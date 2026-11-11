@@ -300,7 +300,7 @@ const CHARS=[
   col:{skin:'#e2b08a',top:'#2f6b4a',pants:'#203a2c',belt:'#d9c48a',hair:'#e8e8ee',band:'#e8e8ee',glove:'#e2b08a',shoe:'#3a2a1a',accent:'#9dffcf'},
   style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true},stats:[4,2,3],hPose:'palm',
   desc:'Counter. Mirror Stance punishes any attack. His palm swats fireballs away.',
-  specials:{S1:'MIRROR STANCE',S2:'TYPHOON PALM',S3:'RIVER THROW',S4:'SPIRIT RIPPLE',AS:'FALLING PALMS',AS2:'CRANE KICK',SU:'HUNDRED PALMS'},quote:'Your own force defeated you.',
+  specials:{S1:'MIRROR STANCE',S2:'TYPHOON PALM',S3:'RIVER THROW',S4:'SPIRIT RIPPLE',AS:'FALLING PALMS',AS2:'CRANE KICK',SU:'ENDLESS TIDE'},quote:'Your own force defeated you.',
   ai:{aa:'U',ender:'S2',counter:'S1'},rushPoses:['palm','jab'],
   moves:(B,S)=>({
    S1:{s:3,a:26,r:16,counter:true,pose:'stance'},
@@ -310,7 +310,7 @@ const CHARS=[
    AS:{s:6,a:18,r:10,dmg:100,hits:4,multi:4,hs:14,bs:8,hb:B([2,-64,40,44]),kb:0.6,hover:24,pose:'rush',ender:true,air:true},
    AS2:{s:8,a:10,r:10,dmg:105,hs:24,bs:16,hb:B([4,-56,40,36]),kb:4,hover:18,vx:3.2,pose:'kick',ender:true,air:true},
    S4:{s:14,a:1,r:22,pose:'palm',proj:{type:'wave',ground:true,vx:2.2,dmg:60,hs:20,bs:12,w:22,h:12,y:-6,lvl:'low',kb:2,life:160}},
-   SU:{s:8,a:36,r:24,dmg:420,hits:10,multi:3,hs:12,bs:6,hb:B([4,-66,40,40]),kb:0.4,pose:'rush',lastKd:true}})},
+   SU:{s:6,a:22,r:26,dmg:24,hs:30,bs:16,hb:B([0,-70,34,70],1),kb:0.2,vx:7,inv:[0,10],pose:'tide',rush:{hits:12,every:3,dmg:290,fin:120}}})},
   {id:'magatsu',name:'MAGATSU',arch:'EVIL SHOTO',archCol:'#ff3a5a',hp:850,walk:1.6,dash:4.8,jumpV:6.4,jumpX:2.3,scale:1.27,reach:1,sw:12,hw:8,dmgMul:1.15,
   col:{skin:'#d9c2b8',top:'#1d1a24',pants:'#1d1a24',belt:'#7a2ab0',hair:'#ececf4',band:'#7a2ab0',glove:'#3a2a4a',shoe:'#d9c2b8',accent:'#b040ff'},
   style:{hair:'wild',gi:true,sleeve:'none',beads:true,tail:'hair',beltTail:true,eyeGlow:true},stats:[5,4,3],
@@ -523,7 +523,7 @@ class Fighter{
   constructor(ch,side,ci=0){this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
-    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,gL:0,enderH:false});
+    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,gL:0,enderH:false,rushT:0,rushN:0});
     this.pose=Object.assign({},POSES.idle);this.dpose=Object.assign({},POSES.idle);this.pv={}}
   get air(){return this.y<FLOOR-0.1}
   get S(){return this.ch.scale}
@@ -546,6 +546,7 @@ class Fighter{
   tryAct(a){if(a==='P'){if(this.air)return false;this.state='parry';this.t=0;this.vx=0;SFX.whoosh(0);return true}
     const m=this.pick(a);if(!m)return false;this.startMove(m);return true}
   startMove(m){
+    this.rushT=0;
     const chainL=this.state==='attack'&&this.move&&this.move.key==='L';
     if(m.key==='L'){this.gL=chainL?(this.gL||0)+1:1;this.enderH=false}else{this.enderH=m.key==='H'&&chainL&&(this.gL||0)>=2;this.gL=0}
     Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(m.key==='AS'||m.key==='AS2')this.airSp=true;
@@ -597,7 +598,21 @@ class Fighter{
     else{this.state='idle';this.vx=0}
     if(prev!==this.state)this.t=0;
   }
+  updRush(op){const m=this.move,R=m.rush;this.rushT++;this.t=m.s+1;
+    const wall=op.x<22||op.x>STAGE_W-22||Math.abs(op.x-(G.camX+W/2))>W/2-20;this.vx=wall?0:this.facing*2.6;
+    Object.assign(op,{state:'hit',juggle:false,stun:30,t:0,vx:0,vy:0,y:FLOOR,move:null});op.x=this.x+this.facing*30*this.S;
+    if(this.rushT%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
+    if(this.rushT%R.every!==0)return;
+    const px=(this.x+op.x)/2,py=op.y-46*op.S;
+    if(this.rushN<R.hits){this.rushN++;const d=Math.round(R.dmg/R.hits);op.hp=Math.max(1,op.hp-d);op.combo++;op.redT=60;op.flash=2;op.flashCol='#ffffff';
+      this.meter=Math.min(100,this.meter);addFx('spark',px+rnd(-6,6),py+rnd(-14,14),1,null,null,this.facing);SFX.hit(this.rushN%3===0);G.hitstop=Math.max(G.hitstop,2);G.shake=Math.max(G.shake,2);comboShow(this,op);return}
+    // finisher
+    op.hp=Math.max(0,op.hp-R.fin);op.combo++;comboShow(this,op);this.rushT=0;this.t=m.s+m.a+1;this.vx=0;
+    Object.assign(op,{state:'hit',juggle:true,vy:-4.6,vx:this.facing*7,y:FLOOR-1,t:0});op.juggleN++;op.redT=60;
+    G.hitstop=16;G.impact=4;G.zoomKick=0.22;G.shake=6;G.excite=1;addFx('spark',px,py,2,null,null,this.facing);addFx('quake',op.x,FLOOR,2);addFx('text',this.x,this.y-96*this.S,0,'ENDLESS TIDE!',this.col.accent);SFX.hit(1);
+    if(op.hp<=0){op.hp=1;op.hp=0;KO(op,this,this.facing)}}
   updMove(op){
+    if(this.rushT>0){this.updRush(op);return}
     const m=this.move,t=this.t,a0=m.s,a1=m.s+m.a,tot=m.s+m.a+m.r;
     if(m.vx){if(t>a0-2&&t<=a1)this.vx=m.vx*this.facing;else if(!this.air)this.vx*=0.6}
     else if(!this.air)this.vx*=0.7;
@@ -677,6 +692,7 @@ class Fighter{
         if(pn==='rush'){const rp=this.ch.rushPoses||['jab','heavy'];pn=t<=m.s?'palm':rp[Math.floor(t/4)%2]}
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
         if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
+        if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor(this.rushT/3)%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.grabbed)pn='slam';this.pn=pn;
         if(t<=m.s)return POSES[pn+'_w']||POSES[pn]||POSES.idle;
         if(t>m.s+m.a+m.r*0.6)return m.air?POSES.jump:POSES.idle;
@@ -739,6 +755,7 @@ function checkHits(A,B){
   if(m.reflect)for(const p of G.projs)if(p.owner!==A&&!p.beam&&overlap(hb,projBox(p))){p.dead=true;addFx('ring',p.x,p.y);addFx('text',p.x,p.y-10,0,'SWAT!','#9dffcf');SFX.parry()}
   const hu=B.hurt();if(!overlap(hb,hu))return;
   const r=resolveHit(A,B,m,hb,hu,false,null,A.hitCount+1);
+  if(r==='hit'&&m.rush&&!A.rushT&&B.hp>0){A.rushT=1;A.rushN=0;B.y=FLOOR;B.vy=0;B.juggle=false;if(!G.resim){G.zoomKick=0.12;addFx('ring',B.x,B.y-40)}}
   if(r!=='none'){A.lastHit=t;if(r!=='parry'||true)A.hitCount++}
 }
 function cornerPush(A,B,dir,m,isProj){if(isProj||A.air)return;if(B.x<34||B.x>STAGE_W-34||Math.abs(B.x-(G.camX+W/2))>W/2-24)A.vx=-dir*(m.kb||2)*0.7}
@@ -1284,7 +1301,7 @@ function uiTap(x,y){for(let i=BTN.length-1;i>=0;i--){const b=BTN[i];if(x>=b.x&&x
 const go=m=>{G.mode=m;SFX.sel()};
 
 /* ============================ RENDER ============================ */
-const SMEAR_LIMB={skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
+const SMEAR_LIMB={dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
 function drawFighterWorld(g,f,camX,opt={}){
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
