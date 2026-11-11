@@ -172,7 +172,7 @@ const AIR_SEQ=['airjab','airkick','airjab2','airknee','airkick'];
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
-let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
+const MAX_LAUNCH=5;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
 
 /* ============================ CHARACTERS ============================ */
 const CHARS=[
@@ -473,7 +473,7 @@ class Fighter{
   constructor(ch,side,ci=0){this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
-    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0});
+    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0});
     this.pose=Object.assign({},POSES.idle);this.dpose=Object.assign({},POSES.idle);this.pv={}}
   get air(){return this.y<FLOOR-0.1}
   get S(){return this.ch.scale}
@@ -518,10 +518,10 @@ class Fighter{
       if(this.t%5===0)addFx('dust',this.x-d*8,FLOOR);
       if(this.t>=dur){this.state='idle';this.t=0;this.vx=0}}
     else if(st==='attack')this.updMove(op);
-    else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0}}else this.vx*=0.995}
+    else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0;this.launchN=0}}else this.vx*=0.995}
     else if(st==='block'){this.vx*=0.85;if(this.buf==='H'&&this.pbCD<=0){this.buf=null;this.bufT=0;this.pushblock(op)}if(this.t>=this.stun){this.state='idle';this.t=0}}
     else if(st==='down'){this.vx*=0.8;if(this.t>=34&&!this.ko){this.state='getup';this.t=0}}
-    else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0}}
+    else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0}}
     else if(st==='parry'){if(this.t>=20){this.state='idle';this.t=0}}
     else if(st==='ko'||st==='win'){this.vx*=0.85}
     else if(st==='taunt'){this.vx=0;if(this.t>=50){this.state='idle';this.t=0}}
@@ -589,7 +589,7 @@ class Fighter{
   }
   onLand(v){
     if(this.state==='jump'){this.chase=false;this.sj=false;this.sq=1;this.state='land';this.t=0;this.landT=3;this.vx=0;addFx('dust',this.x,FLOOR);this.flip=false;this.pose.rot=0}
-    else if(this.state==='hit'&&this.juggle){this.juggle=false;this.juggleN=0;this.juggleInv=false;this.state=this.ko?'ko':'down';this.t=0;this.vx*=0.3;this.sq=0.8;if(v>4)addFx('quake',this.x,FLOOR,1);
+    else if(this.state==='hit'&&this.juggle){this.juggle=false;this.juggleN=0;this.juggleInv=false;this.launchN=0;this.state=this.ko?'ko':'down';this.t=0;this.vx*=0.3;this.sq=0.8;if(v>4)addFx('quake',this.x,FLOOR,1);
       addFx('dust',this.x,FLOOR);addFx('dust',this.x+12,FLOOR);G.shake=Math.max(G.shake,3);SFX.hit(1)}
     else if(this.state==='attack'){const m=this.move;this.move=null;if(m.landQuake){addFx('quake',this.x+this.facing*10,FLOOR,2);G.shake=Math.max(G.shake,6)}this.state='land';this.t=0;this.landT=m.landRec||3;this.vx=0;this.sq=1;addFx('dust',this.x,FLOOR)}
     else if(this.state==='ko'){}
@@ -729,7 +729,10 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   Object.assign(B,{move:null,state:'hit',t:0,stun:m.hs+(counterHit?4:0)});B.vx=dir*(m.kb||2);
   const finisher=(m.lastKd&&nth>=hits)||(m.ender&&nth>=hits&&(B.air||(A.airHits||0)>0));
   if(!isProj&&A.air){A.airHits=(A.airHits||0)+1}
-  if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
+  const isLaunch=!!m.launch&&(nth>=hits||!m.lastKd);let limited=false;
+  if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.2;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true;addFx('text',B.x,B.y-90*B.S,0,'LIMIT!','#ff5a5a')}}
+  if(limited){}
+  else if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(B.air||B.juggle||m.launch||m.kd||finisher){
     const lv=(m.launch&&(nth>=hits||!m.lastKd))?m.launch:(finisher?4.2:(m.kd?3.6:(B.air?(A.air&&!isProj?2.9:3.2):0)));
     if(lv>0||B.air){B.juggle=true;B.vy=-Math.max(lv,B.air?2.4:0);B.y=Math.min(B.y,FLOOR-1);B.juggleN++;if(B.juggleN>9)B.juggleInv=true}
@@ -745,7 +748,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   if(B.hp<=0)KO(B,A,dir);
   return'hit';
 }
-function comboShow(A,B){if(B.combo>=2)G.comboDisp={side:A.side,n:B.combo,t:100}}
+function comboShow(A,B){if(B.combo>=2)G.comboDisp={side:A.side,n:B.combo,t:100,l:B.launchN||0}}
 function KO(B,A,dir){
   if(G.training){B.hp=1;return}
   if(G.phase!=='fight')return;
@@ -1303,7 +1306,7 @@ function renderHUD(g){
   txt(g,G.training?'--':String(G.timer).padStart(2,'0'),W/2,8,16,G.timer<=10&&G.tick%30<15?'#ff4040':'#ffd23f','center');
   if(!G.demo)BTN.push({x:W/2-20,y:0,w:40,h:34,cb:()=>{G.paused=true;SFX.sel()}});
   if(!G.demo){g.fillStyle='rgba(255,255,255,0.45)';g.fillRect(W/2-4,29,3,6);g.fillRect(W/2+1,29,3,6)}
-  if(G.comboDisp){const c=G.comboDisp,right=c.side===1,x=right?W-10:10;g.globalAlpha=Math.min(1,c.t/20);bigTxt(g,c.n+' HITS',right?x-36:x+36,64,8,'#ffffff','#ff5a5a');g.globalAlpha=1}
+  if(G.comboDisp){const c=G.comboDisp,right=c.side===1,x=right?W-10:10;g.globalAlpha=Math.min(1,c.t/20);bigTxt(g,c.n+' HITS',right?x-36:x+36,64,8,'#ffffff','#ff5a5a');if(c.l)txt(g,'LAUNCH '+Math.min(c.l,MAX_LAUNCH)+'/'+MAX_LAUNCH,right?x:x,74,8,c.l>=MAX_LAUNCH?'#ff5a5a':'#ffd23f',right?'right':'left');g.globalAlpha=1}
   if(G.training){txt(g,'TRAINING  DUMMY:'+G.dummy.toUpperCase(),W/2,32+8,8,'#9dffcf','center')}
   if(G.net&&G.net.live){const N=G.net;txt(g,(N.ping||0)+'MS RB'+(N.rbLast||0),W/2,38,8,N.ping>150?'#ff8a3a':'#9dffcf','center');
     if(N.stalls&&G.tick%60<30&&N.frame-N.rconf>MAXRB)txt(g,'WAITING FOR RIVAL',W/2,50,8,'#ffd23f','center');
