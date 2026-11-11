@@ -1753,7 +1753,7 @@ function classify(pts,dur){
   if(Math.abs(dy)>Math.abs(dx)*1.1)return dy<0?'U':'D';
   return Math.sign(dx)===fac?'H':'P';
 }
-function inFightControls(){return G.mode==='fight'&&!G.paused&&!G.result}
+function inFightControls(){return(G.mode==='fight'&&!G.paused&&!G.result)||(G.mode==='bonus'&&G.bonus&&!G.bonus.res&&!G.paused)}
 function onDown(e){
   e.preventDefault();initAudio();if(e.pointerType==='touch')IN.touch=true;
   if(!G.fsTried){G.fsTried=true;try{const d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen)?.call(d)?.catch?.(()=>{});screen.orientation?.lock?.('landscape').catch(()=>{})}catch(err){}}
@@ -1803,7 +1803,7 @@ function playerInput(){
   IN.dash=0;KB.dash=0;return inp}
 const KEYACT={KeyJ:'L',KeyK:'H',KeyL:'U',KeyI:'D',KeyU:'S1',KeyO:'S2',KeyY:'S3',KeyN:'S4',KeyP:'SU',KeyH:'P'};
 addEventListener('keydown',e=>{initAudio();const c=e.code,now=performance.now();if(e.repeat&&!['Space'].includes(c))return;
-  if(c==='Escape'&&G.mode==='fight'&&!G.result){G.paused=!G.paused;return}
+  if(c==='Escape'&&(G.mode==='fight'||G.mode==='bonus')&&!G.result&&!(G.bonus&&G.bonus.res)){G.paused=!G.paused;return}
   if(c==='KeyA'||c==='ArrowLeft'){if(now-KB.lastL<260)KB.dash=-1;KB.lastL=now;KB.l=true}
   if(c==='KeyD'||c==='ArrowRight'){if(now-KB.lastR<260)KB.dash=1;KB.lastR=now;KB.r=true}
   if(c==='KeyW'||c==='ArrowUp'){KB.u=true;KB.sj=now-(KB.lastD||-1e9)<260}if(c==='KeyS'||c==='ArrowDown'){if(!KB.d)KB.lastD=now;KB.d=true}if(c==='Space'){KB.g=true;e.preventDefault()}
@@ -2092,7 +2092,7 @@ function renderResult(g){
   b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff4a4a'});
 }
 function renderOverlay(){
-  const g=ox;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,ov.width,ov.height);if(G.mode!=='fight'||G.paused||G.result)return;
+  const g=ox;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,ov.width,ov.height);if(!inFightControls())return;
   g.scale(DPR,DPR);const now=performance.now();
   if(IN.touch&&G.hint<420){const a=Math.min(1,(420-G.hint)/60)*0.6;g.globalAlpha=a;g.font='11px '+FONT;g.textAlign='center';g.fillStyle='#fff';
     g.fillText('◀ DRAG TO MOVE ▶',innerWidth*0.21,innerHeight-30);g.fillText('TAP / SWIPE / ARC TO ATTACK',innerWidth*0.71,innerHeight-30);
@@ -2171,6 +2171,11 @@ function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
   let h0=X.hp;updateProjs();if(near&&X.hp<h0)bonusHit(near,h0-X.hp);resetProxy(X);
   // melee can hit any prop it touches
   if(live)for(const t of alive){if(t.dead)continue;placeProxy(X,t);h0=X.hp;checkHits(P,X);if(X.hp<h0)bonusHit(t,h0-X.hp);resetProxy(X)}
+  // a rolling or falling barrel that touches you knocks you down
+  if(live&&B.type==='barrels'&&!P.isInv()&&P.state!=='hit'){const hu=P.hurt();
+    for(const t of B.targets){if(t.dead)continue;const bb={x:t.x-11,y:t.y-30,w:22,h:30};if(!overlap(hu,bb))continue;
+      const dir=Math.sign(P.x-t.x)||-P.facing;Object.assign(P,{state:'hit',juggle:true,vy:-3.6,vx:dir*2.6,y:Math.min(P.y,FLOOR-1),move:null,t:0});
+      t.vx=-dir*Math.max(0.9,Math.abs(t.vx||0.9));t.roll=-dir;G.shake=4;addFx('spark',P.x,P.y-30,1);addFx('text',P.x,P.y-80,0,'OUCH!','#ff6a6a');SFX.hit(1);vib(40);break}}
   if(near)placeProxy(X,near);
   P.x=clamp(P.x,G.camX+14,G.camX+W-14);
   const tgt=clamp(P.x-W/2+(near?(near.x-P.x)*0.3:0),0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.08;
