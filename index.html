@@ -220,7 +220,7 @@ const GROUND_SEQ=['jab','skick','jab2','knee','skick'];
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
-const MAX_LAUNCH=2;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
+const MAX_LAUNCH=2;let FF_MUL=2.4,FF_LAND=6;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
 
 /* ============================ CHARACTERS ============================ */
 const CHARS=[
@@ -319,7 +319,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S1',zone:'S1',tele:'S3'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'ki',vx:4,dmg:65,hs:20,bs:14,w:16,h:14,kb:2.5,life:220}},
-   S2:{s:3,a:16,r:22,dmg:120,hits:3,multi:5,hs:22,bs:16,hb:B([2,-92,26,74],1),kb:1,launch:6.5,lastKd:true,inv:[0,7],vy:6.6,vx:1.2,pose:'upper',landRec:16},
+   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-90,24,70],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.4,vx:1.6,pose:'upper',landRec:FF_LAND,fastFall:FF_MUL},
    S3:{s:8,a:0,r:14,tele:6,teleFwd:110,pose:'glide'},
    S4:{s:14,a:30,r:10,dmg:80,hs:20,bs:14,hb:B([0,-36,30,36],1),lvl:'high',kb:2,hop:[6.2,3.2],dive:14,diveV:[3.4,5],pose:'airheavy',landRec:6},
    AS2:{s:6,a:34,r:8,dmg:90,hs:22,bs:14,hb:B([0,-36,32,38],1),lvl:'high',kb:2,hover:5,dive:5,diveV:[4.4,5.6],pose:'airheavy',ender:true,air:true,landRec:8},
@@ -578,7 +578,7 @@ class Fighter{
     else if(st==='ko'||st==='win'){this.vx*=0.85}
     else if(st==='taunt'){this.vx=0;if(this.t>=50){this.state='idle';this.t=0}}
     // physics
-    if(this.y<FLOOR||this.vy<0){this.vy+=((this.state==='hit'&&this.juggle&&!this.ko)||(this.airHits>0&&(this.state==='jump'||this.state==='attack')))?JUGGLE_G:GRAV;this.y+=this.vy;if(this.y>=FLOOR){this.y=FLOOR;const v=this.vy;this.vy=0;this.onLand(v)}}
+    if(this.y<FLOOR||this.vy<0){this.vy+=(this.state==='attack'&&this.move&&this.move.fastFall&&this.t>this.move.s+this.move.a)?GRAV*this.move.fastFall:((this.state==='hit'&&this.juggle&&!this.ko)||(this.airHits>0&&(this.state==='jump'||this.state==='attack')))?JUGGLE_G:GRAV;this.y+=this.vy;if(this.y>=FLOOR){this.y=FLOOR;const v=this.vy;this.vy=0;this.onLand(v)}}
     this.x+=this.vx;if(this.ext){this.x+=this.ext;this.ext*=0.86;if(Math.abs(this.ext)<0.2)this.ext=0}if(this.pbCD>0)this.pbCD--;
     for(const gh of this.ghosts)gh.t--;this.ghosts=this.ghosts.filter(g=>g.t>0);
     this.animate();
