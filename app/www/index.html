@@ -129,6 +129,10 @@ const TRACKS={
   s4:{bpm:116,roots:[0,0,-4,0],bassWave:'triangle',bassVol:0.2,bass:[0,-1,7,-1,0,-1,8,-1,0,-1,7,-1,5,-1,1,-1],
     lead:[12,-1,13,17,-1,19,20,-1,24,-1,20,19,-1,17,13,-1, 12,-1,17,-1,19,-1,13,12,-1,8,-1,7,-1,8,-1,-1],leadInst:'koto',
     drums:{taiko:[0,6,8,11],wood:[4,12],shaker:[2,6,10,14]}},
+  // TRAINING ROOM: laid-back lab groove (electric piano feel)
+  s5:{bpm:96,roots:[0,-3,-5,-7],bassWave:'triangle',bassVol:0.2,bassLen:0.8,bass:[0,-1,-1,0,-1,-1,7,-1,0,-1,-1,0,-1,10,-1,-1],
+    lead:[12,-1,16,-1,19,-1,16,-1,23,-1,-1,21,-1,19,-1,-1, 12,-1,16,-1,19,-1,21,-1,19,-1,16,-1,14,-1,-1,-1],leadInst:'bell',leadVol:0.035,pad:true,
+    drums:{kick:[0,7,10],snare:[4,12],hat:[2,6,10,14],shaker:[1,3,5,7,9,11,13,15]}},
 };
 const DRUM={
   kick:t=>osc('sine',160,40,0.13,0.55,0,musicGain,t),
@@ -1085,7 +1089,7 @@ const PARA=[0.12,0.35,0.7,0.86];
 const layerW=p=>Math.ceil(W+(STAGE_W-W)*p)+4;
 function buildStage(kind){
   const R=seeded(4242+kind*1013),r=(a,b)=>a+R()*(b-a),rp=a=>a[R()*a.length|0];
-  const L={kind,name:['SUNSET PIER','NEON ALLEY','LOST TEMPLE','FROZEN CAVERN','SAKURA SHRINE'][kind],rim:['rgba(255,170,90,0.35)','rgba(255,80,190,0.35)','rgba(160,255,120,0.25)','rgba(140,220,255,0.3)','rgba(255,160,200,0.35)'][kind]};
+  const L={kind,name:['SUNSET PIER','NEON ALLEY','LOST TEMPLE','FROZEN CAVERN','SAKURA SHRINE','TRAINING ROOM'][kind],rim:['rgba(255,170,90,0.35)','rgba(255,80,190,0.35)','rgba(160,255,120,0.25)','rgba(140,220,255,0.3)','rgba(255,160,200,0.35)','rgba(120,200,255,0.3)'][kind]};
   const sw=layerW(PARA[0]),sky=mkCanvas(sw,FLOOR_TOP),sg=sky.getContext('2d');
   const fw=layerW(PARA[1]),far=mkCanvas(fw,FLOOR_TOP),fg=far.getContext('2d');
   const mw=layerW(PARA[2]),mid=mkCanvas(mw,FLOOR_TOP),mg=mid.getContext('2d');
@@ -1206,6 +1210,23 @@ function buildStage(kind){
     for(let i=0;i<30;i++){const x=r(0,ftw);for(let y=FLOOR_TOP+3;y<H;y+=2){tg.globalAlpha=0.12*(1-(y-FLOOR_TOP)/60);tg.fillStyle=rp(['#40e0ff','#ffffff','#9a80ff']);tg.fillRect(x+Math.sin(y)*1.5,y,3,1)}}tg.globalAlpha=1;
     for(let i=0;i<40;i++){tg.fillStyle='rgba(255,255,255,0.8)';tg.beginPath();tg.ellipse(r(0,ftw),r(FLOOR_TOP,H),r(8,26),r(1,3),0,0,7);tg.fill()}
     L.noCrowd=true;L.fog='rgba(4,16,36,';L.floorGlow='rgba(120,220,255,0.10)';L.parts='snow';
+  }else if(kind===5){ // ---------- TRAINING ROOM (blue grid)
+    // back wall: deep blue gradient + fine grid, brighter major lines, glowing horizon
+    for(let y=0;y<FLOOR_TOP;y++){const t=y/FLOOR_TOP;sg.fillStyle=`rgb(${Math.round(8+14*t)},${Math.round(22+36*t)},${Math.round(70+80*t)})`;sg.fillRect(0,y,sw,1)}
+    for(let x=0;x<sw;x+=12){sg.fillStyle=x%48===0?'rgba(120,200,255,0.42)':'rgba(90,160,255,0.16)';sg.fillRect(x,0,1,FLOOR_TOP)}
+    for(let y=FLOOR_TOP;y>=0;y-=12){sg.fillStyle=(FLOOR_TOP-y)%48===0?'rgba(120,200,255,0.42)':'rgba(90,160,255,0.16)';sg.fillRect(0,y,sw,1)}
+    // far: large wall panels (subtle), lit strip lights
+    for(let x=0;x<fw;x+=96){fg.fillStyle='rgba(160,220,255,0.05)';fg.fillRect(x+4,22,88,FLOOR_TOP-30);fg.fillStyle='rgba(180,230,255,0.22)';fg.fillRect(x+4,22,88,1);fg.fillRect(x+4,FLOOR_TOP-9,88,1)}
+    for(let x=24;x<fw;x+=96){fg.fillStyle='rgba(200,240,255,0.55)';fg.fillRect(x,8,48,2);fg.fillStyle='rgba(200,240,255,0.12)';fg.fillRect(x-4,6,56,6)}
+    // mid: horizon glow at the wall base + distance markers every 48px of stage
+    const hg=mg.createLinearGradient(0,FLOOR_TOP-18,0,FLOOR_TOP);hg.addColorStop(0,'rgba(80,180,255,0)');hg.addColorStop(1,'rgba(120,210,255,0.45)');mg.fillStyle=hg;mg.fillRect(0,FLOOR_TOP-18,mw,18);
+    mg.fillStyle='#bfe8ff';mg.fillRect(0,FLOOR_TOP-1,mw,1);
+    // floor: blue tiles with a grid; the line-scroll perspective makes the lines converge
+    const ftw=FT.width;for(let y=FLOOR_TOP;y<H;y++){const t=(y-FLOOR_TOP)/(H-FLOOR_TOP);tg.fillStyle=`rgb(${Math.round(18+10*t)},${Math.round(52+30*t)},${Math.round(140+50*t)})`;tg.fillRect(0,y,ftw,1)}
+    const cx0=PAD+STAGE_W/2;
+    for(let x=cx0%32;x<ftw;x+=32){const d=Math.round(x-cx0),major=d%128===0;tg.fillStyle=d===0?'rgba(255,255,255,0.7)':major?'rgba(170,225,255,0.5)':'rgba(130,200,255,0.26)';const w=d===0?4:3;tg.fillRect(Math.round(x)-(w>>1),FLOOR_TOP,w,H-FLOOR_TOP)}
+    for(const y of [FLOOR_TOP,FLOOR_TOP+5,FLOOR_TOP+11,FLOOR_TOP+18,FLOOR_TOP+27,FLOOR_TOP+38,FLOOR_TOP+52]){tg.fillStyle=y===FLOOR_TOP?'rgba(200,240,255,0.7)':'rgba(130,200,255,0.32)';tg.fillRect(0,y,ftw,1)}
+    L.noCrowd=true;L.fog='rgba(8,24,70,';L.floorGlow='rgba(120,200,255,0.10)';L.parts='grid';
   }else{ // ---------- SAKURA SHRINE (Japan)
     ditherFill(sg,sw,FLOOR_TOP,['#3a2a6a','#6a3e8e','#c06a9e','#f0a0a8','#ffd2b4','#fff0d0'],(x,y)=>y/146);
     for(let i=0;i<10;i++){const y=r(20,90),x=r(-20,sw),l=r(40,120);sg.fillStyle=y<55?'#8a5aa8':'#f8c0c0';sg.fillRect(x,y,l,r(2,4)|0);sg.fillStyle='#fff0f0';sg.fillRect(x+6,y-1,l-12,1)}
@@ -1234,7 +1255,7 @@ function buildStage(kind){
   const cw=layerW(PARA[3]);L.crowd=[];if(!L.noCrowd)for(let x=4;x<cw;x+=r(8,14))if(R()<.82)L.crowd.push({x,h:r(16,24),c:pick(L.crowdCols),ph:r(0,6),hair:R()<.5,cheer:R()<.5,w:r(8,11)});
   return L;
 }
-let STAGES=[];
+let STAGES=[];const TRAIN_STAGE=5;
 function drawStage(g,camX){
   const L=STAGES[G.stage]||STAGES[0];
   g.drawImage(L.sky,-Math.round(camX*PARA[0]),0);
@@ -1257,6 +1278,7 @@ function drawStage(g,camX){
     for(let i=0;i<8;i++){const x=((i*131-camX*0.9+Math.sin(T*0.03+i)*30)%pw+pw)%pw-20,y=((T*0.5+i*37)%(H+20))-10;g.fillStyle=i%2?'#3a8a2a':'#6aa83a';g.fillRect(x,y,3,2)}}
   if(L.parts==='snow'){for(let i=0;i<46;i++){const x=((i*83-camX*(0.6+i%3*0.2)+Math.sin(T*0.02+i)*14)%pw+pw)%pw-20,y=((T*(0.35+i%4*0.12)+i*41)%(H+10))-5;g.fillStyle=i%5?'rgba(255,255,255,0.8)':'#ffffff';g.fillRect(x,y,i%3?1:2,i%3?1:2)}
     for(let i=0;i<5;i++){if((T+i*40)%120<8){g.fillStyle='#ffffff';const x=(i*77+40)%W,y=40+(i*29)%90;g.fillRect(x-2,y,5,1);g.fillRect(x,y-2,1,5)}}}
+  if(L.parts==='grid'){const sy=(T*0.4)%(FLOOR_TOP+40)-20;const sg2=g.createLinearGradient(0,sy-10,0,sy+10);sg2.addColorStop(0,'rgba(140,220,255,0)');sg2.addColorStop(0.5,'rgba(140,220,255,0.10)');sg2.addColorStop(1,'rgba(140,220,255,0)');g.fillStyle=sg2;g.fillRect(0,sy-10,W,20)}
   if(L.parts==='petal'){for(let i=0;i<34;i++){const x=((i*91-camX*(0.7+i%3*0.15)+T*0.3+Math.sin(T*0.03+i)*22)%pw+pw)%pw-20,y=((T*(0.3+i%4*0.1)+i*47)%(H+10))-5;g.fillStyle=['#ffb0c8','#ff90b4','#ffe0ea'][i%3];g.fillRect(x,y,(T+i)%20<10?3:2,2)}}
 }
 
@@ -1525,7 +1547,7 @@ function renderTitle(g){
   const y=30+Math.sin(G.tick*0.05)*2;bigTxt(g,'SWIPE',W/2,y,24,'#ffffff','#ff4fa3');bigTxt(g,'STRIKE',W/2,y+28,24,'#fff6a0','#ff7a1a');
   txt(g,'GESTURE FIGHTER',W/2,y+48,8,'#7fd8ff','center');
   button(g,W/2-62,102,124,18,'ARCADE',()=>{G.training=false;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{def:true});
-  button(g,W/2-62,124,124,18,'TRAINING',()=>{G.training=true;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#9dffcf'});
+  button(g,W/2-62,124,124,18,'TRAINING',()=>{G.training=true;G.stage=TRAIN_STAGE;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#9dffcf'});
   button(g,W/2-62,146,124,18,'VS ONLINE/LAN',()=>{NU.err='';NU.status='';go('net')},{col:'#ff4fa3'});
   button(g,W/2-62,168,124,18,'HOW TO PLAY',()=>{G.howFrom='title';go('howto')},{col:'#7fd8ff'});
   button(g,W-78,H-22,70,16,musicOn?'MUSIC ON':'MUSIC OFF',()=>{setMusic(!musicOn)},{col:'#b48cff'});
@@ -1664,7 +1686,7 @@ function renderResult(g){
       b('REMATCH',()=>{N.ready=false;N.rready=false;G.result=null;N.live=false;G.mode='netsel'},{def:true});b('LEAVE',()=>{NX.ctrlSend({t:'bye'});netLost('')},{col:'#ff4a4a'})}return}
   if(G.training){b('AGAIN',()=>startMatch(),{def:true})}
   else if(champ){b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{def:true})}
-  else if(r.won){b('NEXT FIGHT',()=>ADS.gate(()=>{G.sel.p2=G.ladder[G.ladderIdx];G.stage=(G.stage+1)%STAGES.length;startMatch()}),{def:true})}
+  else if(r.won){b('NEXT FIGHT',()=>ADS.gate(()=>{G.sel.p2=G.ladder[G.ladderIdx];G.stage=(G.stage+1)%TRAIN_STAGE;startMatch()}),{def:true})}
   else{b('CONTINUE',()=>ADS.gate(()=>{startMatch()}),{def:true})}
   b('CHARACTER SELECT',()=>ADS.gate(()=>{G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')}),{col:'#ff8a3a'});
   b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff4a4a'});
@@ -1920,7 +1942,7 @@ function renderNetSel(g){const N=G.net;
 
 let last=performance.now(),acc=0;
 function frame(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(!window.__freeze)step();acc-=1000/60;n++}if(n>=4)acc=0;render();requestAnimationFrame(frame)}
-function boot(){ADS.init();resize();STAGES=[0,1,2,3,4].map(buildStage);newDemo();requestAnimationFrame(frame)}
+function boot(){ADS.init();resize();STAGES=[0,1,2,3,4,5].map(buildStage);try{document.fonts&&document.fonts.ready.then(()=>{STAGES[TRAIN_STAGE]=buildStage(TRAIN_STAGE)})}catch(e){}newDemo();requestAnimationFrame(frame)}
 if(document.fonts&&document.fonts.load){Promise.race([document.fonts.load('8px "Press Start 2P"'),new Promise(r=>setTimeout(r,1500))]).then(boot,boot)}else boot();
 window.__G=G;
 </script>
