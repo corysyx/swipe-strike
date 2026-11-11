@@ -220,6 +220,9 @@ const GROUND_SEQ=['jab','skick','jab2','knee','skick'];
 POSES.beampush=P({lean:14,head:2,fa1:78,fa2:52,ba1:72,ba2:58,fl1:46,fl2:-10,bl1:-38,bl2:0,dx:2});POSES.beamPush=POSES.beampush;POSES.beampush_w=POSES.palm_w;POSES.beamPush_w=POSES.palm_w;
 POSES.upkick=P({lean:-22,head:-8,fl1:165,fl2:-6,bl1:-10,bl2:-30,fa1:60,fa2:80,ba1:-30,ba2:60});POSES.upkick_w=POSES.crouch;
 POSES.roll=POSES.jump;POSES.roll_w=POSES.crouch;
+POSES.flykick=P({lean:-32,head:6,fl1:96,fl2:-4,bl1:18,bl2:-112,fa1:118,fa2:22,ba1:-40,ba2:20});POSES.flykick_w=POSES.crouch;
+POSES.bikeA=P({lean:-30,head:4,fl1:104,fl2:-8,bl1:40,bl2:-105,fa1:100,fa2:40,ba1:-30,ba2:40});
+POSES.bikeB=P({lean:-30,head:4,fl1:40,fl2:-105,bl1:104,bl2:-8,fa1:100,fa2:40,ba1:-30,ba2:40});POSES.bike_w=POSES.crouch;
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
@@ -348,6 +351,21 @@ const CHARS=[
    AS2:{s:4,a:18,r:8,dmg:95,hits:6,multi:3,hs:12,bs:8,hb:B([4,-64,36,42]),kb:0.4,hover:22,pose:'rush',ender:true,air:true},
    SU:{s:8,a:36,r:22,dmg:430,hits:12,multi:3,hs:14,bs:8,hb:B([0,-66,36,52]),kb:0.35,vx:2.2,pose:'rush',lastKd:true,launch:5},
    cSU:{s:6,a:32,r:22,dmg:420,hits:8,multi:4,hs:18,bs:8,hb:B([-12,-104,48,100],1),kb:0.3,carry:true,vy:7.4,vx:1.2,inv:[0,10],pose:'upkick',flipSpin:true,lastKd:true,launch:6,landRec:16}})},
+  {id:'taolin',name:'TAOLIN',arch:'KUNG FU',archCol:'#ff6a1a',hp:960,walk:1.65,dash:4.8,jumpV:6.6,jumpX:2.4,scale:1.17,reach:1,sw:11,hw:8,
+  col:{skin:'#e2b080',top:'#e2b080',pants:'#16141c',belt:'#c8202a',hair:'#18121a',band:'#c8202a',glove:'#f0ece4',shoe:'#16141c',accent:'#ff6a1a'},
+  style:{hair:'mop',shirtless:true,boots:true,beltTail:true},stats:[4,4,3],hPose:'kick',
+  alts:[{pants:'#e8e4dc',shoe:'#e8e4dc',belt:'#2a5ac8',band:'#2a5ac8',accent:'#40b0ff'},{pants:'#9a1a20',shoe:'#1a1214',belt:'#141016',band:'#141016',accent:'#ff3030'},{pants:'#1e5a32',shoe:'#141016',belt:'#e8c060',band:'#e8c060',accent:'#9dff5a'}],
+  desc:'Kung fu hero. High and low dragon fireballs, a screen-crossing flying kick and a bicycle kick.',
+  specials:{S1:'DRAGON FLAME',S2:'BICYCLE KICK',S3:'FLYING KICK',S4:'LOW FLAME',AS:'AIR FLAME',AS2:'SKY KICK',SU:'DRAGON FURY'},quote:'The flame of the dragon never dies!',
+  ai:{aa:'U',ender:'S2',zone:'S1',rush:true},
+  moves:(B,S)=>({
+   S1:{s:10,a:1,r:20,pose:'palm',proj:{type:'dflame',vx:4.4,dmg:65,hs:20,bs:14,w:20,h:14,kb:2.5,life:200}},
+   S2:{s:6,a:30,r:16,dmg:140,hits:6,multi:5,hs:14,bs:8,hb:B([2,-60,36,42]),kb:0.4,vx:3.4,hop:[2.4,0],hover:36,pose:'bike',lastKd:true,landRec:10},
+   S3:{s:6,a:22,r:14,dmg:90,hs:22,bs:14,hb:B([8,-58,36,32],1),kb:5,kd:true,vx:7,hop:[1.8,0],hover:28,pose:'flykick',landRec:8},
+   S4:{s:10,a:1,r:22,pose:'cjab',crouch:true,proj:{type:'dflame',ground:true,vx:3.6,dmg:55,hs:18,bs:12,w:20,h:12,y:-10,lvl:'low',kb:2,life:200}},
+   AS:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,proj:{type:'dflame',vx:3.4,vy:2.4,dmg:60,hs:20,bs:14,w:18,h:14,kb:2,life:90,ender:true}},
+   AS2:{s:4,a:26,r:8,dmg:90,hs:22,bs:14,hb:B([8,-52,36,34],1),kb:5,hover:4,dive:4,diveV:[6,2.2],pose:'flykick',ender:true,air:true,landRec:6},
+   SU:{s:12,a:1,r:30,pose:'palm',proj:{type:'dragon',vx:3.2,dmg:420,hits:7,multi:5,hs:22,bs:14,w:46,h:40,kb:0.3,lastKd:true,launch:5,life:240}}})},
 ];
 const CH={};
 function hueRot(hex,deg,sat=1,lit=0){let[r,g,b]=hex2rgb(hex).map(v=>v/255);const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s2=0,l=(mx+mn)/2;
@@ -485,6 +503,10 @@ function drawRig(g,ch,Q,pal,opt={}){
   }else if(st.hair==='mohawk'){
     const pts=[];for(let i=0;i<=6;i++){const ph=lerp(-70,40,i/6)*D2R,r=i%2?1.55:1.08;pts.push([Math.cos(ph)*r,Math.sin(ph)*r])}pts.push([0.75,0.2],[0.8,-0.4]);hairPoly(pts,pal.hair);
     const m0=at(-0.45,0.55),m1=at(-0.55,1.05);g.beginPath();g.moveTo(m0.x,m0.y);g.lineTo(m1.x,m1.y);g.strokeStyle=OL;g.lineWidth=3.2;g.stroke();g.strokeStyle=pal.hair;g.lineWidth=1.8;g.stroke();
+  }else if(st.hair==='mop'){
+    const pts=[];const n=11;for(let i=0;i<=n;i++){const ph=lerp(-150,70,i/n)*D2R,r=(i%2?1.42:1.18)+(i<4?0.12:0);pts.push([Math.cos(ph)*r,Math.sin(ph)*r])}
+    pts.push([0.15,1.05],[0.35,0.55],[0.05,0.2],[-0.5,-0.2],[-0.95,-0.9],[-1.15,-1.1]);hairPoly(pts,pal.hair);
+    const sh=at(0.95,0.1);g.fillStyle=pal.hairL;g.fillRect(Math.round(sh.x),Math.round(sh.y),2,1);
   }else if(st.hair==='braid'){
     hairPoly([[-0.45,-1.05],[0.45,-1.1],[1.0,-0.55],[0.95,-0.1],[0.45,-0.55],[-0.2,-0.95]],pal.hair);
     const b0=at(0.6,-0.9);dot(b0,1.6*S,pal.band);
@@ -722,6 +744,7 @@ class Fighter{
         if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
+        if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
         if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor(this.rushT/3)%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.grabbed)pn='slam';this.pn=pn;
         if(t<=m.s)return POSES[pn+'_w']||POSES[pn]||POSES.idle;
@@ -968,6 +991,20 @@ function drawProj(g,p,ox){
       g.fillStyle='#e8c8ff';for(let i=0;i<6;i++){const a=G.tick*0.12+i*Math.PI/3;g.fillRect(x+Math.cos(a)*r*0.75-1,y+Math.sin(a)*r*0.75-1,2.5,2.5)}
       g.fillStyle='#fff';g.beginPath();g.arc(x,y,2.5,0,7);g.fill();break}
     case'flame':{for(let i=0;i<5;i++){g.fillStyle=['#ff4a10','#ff8a20','#ffc040','#fff0a0','#fff'][i];g.beginPath();g.arc(x+Math.sin(G.tick*0.7+i)*1.5-Math.sign(p.vx)*i*-0.5,y+i*0.6,10-i*2+(fl?1:0),0,7);g.fill()}break}
+    case'dflame':{const d=Math.sign(p.vx)||1,fl2=G.tick%4<2;
+      for(let i=4;i>0;i--){g.fillStyle=['#ffe070','#ffb030','#ff6a1a','#c82010'][i-1];g.globalAlpha=0.5+i*0.1;g.beginPath();g.ellipse(x-d*i*5,y+Math.sin(G.tick*0.6+i)*1.5,8-i*0.8,5.5-i*0.6,0,0,7);g.fill()}g.globalAlpha=1;
+      g.fillStyle='#ff6a1a';g.beginPath();g.moveTo(x+d*11,y);g.lineTo(x+d*2,y-6);g.lineTo(x-d*3,y-3);g.lineTo(x-d*3,y+3);g.lineTo(x+d*2,y+6);g.closePath();g.fill();
+      g.fillStyle='#ffe070';g.beginPath();g.moveTo(x+d*9,y+1);g.lineTo(x+d*2,y-3);g.lineTo(x+d*2,y+4);g.closePath();g.fill();
+      g.fillStyle='#fff';g.fillRect(x+d*3-1,y-3,2,2);g.fillStyle='#ffb030';g.fillRect(x-d*1,y-8-(fl2?1:0),2,3);break}
+    case'dragon':{const d=Math.sign(p.vx)||1,n=11;
+      g.fillStyle='rgba(255,106,26,0.18)';g.beginPath();g.ellipse(x-d*40,y,70,26,0,0,7);g.fill();
+      for(let i=n;i>=1;i--){const sx=x-d*i*9,sy=y+Math.sin(p.t*0.3-i*0.7)*7,r=Math.max(4,15-i*0.9);
+        g.fillStyle=i%2?'#c82010':'#ff6a1a';g.beginPath();g.arc(sx,sy,r,0,7);g.fill();g.fillStyle='#ffb030';g.beginPath();g.arc(sx,sy-r*0.3,r*0.5,0,7);g.fill();
+        if(i%2===0){g.fillStyle='#ffe070';g.beginPath();g.moveTo(sx-d*3,sy-r);g.lineTo(sx,sy-r-6);g.lineTo(sx+d*3,sy-r);g.fill()}}
+      const hy=y+Math.sin(p.t*0.3)*4;g.fillStyle='#e03018';g.beginPath();g.moveTo(x-d*12,hy-12);g.lineTo(x+d*14,hy-6);g.lineTo(x+d*20,hy);g.lineTo(x+d*12,hy+3);g.lineTo(x+d*18,hy+9);g.lineTo(x-d*10,hy+12);g.closePath();g.fill();
+      g.fillStyle='#ffb030';g.beginPath();g.moveTo(x-d*6,hy-12);g.lineTo(x-d*16,hy-22);g.lineTo(x-d*2,hy-10);g.fill();g.beginPath();g.moveTo(x-d*2,hy-10);g.lineTo(x-d*8,hy-24);g.lineTo(x+d*3,hy-8);g.fill();
+      g.fillStyle='#fff6a0';g.fillRect(x+d*5-1,hy-6,3,3);g.fillStyle='#ffe070';for(let k=0;k<3;k++)g.fillRect(x+d*(12+k*2),hy+4-k,2,2);
+      if(G.tick%3===0)addFx('ember',x+rnd(-30,10)*d,y+rnd(-12,12));break}
     case'pillar':{const k=Math.min(1,p.t/6),hh=p.h*k,a=1-Math.max(0,(p.t-26)/10);g.globalAlpha=a;
       g.fillStyle='rgba(200,107,255,0.35)';g.fillRect(x-14,FLOOR-hh-4,28,hh+4);g.fillStyle='#b070ff';g.fillRect(x-9,FLOOR-hh,18,hh);
       g.fillStyle='#ffffff';g.fillRect(x-4,FLOOR-hh,8,hh);for(let i=0;i<5;i++){g.fillStyle='#e8c8ff';g.fillRect(x-10+((i*7+G.tick*3)%20),FLOOR-((i*19+G.tick*4)%Math.max(1,hh)),2,4)}
@@ -1333,7 +1370,7 @@ function uiTap(x,y){for(let i=BTN.length-1;i>=0;i--){const b=BTN[i];if(x>=b.x&&x
 const go=m=>{G.mode=m;SFX.sel()};
 
 /* ============================ RENDER ============================ */
-const SMEAR_LIMB={upkick:'ftF',roll:null,dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
+const SMEAR_LIMB={flykick:'ftF',bikeA:'ftF',bikeB:'ftB',upkick:'ftF',roll:null,dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
 function drawFighterWorld(g,f,camX,opt={}){
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
