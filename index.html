@@ -315,12 +315,12 @@ const CHARS=[
   style:{hair:'wild',gi:true,sleeve:'none',beads:true,tail:'hair',beltTail:true,eyeGlow:true},stats:[5,4,3],
   alts:[{top:'#e8e4dc',pants:'#e8e4dc',belt:'#b01a2a',hair:'#1a1418',band:'#b01a2a',accent:'#ff3030',glove:'#7a1a1a'},{top:'#7a1020',pants:'#7a1020',belt:'#141018',hair:'#ececf4',band:'#141018',accent:'#ff6a20',glove:'#2a0a10'},{top:'#16305a',pants:'#16305a',belt:'#40e0ff',hair:'#b8c8e8',band:'#40e0ff',accent:'#40e0ff',glove:'#0a1830'}],
   desc:'Evil shoto. Huge damage, a teleport and a demon flip, but fragile. His super ends fights.',
-  specials:{S1:'NETHER BLAST',S2:'DEMON RISE',S3:'PHANTOM STEP',S4:'HELL LEAP',AS:'NETHER RAIN',AS2:'DEMON DIVE',SU:'SOUL REAPER'},quote:'Your soul was never yours to keep.',
-  ai:{aa:'S2',ender:'S1',zone:'S1',tele:'S3'},
+  specials:{S1:'NETHER BLAST',S2:'DEMON RISE',S3:'PHANTOM SLIDE',S4:'HELL LEAP',AS:'NETHER RAIN',AS2:'DEMON DIVE',SU:'SOUL REAPER'},quote:'Your soul was never yours to keep.',
+  ai:{aa:'S2',ender:'S1',zone:'S1',tele:'S3',slide:'S3'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'ki',vx:4,dmg:65,hs:20,bs:14,w:16,h:14,kb:2.5,life:220}},
    S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-90,24,70],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.4,vx:1.6,pose:'upper',landRec:FF_LAND,fastFall:FF_MUL},
-   S3:{s:8,a:0,r:14,tele:6,teleFwd:110,pose:'glide'},
+   S3:{s:3,a:22,r:12,vx:4.4,projInv:[0,26],pose:'glide'},
    S4:{s:14,a:30,r:10,dmg:80,hs:20,bs:14,hb:B([0,-36,30,36],1),lvl:'high',kb:2,hop:[6.2,3.2],dive:14,diveV:[3.4,5],pose:'airheavy',landRec:6},
    AS2:{s:6,a:34,r:8,dmg:90,hs:22,bs:14,hb:B([0,-36,32,38],1),lvl:'high',kb:2,hover:5,dive:5,diveV:[4.4,5.6],pose:'airheavy',ender:true,air:true,landRec:8},
    AS:{s:8,a:1,r:14,hover:18,pose:'palm',air:true,proj:{type:'ki',vx:3.2,vy:2.6,dmg:65,hs:20,bs:14,w:16,h:14,kb:2,life:90,ender:true}},
@@ -619,6 +619,7 @@ class Fighter{
       else if(m.key==='jL'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='H'||b==='U'||b==='D')nm=this.moves.jH}
       if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
     if(m.super&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
+    if(m.projInv&&t<=m.s+m.a&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(m.tele&&m.teleFwd&&t<=m.s&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(this.canCancel&&this.buf&&t>a0&&!this.air){
       const b=this.buf;let ok=false;
@@ -742,6 +743,7 @@ function checkHits(A,B){
 function cornerPush(A,B,dir,m,isProj){if(isProj||A.air)return;if(B.x<34||B.x>STAGE_W-34||Math.abs(B.x-(G.camX+W/2))>W/2-24)A.vx=-dir*(m.kb||2)*0.7}
 function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   if(B.isInv())return'none';
+  if(isProj&&B.state==='attack'&&B.move&&B.move.projInv&&B.t>=B.move.projInv[0]&&B.t<=B.move.projInv[1])return'none';
   const px=(Math.max(hb.x,hu.x)+Math.min(hb.x+hb.w,hu.x+hu.w))/2,py=(Math.max(hb.y,hu.y)+Math.min(hb.y+hb.h,hu.y+hu.h))/2;
   const dir=isProj?(Math.sign(src.vx)||1):(Math.sign(B.x-A.x)||A.facing);
   const hits=m.hits||1,per=Math.round(m.dmg/hits);
@@ -832,6 +834,7 @@ function aiInput(ai,me,op){
   const atk=s.st==='attack'&&s.mv&&(s.mv.hb||s.mv.grab)&&dist<135&&!s.mv.counter;
   if(atk||pj){const key=pj?'p'+pj.id:'m'+s.mid;
     if(ai.threat!==key){ai.threat=key;ai.def=Math.random()<ai.b;ai.jmp=!!pj&&!pj.beam&&dist>80&&Math.random()<ai.b*0.35}
+    if(Hh.slide&&pj&&!pj.beam&&me.canBlock()&&Math.abs(pj.x-me.x)<90&&Math.random()<ai.b*0.15){inp.act=Hh.slide;return inp}
     if(ai.jmp&&pj&&me.state!=='block'){inp.jump=true;inp.h=dir;ai.jmp=false;return inp}
     if(s.mv&&s.mv.grab&&dist<55){if(Math.random()<ai.b*0.08){inp.jump=true;inp.h=-dir}return inp}
     if(ai.def){inp.h=-dir;inp.down=(pj?pj.lvl:s.mv.lvl)==='low';if(me.state==='block'&&(me.x<70||me.x>STAGE_W-70||Math.abs(me.x-(G.camX+W/2))>W/2-50)&&Math.random()<0.05*(ai.lv+1))inp.act='H';return inp}
