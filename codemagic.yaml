@@ -1,0 +1,82 @@
+# Codemagic cloud builds for Swipe Strike (no Mac needed).
+# Codemagic reads this file from the repository root, so it is copied there; the app lives in /app.
+workflows:
+
+  # 1) Quick test build: an installable APK for your Samsung. No accounts or signing needed.
+  android-test-apk:
+    name: Android test APK
+    instance_type: linux_x2
+    max_build_duration: 30
+    working_directory: app
+    environment:
+      node: 22
+      java: 21
+    scripts:
+      - name: Install packages
+        script: npm ci
+      - name: Copy game into native project
+        script: npx cap sync android
+      - name: Build debug APK
+        script: cd android && chmod +x gradlew && ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+
+  # 2) Google Play release: signed .aab uploaded to the Internal testing track as a draft.
+  android-release:
+    name: Android release (Google Play)
+    instance_type: linux_x2
+    max_build_duration: 40
+    working_directory: app
+    environment:
+      android_signing:
+        - swipe_strike_upload_key        # the keystore you upload in Codemagic > Team > Code signing identities
+      groups:
+        - google_play                    # contains GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      node: 22
+      java: 21
+    scripts:
+      - name: Install packages
+        script: npm ci
+      - name: Copy game into native project
+        script: npx cap sync android
+      - name: Build signed App Bundle
+        script: cd android && chmod +x gradlew && ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true
+
+  # 3) iPhone release: signed .ipa uploaded to TestFlight (built on Codemagic's Macs).
+  ios-release:
+    name: iOS release (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    working_directory: app
+    integrations:
+      app_store_connect: Swipe Strike API key   # name you give the App Store Connect API key in Codemagic
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.swipestrike.game
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install packages
+        script: npm ci
+      - name: Copy game into native project
+        script: npx cap sync ios
+      - name: Use Codemagic signing profiles
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" ios/App/App.xcodeproj/project.pbxproj
+      - name: Build IPA
+        script: xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

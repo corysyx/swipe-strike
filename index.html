@@ -155,7 +155,50 @@ function musicTick(){if(!AC||!musicOn)return;const T=trk,spb=60/T.bpm/4;if(mNext
     if(T.pad&&s===0)for(const iv of[12,15,19])osc('sine',110*Math.pow(2,(root+iv)/12),0,spb*16,0.035,0,musicGain,t);
     mStep++;mNext+=spb}}
 function setMusic(on){musicOn=on;if(musicGain){const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(on?0.32:0.0001,now)}}
-function vib(ms){if(G.resim)return;try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function vib(ms){if(G.resim)return;if(NATIVE){try{const H=CP('Haptics');H&&H.impact({style:ms>=30?'HEAVY':ms>=15?'MEDIUM':'LIGHT'})}catch(e){}return}try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+// ===== Native app layer (App Store / Google Play builds only; the web version never shows ads) =====
+const NATIVE=(()=>{try{return!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){return false}})();
+const CP=n=>{try{return window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins[n]}catch(e){return null}};
+// Replace the test IDs with your own AdMob unit IDs and set testing:false before release (see the App Store guide / app/README.md)
+const ADCFG={testing:true,
+  ios:{inter:'ca-app-pub-3940256099942544/4411468910',reward:'ca-app-pub-3940256099942544/1712485313'},
+  android:{inter:'ca-app-pub-3940256099942544/1033173712',reward:'ca-app-pub-3940256099942544/5224354917'},
+  removeAdsId:'swipestrike.removeads',every:3,minGapMs:180000,goldMs:24*3600e3};
+const LS={get(k,d){try{const v=localStorage.getItem('ss_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('ss_'+k,JSON.stringify(v))}catch(e){}}};
+const ADS={ok:false,noAds:LS.get('noads',false),goldUntil:LS.get('gold',0),matches:0,lastAd:Date.now(),interReady:false,rewardReady:false,busy:false,msg:'',msgT:0,price:'',privacy:false,
+  plat(){try{return Capacitor.getPlatform()}catch(e){return'web'}},ids(){return ADCFG[this.plat()==='ios'?'ios':'android']},
+  gold(){return this.noAds||Date.now()<this.goldUntil},
+  say(m){this.msg=m;this.msgT=180},
+  async init(){if(!NATIVE)return;const A=CP('AdMob'),SB=CP('StatusBar');try{SB&&SB.hide()}catch(e){}
+    this.checkPurchases();if(!A)return;
+    try{let info=await A.requestConsentInfo();if(info.isConsentFormAvailable&&info.status==='REQUIRED')info=await A.showConsentForm();this.privacy=info.privacyOptionsRequirementStatus==='REQUIRED';
+      if(this.plat()==='ios'){const t=await A.trackingAuthorizationStatus();if(t.status==='notDetermined')await A.requestTrackingAuthorization()}
+      await A.initialize({initializeForTesting:ADCFG.testing,maxAdContentRating:'Teen'});this.ok=info.canRequestAds!==false}catch(e){this.ok=false}
+    if(!this.ok)return;
+    A.addListener('interstitialAdDismissed',()=>this.done());A.addListener('interstitialAdFailedToShow',()=>this.done());
+    A.addListener('onRewardedVideoAdReward',()=>{this.goldUntil=Date.now()+ADCFG.goldMs;LS.set('gold',this.goldUntil);this.say('GOLD COLOURS UNLOCKED FOR 24H!')});
+    A.addListener('onRewardedVideoAdDismissed',()=>this.done());A.addListener('onRewardedVideoAdFailedToShow',()=>{this.say('AD NOT AVAILABLE - TRY LATER');this.done()});
+    this.load()},
+  load(){const A=CP('AdMob');if(!A||!this.ok)return;const t=ADCFG.testing;
+    if(!this.noAds&&!this.interReady)A.prepareInterstitial({adId:this.ids().inter,isTesting:t,immersiveMode:true}).then(()=>this.interReady=true).catch(()=>{});
+    if(!this.rewardReady)A.prepareRewardVideoAd({adId:this.ids().reward,isTesting:t,immersiveMode:true}).then(()=>this.rewardReady=true).catch(()=>{})},
+  pauseAudio(){try{AC&&AC.suspend()}catch(e){}},
+  done(){this.busy=false;this.lastAd=Date.now();try{AC&&AC.resume()}catch(e){}const cb=this.after;this.after=null;cb&&cb();setTimeout(()=>this.load(),1000)},
+  // Only ever called from a menu button between matches: never during a fight, training or online play
+  gate(cb){if(!NATIVE||this.noAds||!this.ok||this.busy||G.net||G.training||this.matches<ADCFG.every||Date.now()-this.lastAd<ADCFG.minGapMs||!this.interReady){cb();return}
+    this.matches=0;this.interReady=false;this.busy=true;this.after=cb;this.pauseAudio();CP('AdMob').showInterstitial().catch(()=>this.done())},
+  watchForGold(){if(this.busy)return;if(!this.ok||!this.rewardReady){this.say('NO AD READY - TRY AGAIN SOON');this.load();return}
+    this.rewardReady=false;this.busy=true;this.after=null;this.pauseAudio();CP('AdMob').showRewardVideoAd().catch(()=>{this.say('AD NOT AVAILABLE - TRY LATER');this.done()})},
+  grantNoAds(){this.noAds=true;LS.set('noads',true);this.interReady=false},
+  async checkPurchases(){const P=CP('NativePurchases');if(!P)return;
+    try{const r=await P.getProduct({productIdentifier:ADCFG.removeAdsId,productType:'inapp'});this.price=r&&r.product&&r.product.priceString||''}catch(e){}
+    try{const r=await P.getPurchases({productType:'inapp'});if((r.purchases||[]).some(t=>t.productIdentifier===ADCFG.removeAdsId&&(!t.purchaseState||t.purchaseState==='PURCHASED'||t.purchaseState==='1')))this.grantNoAds()}catch(e){}},
+  async buy(){const P=CP('NativePurchases');if(!P||this.busy){this.say('STORE NOT AVAILABLE');return}this.busy=true;
+    try{await P.purchaseProduct({productIdentifier:ADCFG.removeAdsId,productType:'inapp',quantity:1});this.grantNoAds();this.say('THANK YOU! ADS REMOVED')}catch(e){this.say('PURCHASE CANCELLED')}this.busy=false},
+  async restore(){const P=CP('NativePurchases');if(!P){this.say('STORE NOT AVAILABLE');return}
+    try{await P.restorePurchases()}catch(e){}const had=this.noAds;await this.checkPurchases();this.say(this.noAds?(had?'ALREADY AD-FREE':'PURCHASE RESTORED'):'NO PURCHASES FOUND')},
+  privacyForm(){const A=CP('AdMob');A&&A.showPrivacyOptionsForm().catch(()=>{})}};
+
 
 /* ============================ POSES ============================
    Angles in degrees measured from straight-down, positive = toward facing.
@@ -374,10 +417,11 @@ function hueRot(hex,deg,sat=1,lit=0){let[r,g,b]=hex2rgb(hex).map(v=>v/255);const
   h=(h+deg+360)%360;s2=clamp(s2*sat,0,1);l=clamp(l+lit,0,1);const q=l<0.5?l*(1+s2):l+s2-l*s2,p2=2*l-q;
   const f=t=>{t=((t%360)+360)%360/360;return t<1/6?p2+(q-p2)*6*t:t<1/2?q:t<2/3?p2+(q-p2)*(2/3-t)*6:p2};
   return'#'+[f(h+120),f(h),f(h-120)].map(v=>Math.round(clamp(v,0,1)*255).toString(16).padStart(2,'0')).join('')}
-const COLOR_VARIANTS=[[0,1,0],[150,1.05,0],[230,1,-0.02],[0,0.15,-0.18]]; // original, two hue swaps, shadow
+const COLOR_VARIANTS=[[0,1,0],[150,1.05,0],[230,1,-0.02],[0,0.15,-0.18],[0,1,0]]; // original, two hue swaps, shadow
 const outfit=(c,col)=>c.style.shirtless?col.pants:col.top;
 function makePal(col){const pal={OL:'#120a16'};for(const k in col){pal[k]=col[k];pal[k+'D']=shade(col[k],-0.32);pal[k+'L']=shade(col[k],0.38)}return pal}
-for(const c of CHARS){c.cols=COLOR_VARIANTS.map(([d,sa,li],i)=>{if(!i)return Object.assign({},c.col);if(c.alts&&c.alts[i-1])return Object.assign({},c.col,c.alts[i-1]);const o={};
+const toGold=v=>{const n=parseInt(v.slice(1),16),r=(n>>16&255)/255,g2=(n>>8&255)/255,b=(n&255)/255,l=(Math.max(r,g2,b)+Math.min(r,g2,b))/2;return hueRot('#d4a017',0,1.15,clamp(0.3+l*0.6,0.3,0.85)-0.46)};
+for(const c of CHARS){c.cols=COLOR_VARIANTS.map(([d,sa,li],i)=>{if(!i)return Object.assign({},c.col);if(i===4){const o={};for(const k in c.col){const v=c.col[k];o[k]=(k==='skin'||v===c.col.skin||typeof v!=='string'||v[0]!=='#'||v.length!==7)?v:toGold(v)}o.accent='#fff2a0';return o}if(c.alts&&c.alts[i-1])return Object.assign({},c.col,c.alts[i-1]);const o={};
     for(const k in c.col){const v=c.col[k];o[k]=(k==='skin'||v===c.col.skin)?v:(i===3&&(k==='accent'||k==='band'||k==='belt')?hueRot(v,0,1.1,0.05):hueRot(v,d,sa,li))}
     if(i===3)o.accent='#ffd23f';return o});
   c.pals=c.cols.map(makePal);c.pal=c.pals[0]}
@@ -1213,6 +1257,7 @@ const G={mode:'title',tick:0,projs:[],fx:[],hitstop:0,shake:0,slow:0,superFlash:
 function banner(text,life=60,size=24){G.banner={text,t:0,life,size}}
 function newDemo(){const a=pick(CHARS),b=pick(CHARS.filter(c=>c!==a));G.p1=new Fighter(a,0);G.p2=new Fighter(b,1);G.me=G.p1;if(G.net&&!G.net.connected)G.net=null;G.ai1=makeAI(2);G.ai=makeAI(2);G.demo=true;G.training=false;
   G.stage=Math.random()<.5?0:1;G.wins=[0,0];G.round=1;startRound()}
+const NCOL=()=>ADS.gold()?5:4;
 function startMatch(){const a=CH[G.sel.p1],b=CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=(c2+1)%4;G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
   const lv=G.training?1:clamp(G.diff+(G.ladderIdx>=4?1:0),0,2);G.ai=makeAI(lv);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
 function startRound(){G.p1.reset(STAGE_W/2-70);G.p2.reset(STAGE_W/2+70);G.projs=[];G.fx=[];G.timer=99;G.timerF=0;G.phase='intro';G.phaseT=0;
@@ -1224,6 +1269,7 @@ function endRound(winner){
 function matchOver(){
   if(G.demo){newDemo();return}
   const won=G.wins[G.me?G.me.side:0]>=2;G.result={won,t:0};if(G.net){G.result.net=true;return}
+  if(!G.training)ADS.matches++;
   if(won)G.ladderIdx++;
 }
 function stepCine(){const c=G.cine,F=[G.p1,G.p2],A=F[c.a],B=F[c.b];c.t++;const N=15,per=Math.round(c.dmg/N);
@@ -1473,7 +1519,22 @@ function renderTitle(g){
   button(g,W/2-62,146,124,18,'VS ONLINE/LAN',()=>{NU.err='';NU.status='';go('net')},{col:'#ff4fa3'});
   button(g,W/2-62,168,124,18,'HOW TO PLAY',()=>{G.howFrom='title';go('howto')},{col:'#7fd8ff'});
   button(g,W-78,H-22,70,16,musicOn?'MUSIC ON':'MUSIC OFF',()=>{setMusic(!musicOn)},{col:'#b48cff'});
+  if(NATIVE)button(g,6,6,54,16,'SHOP',()=>{ADS.checkPurchases();go('shop')},{col:'#ffd23f'});
   if(G.tick%60<40)txt(g,'TAP TO PLAY',8,H-18,8,'#ffd23f');
+}
+function renderShop(g){
+  g.fillStyle='rgba(8,4,20,0.8)';g.fillRect(0,0,W,H);bigTxt(g,'SHOP',W/2,14,16,'#fff6a0','#ff7a1a');
+  let y=50;const b=(l,cb,o)=>{button(g,W/2-90,y,180,18,l,cb,o);y+=24};
+  if(ADS.noAds)txt(g,'ADS REMOVED - THANK YOU!  GOLD COLOURS UNLOCKED',W/2,y+5,8,'#9dffcf','center'),y+=24;
+  else b('REMOVE ADS'+(ADS.price?'  '+ADS.price:''),()=>ADS.buy(),{def:true});
+  if(!ADS.noAds){const left=ADS.goldUntil-Date.now();
+    if(left>0)txt(g,'GOLD COLOURS: '+Math.ceil(left/3600e3)+'H LEFT',W/2,y+5,8,'#ffd23f','center'),y+=24;
+    else b('WATCH AD: GOLD COLOURS 24H',()=>ADS.watchForGold(),{col:'#ffd23f'})}
+  b('RESTORE PURCHASES',()=>ADS.restore(),{col:'#7fd8ff'});
+  if(ADS.privacy)b('PRIVACY SETTINGS',()=>ADS.privacyForm(),{col:'#b48cff'});
+  txt(g,'GOLD COLOURS: TAP YOUR FIGHTER AGAIN ON SELECT',W/2,H-30,8,'#8a80b0','center');
+  if(ADS.msgT>0){ADS.msgT--;txt(g,ADS.msg,W/2,H-46,8,'#fff','center')}
+  button(g,4,2,24,13,'<',()=>go('title'),{def:true});
 }
 function gestIcon(g,type,x,y){
   g.strokeStyle='#ffd23f';g.fillStyle='#ffd23f';g.lineWidth=1.5;g.lineCap='round';
@@ -1540,7 +1601,7 @@ function renderSelect(g){
   drawRoster(g,{tag:c=>{const isP1=s.p1===c.id,isP2=s.p2===c.id;if(!isP1&&!isP2)return null;
       return{sel:isP1?'#4aa0ff':'#ff4a4a',ci:isP1?s.c1:s.c2,l:isP1?'1P':null,lc:'#4aa0ff',r:isP2?(G.training?'DUMMY':'CPU'):null,rc:'#ff4a4a',sw:isP1?s.c1:s.c2}},
     tap:(c,i)=>{SFX.sel();s.info=i;if(!s.p1){s.p1=c.id;s.c1=0;if(G.training){s.p2=pick(CHARS.filter(q=>q.id!==c.id)).id;s.c2=0}}
-      else if(s.p2===c.id&&s.p1!==c.id){s.c2=(s.c2+1)%4}else if(s.p1===c.id&&(s.p2||G.training)){s.c1=(s.c1+1)%4}else if(s.p1===c.id&&!s.p2){s.p2=c.id;s.c2=1}else{s.p2=c.id;s.c2=0}}});
+      else if(s.p2===c.id&&s.p1!==c.id){s.c2=(s.c2+1)%NCOL()}else if(s.p1===c.id&&(s.p2||G.training)){s.c1=(s.c1+1)%NCOL()}else if(s.p1===c.id&&!s.p2){s.p2=c.id;s.c2=1}else{s.p2=c.id;s.c2=0}}});
   drawInfo(g,CHARS[s.info]||CHARS[0]);
   const dn=['EASY','NORMAL','HARD'];
   button(g,6,198,110,20,G.training?'VS CPU':'CPU: '+dn[G.diff],()=>{if(!G.training)G.diff=(G.diff+1)%3},{col:'#ff8a3a'});
@@ -1592,11 +1653,11 @@ function renderResult(g){
   if(G.net){const N=G.net;if(N){txt(g,'ROLLBACKS MAX '+N.rbMax+'F  DESYNC FIXES '+N.resyncs,W/2,H-10,8,'#5a5080','center');
       b('REMATCH',()=>{N.ready=false;N.rready=false;G.result=null;N.live=false;G.mode='netsel'},{def:true});b('LEAVE',()=>{NX.ctrlSend({t:'bye'});netLost('')},{col:'#ff4a4a'})}return}
   if(G.training){b('AGAIN',()=>startMatch(),{def:true})}
-  else if(champ){b('TITLE',()=>{newDemo();go('title')},{def:true})}
-  else if(r.won){b('NEXT FIGHT',()=>{G.sel.p2=G.ladder[G.ladderIdx];G.stage=(G.stage+1)%STAGES.length;startMatch()},{def:true})}
-  else{b('CONTINUE',()=>{startMatch()},{def:true})}
-  b('CHARACTER SELECT',()=>{G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#ff8a3a'});
-  b('TITLE',()=>{newDemo();go('title')},{col:'#ff4a4a'});
+  else if(champ){b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{def:true})}
+  else if(r.won){b('NEXT FIGHT',()=>ADS.gate(()=>{G.sel.p2=G.ladder[G.ladderIdx];G.stage=(G.stage+1)%STAGES.length;startMatch()}),{def:true})}
+  else{b('CONTINUE',()=>ADS.gate(()=>{startMatch()}),{def:true})}
+  b('CHARACTER SELECT',()=>ADS.gate(()=>{G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')}),{col:'#ff8a3a'});
+  b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff4a4a'});
 }
 function renderOverlay(){
   const g=ox;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,ov.width,ov.height);if(G.mode!=='fight'||G.paused||G.result)return;
@@ -1618,6 +1679,7 @@ function render(){
   BTN=[];cx.setTransform(1,0,0,1,0,0);cx.imageSmoothingEnabled=false;cx.fillStyle='#000';cx.fillRect(0,0,W,H);
   switch(G.mode){
     case'title':renderWorld(cx);BTN=[];renderTitle(cx);break;
+    case'shop':renderWorld(cx);BTN=[];renderShop(cx);break;
     case'howto':renderHowto(cx);break;
     case'net':renderNet(cx);break;
     case'netsel':renderNetSel(cx);break;
@@ -1630,7 +1692,7 @@ function render(){
 function step(){
   G.tick++;pollTouch();
   setTrack(G.mode==='fight'?'s'+G.stage:'menu');
-  if(G.mode==='title'){stepFight()}
+  if(G.mode==='title'||G.mode==='shop'){stepFight()}
   else if(G.mode==='vs'){G.vsT++;if(G.vsT>=110){G.mode='fight';G.hint=IN.touch?G.hint:0;startRound();if(G.net)G.net.live=true}}
   else if(G.mode==='fight'&&G.net&&G.net.live){netTick();G.hint++}
   else if(G.mode==='fight'&&!G.paused&&!G.result){stepFight();G.hint++}
@@ -1848,7 +1910,7 @@ function renderNetSel(g){const N=G.net;
 
 let last=performance.now(),acc=0;
 function frame(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(!window.__freeze)step();acc-=1000/60;n++}if(n>=4)acc=0;render();requestAnimationFrame(frame)}
-function boot(){resize();STAGES=[0,1,2,3,4].map(buildStage);newDemo();requestAnimationFrame(frame)}
+function boot(){ADS.init();resize();STAGES=[0,1,2,3,4].map(buildStage);newDemo();requestAnimationFrame(frame)}
 if(document.fonts&&document.fonts.load){Promise.race([document.fonts.load('8px "Press Start 2P"'),new Promise(r=>setTimeout(r,1500))]).then(boot,boot)}else boot();
 window.__G=G;
 </script>
