@@ -180,7 +180,7 @@ const CHARS=[
   col:{skin:'#e9b48a',top:'#2f56b8',pants:'#2f56b8',belt:'#17141c',hair:'#231a2a',band:'#ff8c1a',glove:'#c8382a',shoe:'#e9b48a',accent:'#7fd8ff'},
   style:{hair:'spiky',band:true,gi:true,sleeve:'upper',tail:'band',beltTail:true},stats:[3,3,3],
   desc:'All-rounder. Fireball to control space, invincible uppercut to stop jumps.',
-  specials:{S1:'KI BLAST',S2:'RISING DRAGON',S3:'HURRICANE KICK',S4:'AXE KICK',AS:'AIR HURRICANE',SU:'SHINKU WAVE'},quote:'The road to strength never ends.',
+  specials:{S1:'KI BLAST',S2:'RISING DRAGON',S3:'HURRICANE KICK',S4:'AXE KICK',AS:'AIR HURRICANE',AS2:'DRAGON DROP',SU:'SHINKU WAVE'},quote:'The road to strength never ends.',
   ai:{aa:'S2',ender:'S1',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:12,a:1,r:24,pose:'palm',proj:{type:'ki',vx:3.6,dmg:60,hs:20,bs:14,w:16,h:14,y:-50*S,kb:2.5,life:220}},
@@ -188,12 +188,13 @@ const CHARS=[
    S3:{s:6,a:26,r:14,dmg:96,hits:3,multi:8,hs:16,bs:12,hb:B([-24,-62,48,20],1),kb:2.5,vx:2.4,pose:'kick',spin:true,lastKd:true},
    S4:{s:15,a:4,r:16,dmg:85,hs:20,bs:14,hb:B([6,-72,30,66]),lvl:'high',kb:2,pose:'axe'},
    AS:{s:5,a:22,r:10,dmg:110,hits:3,multi:7,hs:16,bs:12,hb:B([-26,-62,52,30],1),kb:1.2,hover:27,vx:1.6,pose:'kick',spin:true,ender:true,air:true},
+   AS2:{s:7,a:30,r:8,dmg:95,hs:22,bs:14,hb:B([0,-50,34,54],1),lvl:'high',kb:2,hover:7,dive:7,diveV:[1.6,7],pose:'axe',ender:true,air:true,landRec:8,landQuake:true},
    SU:{s:10,a:1,r:30,pose:'palm',proj:{type:'bigki',vx:3.4,dmg:420,hits:5,multi:4,hs:24,bs:16,w:42,h:34,y:-50*S,kb:0.01,lastKd:true,launch:4,life:220}}})},
  {id:'riot',name:'RIOT',arch:'RUSHDOWN',archCol:'#ff4fa3',hp:900,walk:2.1,dash:5.2,jumpV:6.5,jumpX:2.8,scale:1.12,reach:0.92,sw:9,hw:7,flips:true,frameMod:-1,
   col:{skin:'#f0c09a',top:'#3fbf6a',pants:'#2a2433',belt:'#d8d8e0',hair:'#ff4fa3',band:'#ff4fa3',glove:'#d62f5c',shoe:'#3a2f2a',accent:'#ffd23f'},
   style:{hair:'pony',tail:'hair',boots:true},stats:[3,5,2],hPose:'kick',
   desc:'Rushdown. Fastest walk, dash and buttons. Gets in your face and stays there.',
-  specials:{S1:'ROCKET ELBOW',S2:'SKULL HOP',S3:'FLASH FLIP',S4:'POWER SLIDE',AS:'METEOR STOMP',SU:'RIOT RUSH'},quote:'Too slow! Keep up next time!',
+  specials:{S1:'ROCKET ELBOW',S2:'SKULL HOP',S3:'FLASH FLIP',S4:'POWER SLIDE',AS:'METEOR STOMP',AS2:'SPIN CYCLE',SU:'RIOT RUSH'},quote:'Too slow! Keep up next time!',
   ai:{aa:'U',ender:'S1',rush:true},rushPoses:['jab','kick'],
   moves:(B,S)=>({
    S1:{s:6,a:12,r:16,dmg:80,hs:22,bs:14,hb:B([4,-56,24,22]),kb:5,vx:6.2,pose:'elbow'},
@@ -201,16 +202,18 @@ const CHARS=[
    S3:{s:3,a:12,r:22,dmg:90,hs:26,bs:16,hb:B([-2,-88,34,86],1),launch:6.5,kd:true,inv:[0,6],vy:5.4,vx:0.9,pose:'airkick',landRec:12},
    S4:{s:5,a:16,r:16,dmg:70,hs:20,bs:14,hb:B([6,-14,36,14]),lvl:'low',kd:true,vx:5,pose:'sweep',crouch:true},
    AS:{s:6,a:34,r:6,dmg:95,hs:20,bs:14,hb:B([0,-48,42,52],1),lvl:'high',kb:2,hover:6,dive:6,diveV:[3.8,5.2],pose:'airheavy',ender:true,air:true,landRec:8},
+   AS2:{s:4,a:20,r:8,dmg:90,hits:4,multi:5,hs:14,bs:10,hb:B([-24,-60,48,40],1),kb:0.8,hover:24,vx:1.4,pose:'kick',spin:true,ender:true,air:true},
    SU:{s:6,a:42,r:22,dmg:430,multi:5,hits:8,hs:16,bs:8,hb:B([0,-62,32,44]),kb:0.8,vx:3,pose:'rush',lastKd:true}})},
  {id:'sol',name:'SOL',arch:'ZONER',archCol:'#c86bff',hp:950,walk:1.1,dash:3.6,jumpV:6.0,jumpX:1.8,scale:1.2,reach:1.45,armK:1.32,legK:1.08,torsoK:1.05,sw:10,hw:9,
   col:{skin:'#c98a5e',top:'#f08a24',pants:'#f08a24',belt:'#8a2a1a',hair:'#c98a5e',band:'#5a2a1a',glove:'#c98a5e',shoe:'#c98a5e',accent:'#c86bff'},
   style:{hair:'bald',robe:true,sleeve:'none',beads:true,sash:true,beltTail:true},stats:[3,1,5],
   desc:'Zoner. Long limbs and slow orbs keep you out. Weak up close, if you get there.',
-  specials:{S1:'MANDALA ORB',S2:'SKY FLAME',S3:'ASTRAL RETREAT',S4:'MANDALA PILLAR',AS:'AIR FLAME',SU:'NIRVANA BEAM'},quote:'Distance is a lesson. You failed it.',
+  specials:{S1:'MANDALA ORB',S2:'SKY FLAME',S3:'ASTRAL RETREAT',S4:'MANDALA PILLAR',AS:'AIR FLAME',AS2:'HOVER ORB',SU:'NIRVANA BEAM'},quote:'Distance is a lesson. You failed it.',
   ai:{aa:'S2',ender:'S1',zone:'S1',keep:true},
   moves:(B,S)=>({
    S1:{s:14,a:1,r:22,pose:'palm',proj:{type:'orb',vx:1.7,dmg:60,hs:22,bs:14,w:16,h:16,y:-50*S,kb:2,life:260}},
    S3:{s:9,a:0,r:10,tele:7,teleBack:110,pose:'crouch'},
+   AS2:{s:9,a:1,r:16,hover:24,pose:'palm',air:true,proj:{type:'orb',vx:2.2,dmg:75,hs:22,bs:14,w:18,h:18,kb:2,life:140,ender:true}},
    AS:{s:7,a:1,r:16,hover:22,pose:'palm',air:true,proj:{type:'flame',vx:3,vy:1.1,dmg:80,hs:24,bs:14,w:24,h:24,kb:2,life:80,ender:true}},
    S4:{s:16,a:1,r:24,pose:'upper',proj:{type:'pillar',at:100,vx:0,dmg:80,hs:24,bs:14,w:20,h:64,y:-32,launch:5.5,kb:0.5,life:36,multi:99}},
    S2:{s:10,a:1,r:24,pose:'upper',proj:{type:'flame',vx:2.6,vy:-2.4,dmg:70,hs:24,bs:14,w:18,h:18,y:-70*S,launch:4.5,kb:1.5,life:90}},
@@ -219,7 +222,7 @@ const CHARS=[
   col:{skin:'#d79a6a',top:'#d79a6a',pants:'#b8202a',belt:'#ffd23f',hair:'#3a2014',band:'#ffd23f',glove:'#f2f2f2',shoe:'#b8202a',accent:'#ffd23f'},
   style:{hair:'mohawk',shirtless:true,boots:true,stache:true},stats:[5,1,2],
   desc:'Grappler. Huge health, armored heavy punch and a brutal command grab.',
-  specials:{S1:'TITAN SUPLEX',S2:'IRON LARIAT',S3:'BUFFALO CHARGE',S4:'GROUND POUND',AS:'BODY PRESS',SU:'EARTHQUAKE BUSTER'},quote:'HAHAHA! Get back in the ring!',
+  specials:{S1:'TITAN SUPLEX',S2:'IRON LARIAT',S3:'BUFFALO CHARGE',S4:'GROUND POUND',AS:'BODY PRESS',AS2:'AIR SUPLEX',SU:'EARTHQUAKE BUSTER'},quote:'HAHAHA! Get back in the ring!',
   ai:{aa:'U',ender:'S2',grab:'S1'},
   moves:(B,S)=>({
    H:{armor:true},
@@ -227,26 +230,28 @@ const CHARS=[
    S3:{s:10,a:16,r:18,dmg:100,hs:22,bs:16,hb:B([6,-62,26,50]),kb:7,kd:true,vx:5.2,armor:true,pose:'elbow'},
    S4:{s:16,a:4,r:22,dmg:95,hs:24,bs:16,hb:B([-56,-12,112,12],1),lvl:'low',kd:true,launch:3.5,kb:1,pose:'pound',quake:true},
    AS:{s:8,a:44,r:8,dmg:120,hs:24,bs:16,hb:B([-14,-46,48,46],1),kb:2,hover:7,dive:7,diveV:[2.4,7],pose:'press',ender:true,air:true,landRec:12,landQuake:true},
+   AS2:{s:4,a:5,r:22,grab:true,airGrab:true,dmg:190,hb:B([-4,-78,42,82],1),hover:9,pose:'grab',air:true,grabText:'AIR SUPLEX!'},
    S2:{s:8,a:26,r:20,dmg:120,hits:3,multi:9,hs:18,bs:12,hb:B([-30,-62,60,22],1),armor:true,vx:1.6,pose:'lariat',spin:true,kb:3,lastKd:true},
    SU:{s:6,a:4,r:34,grab:true,dmg:520,hb:B([0,-74,50,74],1),pose:'grab'}})},
  {id:'nyx',name:'NYX',arch:'MIX-UP',archCol:'#b48cff',hp:880,walk:1.9,dash:5,jumpV:6.8,jumpX:2.6,scale:1.15,reach:1,sw:9,hw:7,flips:true,
   col:{skin:'#f2c8a8',top:'#3b2a5c',pants:'#3b2a5c',belt:'#c8243a',hair:'#3b2a5c',band:'#e0263f',glove:'#1c1528',shoe:'#1c1528',accent:'#b48cff'},
   style:{hair:'mask',sleeve:'full',tail:'scarf',boots:true,beltTail:true},stats:[2,4,3],hPose:'kick',
   desc:'Mix-up. Teleports behind you and throws a low kunai you must crouch-block.',
-  specials:{S1:'SHADOW STEP',S2:'LOW KUNAI',S3:'CROSS DIVE',S4:'SHADOW SLIDE',AS:'IZUNA DROP',SU:'THOUSAND SHADOWS'},quote:'You never saw me coming.',
+  specials:{S1:'SHADOW STEP',S2:'LOW KUNAI',S3:'CROSS DIVE',S4:'SHADOW SLIDE',AS:'IZUNA DROP',AS2:'KUNAI RAIN',SU:'THOUSAND SHADOWS'},quote:'You never saw me coming.',
   ai:{aa:'U',ender:'S2',zone:'S2',tele:'S1'},rushPoses:['heavy','kick'],
   moves:(B,S)=>({
    S1:{s:10,a:0,r:12,tele:8,pose:'crouch'},
    S3:{s:12,a:30,r:10,dmg:75,hs:20,bs:14,hb:B([0,-34,30,34],1),lvl:'high',kb:2,hop:[5.4,1.2],dive:11,pose:'airheavy',landRec:6},
    S4:{s:6,a:14,r:16,dmg:65,hs:20,bs:14,hb:B([4,-14,34,14]),lvl:'low',kd:true,vx:6,inv:[0,10],pose:'sweep',crouch:true},
    AS:{s:4,a:5,r:20,grab:true,airGrab:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
+   AS2:{s:7,a:1,r:14,hover:16,pose:'jab',air:true,projs:[{type:'kunai',vx:4.6,vy:2.2,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:3.8,vy:3.4,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:5.4,vy:1.2,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true}]},
    S2:{s:9,a:1,r:18,pose:'cjab',crouch:true,proj:{type:'kunai',vx:5.5,dmg:45,hs:14,bs:10,w:16,h:8,y:-16*S,lvl:'low',kb:2,life:120}},
    SU:{s:10,a:36,r:20,tele:8,dmg:430,hits:6,multi:6,hs:16,bs:10,hb:B([-20,-70,60,70],1),kb:1,pose:'rush',lastKd:true}})},
  {id:'genryu',name:'GENRYU',arch:'COUNTER',archCol:'#9dffcf',hp:1050,walk:1.25,dash:3.8,jumpV:6.0,jumpX:2,scale:1.2,reach:1.1,sw:11,hw:9,
   col:{skin:'#e2b08a',top:'#2f6b4a',pants:'#203a2c',belt:'#d9c48a',hair:'#e8e8ee',band:'#e8e8ee',glove:'#e2b08a',shoe:'#3a2a1a',accent:'#9dffcf'},
   style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true},stats:[4,2,3],hPose:'palm',
   desc:'Counter. Mirror Stance punishes any attack. His palm swats fireballs away.',
-  specials:{S1:'MIRROR STANCE',S2:'TYPHOON PALM',S3:'RIVER THROW',S4:'SPIRIT RIPPLE',AS:'FALLING PALMS',SU:'HUNDRED PALMS'},quote:'Your own force defeated you.',
+  specials:{S1:'MIRROR STANCE',S2:'TYPHOON PALM',S3:'RIVER THROW',S4:'SPIRIT RIPPLE',AS:'FALLING PALMS',AS2:'CRANE KICK',SU:'HUNDRED PALMS'},quote:'Your own force defeated you.',
   ai:{aa:'U',ender:'S2',counter:'S1'},rushPoses:['palm','jab'],
   moves:(B,S)=>({
    S1:{s:3,a:26,r:16,counter:true,pose:'stance'},
@@ -254,6 +259,7 @@ const CHARS=[
    S2:{s:12,a:4,r:20,dmg:90,hs:24,bs:16,hb:B([4,-62,40,30]),kb:8,kd:true,launch:3,reflect:true,pose:'palm'},
    S3:{s:4,a:3,r:28,grab:true,dmg:150,hb:B([0,-70,28,70],1),pose:'grab'},
    AS:{s:6,a:18,r:10,dmg:100,hits:4,multi:4,hs:14,bs:8,hb:B([2,-64,40,44]),kb:0.6,hover:24,pose:'rush',ender:true,air:true},
+   AS2:{s:8,a:10,r:10,dmg:105,hs:24,bs:16,hb:B([4,-56,40,36]),kb:4,hover:18,vx:3.2,pose:'kick',ender:true,air:true},
    S4:{s:14,a:1,r:22,pose:'palm',proj:{type:'wave',ground:true,vx:2.2,dmg:60,hs:20,bs:12,w:22,h:12,y:-6,lvl:'low',kb:2,life:160}},
    SU:{s:8,a:36,r:24,dmg:420,hits:10,multi:3,hs:12,bs:6,hb:B([4,-66,40,40]),kb:0.4,pose:'rush',lastKd:true}})},
   {id:'magatsu',name:'MAGATSU',arch:'EVIL SHOTO',archCol:'#ff3a5a',hp:850,walk:1.6,dash:4.8,jumpV:6.4,jumpX:2.3,scale:1.27,reach:1,sw:12,hw:8,dmgMul:1.15,
@@ -261,13 +267,14 @@ const CHARS=[
   style:{hair:'wild',gi:true,sleeve:'none',beads:true,tail:'hair',beltTail:true,eyeGlow:true},stats:[5,4,3],
   alts:[{top:'#e8e4dc',pants:'#e8e4dc',belt:'#b01a2a',hair:'#1a1418',band:'#b01a2a',accent:'#ff3030',glove:'#7a1a1a'},{top:'#7a1020',pants:'#7a1020',belt:'#141018',hair:'#ececf4',band:'#141018',accent:'#ff6a20',glove:'#2a0a10'},{top:'#16305a',pants:'#16305a',belt:'#40e0ff',hair:'#b8c8e8',band:'#40e0ff',accent:'#40e0ff',glove:'#0a1830'}],
   desc:'Evil shoto. Huge damage, a teleport and a demon flip, but fragile. His super ends fights.',
-  specials:{S1:'NETHER BLAST',S2:'DEMON RISE',S3:'PHANTOM STEP',S4:'HELL LEAP',AS:'NETHER RAIN',SU:'SOUL REAPER'},quote:'Your soul was never yours to keep.',
+  specials:{S1:'NETHER BLAST',S2:'DEMON RISE',S3:'PHANTOM STEP',S4:'HELL LEAP',AS:'NETHER RAIN',AS2:'DEMON DIVE',SU:'SOUL REAPER'},quote:'Your soul was never yours to keep.',
   ai:{aa:'S2',ender:'S1',zone:'S1',tele:'S3'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'ki',vx:4,dmg:65,hs:20,bs:14,w:16,h:14,kb:2.5,life:220}},
    S2:{s:3,a:16,r:22,dmg:120,hits:3,multi:5,hs:22,bs:16,hb:B([2,-92,26,74],1),kb:1,launch:6.5,lastKd:true,inv:[0,7],vy:6.6,vx:1.2,pose:'upper',landRec:16},
    S3:{s:8,a:0,r:14,tele:6,teleFwd:110,pose:'glide'},
    S4:{s:14,a:30,r:10,dmg:80,hs:20,bs:14,hb:B([0,-36,30,36],1),lvl:'high',kb:2,hop:[6.2,3.2],dive:14,diveV:[3.4,5],pose:'airheavy',landRec:6},
+   AS2:{s:6,a:34,r:8,dmg:90,hs:22,bs:14,hb:B([0,-36,32,38],1),lvl:'high',kb:2,hover:5,dive:5,diveV:[4.4,5.6],pose:'airheavy',ender:true,air:true,landRec:8},
    AS:{s:8,a:1,r:14,hover:18,pose:'palm',air:true,proj:{type:'ki',vx:3.2,vy:2.6,dmg:65,hs:20,bs:14,w:16,h:14,kb:2,life:90,ender:true}},
    SU:{s:4,a:34,r:22,grab:true,raging:true,dmg:460,vx:2.6,hb:B([0,-72,26,72],1),inv:[0,6],pose:'glide'}})},
 ];
@@ -300,9 +307,9 @@ function buildMoves(c){
   };
   const cm=c.moves(B,S);
   for(const k in cm)M[k]=Object.assign({},M[k]||{},cm[k]);
-  for(const k in M){M[k].key=k;M[k].lvl=M[k].lvl||'mid';if(['S1','S2','S3','S4','SU','CTR','AS'].includes(k))M[k].special=true}
+  for(const k in M){M[k].key=k;M[k].lvl=M[k].lvl||'mid';if(['S1','S2','S3','S4','SU','CTR','AS','AS2'].includes(k))M[k].special=true}
   M.SU.super=true;
-  if(c.dmgMul)for(const k in M){if(M[k].dmg&&k!=='SU')M[k].dmg=Math.round(M[k].dmg*c.dmgMul);if(M[k].proj)M[k].proj=Object.assign({},M[k].proj,{dmg:Math.round(M[k].proj.dmg*c.dmgMul)})}
+  if(c.dmgMul)for(const k in M){if(M[k].dmg&&k!=='SU')M[k].dmg=Math.round(M[k].dmg*c.dmgMul);if(M[k].proj)M[k].proj=Object.assign({},M[k].proj,{dmg:Math.round(M[k].proj.dmg*c.dmgMul)});if(M[k].projs)M[k].projs=M[k].projs.map(q=>Object.assign({},q,{dmg:Math.round(q.dmg*c.dmgMul)}))}
   return M;
 }
 
@@ -482,14 +489,14 @@ class Fighter{
   canBlock(){return['idle','walk','crouch','block','land'].includes(this.state)&&!this.air}
   pick(a){const M=this.moves;
     if(a==='SU')return(this.meter>=100&&!this.air)?M.SU:null;
-    if(this.air){if(/^S[1-4]$/.test(a))return(this.airSp||!M.AS)?null:M.AS;if(this.airAtk||this.state!=='jump')return null;return a==='L'?M.jL:(a==='H'||a==='D'||a==='U')?M.jH:null}
+    if(this.air){if(/^S[1-4]$/.test(a)){const k=a==='S1'?'AS':a==='S3'?'AS2':null;return(!k||this.airSp||!M[k])?null:M[k]}if(this.airAtk||this.state!=='jump')return null;return a==='L'?M.jL:(a==='H'||a==='D'||a==='U')?M.jH:null}
     if(a==='L')return this.inp.down?M.cL:M.L;
     if(a==='S1'||a==='S2'||a==='S3'||a==='S4'){const m=M[a];if(m.proj&&G.projs.some(p=>p.owner===this&&p.type===m.proj.type))return null;return m}
     return M[a]||null}
   tryAct(a){if(a==='P'){if(this.air)return false;this.state='parry';this.t=0;this.vx=0;SFX.whoosh(0);return true}
     const m=this.pick(a);if(!m)return false;this.startMove(m);return true}
   startMove(m){
-    Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(m.key==='AS')this.airSp=true;
+    Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(m.key==='AS'||m.key==='AS2')this.airSp=true;
     if(this.air)this.airAtk=true;
     if(m.super){this.flash=8;this.flashCol='#ffffff';this.meter=Math.max(0,this.meter-100);G.superFlash={f:this,t:46,name:this.ch.specials.SU};SFX.super();G.excite=1}
     else if(m.special)SFX.special();else SFX.whoosh(m.dmg>=70);
@@ -543,6 +550,7 @@ class Fighter{
     else if(!this.air)this.vx*=0.7;
     if(m.vy&&t===a0){this.vy=-m.vy;this.y=FLOOR-0.5}
     if(m.proj&&t===a0)spawnProj(this,m.super?Object.assign({super:true},m.proj):m.proj);
+    if(m.projs&&t===a0)for(const pr of m.projs)spawnProj(this,pr);
     if(m.beam&&t===a0)spawnBeam(this,m);
     if(m.tele&&t===m.tele)this.teleport(op,m.teleBack,m.teleFwd);
     if(m.hover&&t<=m.hover&&this.air&&!this.grabbed){this.vy=-GRAV;this.vx*=0.85}
@@ -554,7 +562,7 @@ class Fighter{
       SFX.jump();addFx('dust',this.x,FLOOR);this.sq=-0.9;return}
     // air combo chain: light -> light -> light -> heavy
     if(this.air&&m.air&&this.canCancel&&this.buf&&t>a0){const b=this.buf;let nm=null;
-      if(/^S[1-4]$/.test(b)&&m.key!=='AS'){nm=this.pick(b)}
+      if(/^S[1-4]$/.test(b)&&m.key!=='AS'&&m.key!=='AS2'){nm=this.pick(b)}
       else if(m.key==='jL'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='H'||b==='U'||b==='D')nm=this.moves.jH}
       if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
     if(m.super&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
@@ -695,7 +703,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     G.cine={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing};G.impact=3;G.excite=1;SFX.super();return'hit'}
   if(m.airGrab){if(!B.air)return'none';
     const dmg=m.dmg;B.hp-=dmg;B.redT=40;B.combo++;A.grabbed=true;Object.assign(B,{state:'hit',juggle:true,t:0,vy:7.5,vx:0,move:null});B.x=A.x+A.facing*8;B.y=Math.max(B.y,A.y);
-    A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,'IZUNA DROP!','#b48cff');SFX.hit(1);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
+    A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(1);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   if(m.grab){
     if(B.air||B.state==='hit'||B.state==='block'||B.state==='getup')return'none';
     const dmg=Math.round(m.dmg*(m.super?1:Math.max(0.5,1-0.1*B.combo)));B.hp-=dmg;B.redT=40;B.combo++;A.grabbed=true;
@@ -755,8 +763,8 @@ function aiInput(ai,me,op){
   ai.mem.push({st:op.state,mv:op.move,air:op.air,vy:op.vy,j:op.jumpId,mid:op.moveId});
   const s=ai.mem.length>ai.r?ai.mem.shift():ai.mem[0];
   if(me.air){if(me.state==='jump'&&!me.airAtk&&dist<62&&(me.vy>-1.5||me.chase))inp.act=me.chase?'L':(Math.random()<.5?'H':'L');
-    else if(me.state==='attack'&&me.move.air&&me.canCancel&&Math.random()<ai.c*0.3)inp.act=(me.airL||0)>=4&&!me.airSp&&Math.random()<.4?'S1':((me.airL||0)<5&&Math.random()<.8?'L':'H');
-    else if(me.state==='jump'&&!me.airSp&&dist<70&&op.air&&Math.random()<ai.c*0.04)inp.act='S1';return inp}
+    else if(me.state==='attack'&&me.move.air&&me.canCancel&&Math.random()<ai.c*0.3)inp.act=(me.airL||0)>=4&&!me.airSp&&Math.random()<.4?(Math.random()<.5?'S1':'S3'):((me.airL||0)<5&&Math.random()<.8?'L':'H');
+    else if(me.state==='jump'&&!me.airSp&&dist<70&&op.air&&Math.random()<ai.c*0.04)inp.act=Math.random()<.5?'S1':'S3';return inp}
   if(me.state==='attack'&&me.move.key==='U'&&me.canCancel&&op.air&&Math.random()<ai.c*0.2){inp.jump=true;return inp}
   if(me.state==='attack'){if(me.canCancel&&me.move&&!me.move.special&&Math.random()<ai.c*0.12){
       inp.act=(me.move.key==='L'||me.move.key==='cL')&&Math.random()<.4?'H':Hh.ender;if(me.meter>=100&&Math.random()<.5)inp.act='SU'}return inp}
@@ -870,13 +878,13 @@ function seeded(s){return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646}}
 const PARA=[0.12,0.35,0.7,0.86];
 const layerW=p=>Math.ceil(W+(STAGE_W-W)*p)+4;
 function buildStage(kind){
-  const R=seeded(kind?777:4242),r=(a,b)=>a+R()*(b-a);
-  const L={kind,name:kind?'NEON ALLEY':'SUNSET PIER'};
+  const R=seeded(4242+kind*1013),r=(a,b)=>a+R()*(b-a),rp=a=>a[R()*a.length|0];
+  const L={kind,name:['SUNSET PIER','NEON ALLEY','LOST TEMPLE','FROZEN CAVERN','SAKURA SHRINE'][kind],rim:['rgba(255,170,90,0.35)','rgba(255,80,190,0.35)','rgba(160,255,120,0.25)','rgba(140,220,255,0.3)','rgba(255,160,200,0.35)'][kind]};
   const sw=layerW(PARA[0]),sky=mkCanvas(sw,FLOOR_TOP),sg=sky.getContext('2d');
   const fw=layerW(PARA[1]),far=mkCanvas(fw,FLOOR_TOP),fg=far.getContext('2d');
   const mw=layerW(PARA[2]),mid=mkCanvas(mw,FLOOR_TOP),mg=mid.getContext('2d');
   const FT=mkCanvas(STAGE_W+PAD*2,H),tg=FT.getContext('2d');
-  if(!kind){
+  if(kind===0){
     ditherFill(sg,sw,FLOOR_TOP,['#1d0b33','#3b1250','#6a1d5e','#a8305f','#e05a4e','#f79a4a','#ffd47a'],(x,y)=>y/138);
     const sx=sw/2,sy=114,sr=40;
     ditherFill(sg,sw,FLOOR_TOP,['#fff6c0','#ffd860','#ffa040','#ff6a5a'],(x,y)=>{const dx=x-sx,dy=y-sy;if(dx*dx+dy*dy>sr*sr)return-1;
@@ -916,7 +924,7 @@ function buildStage(kind){
       tg.fillStyle='#2a160e';tg.fillRect(x2+4,jy+3,1,1);tg.fillRect(x2+17,jy+3,1,1)}
     tg.fillStyle='rgba(255,170,90,0.18)';tg.fillRect(0,FLOOR_TOP,ftw,H-FLOOR_TOP);
     L.crowdCols=['#2a1230','#3a1838','#22102a','#4a2040'];L.fog='rgba(40,10,40,';L.floorGlow='rgba(255,150,80,0.18)';
-  }else{
+  }else if(kind===1){
     ditherFill(sg,sw,FLOOR_TOP,['#04030d','#0b0922','#16123a','#241a50','#3a1f5c','#5a2266'],(x,y)=>y/150);
     for(let i=0;i<120;i++){sg.fillStyle=R()<.8?'#c8c8ff':'#ffffff';sg.fillRect(r(0,sw)|0,r(0,90)|0,1,1)}
     sg.fillStyle='rgba(240,236,210,0.15)';sg.beginPath();sg.arc(sw*0.72,36,20,0,7);sg.fill();
@@ -950,9 +958,74 @@ function buildStage(kind){
     for(let x2=0;x2<ftw;x2+=48){tg.fillStyle='#2a2640';tg.fillRect(x2,FLOOR_TOP,1,H-FLOOR_TOP)}
     for(let i=0;i<8;i++){const px=r(PAD,PAD+STAGE_W),py=r(FLOOR_TOP+12,H-6),pw=r(20,50);tg.fillStyle='rgba(120,140,220,0.18)';tg.beginPath();tg.ellipse(px,py,pw,3,0,0,7);tg.fill()}
     L.crowdCols=['#1a1630','#221c3c','#141028','#2a2244'];L.fog='rgba(10,8,30,';L.floorGlow='rgba(255,60,170,0.10)';
+  }else if(kind===2){ // ---------- LOST TEMPLE (jungle)
+    ditherFill(sg,sw,FLOOR_TOP,['#0a2416','#123c22','#1e5a2e','#3e8040','#86b860','#c8e090'],(x,y)=>y/150);
+    sg.globalAlpha=0.09;sg.fillStyle='#fff8c0';for(let i=0;i<6;i++){const x=r(0,sw),w=r(10,26);sg.beginPath();sg.moveTo(x,0);sg.lineTo(x+w,0);sg.lineTo(x+w+60,FLOOR_TOP);sg.lineTo(x+60,FLOOR_TOP);sg.fill()}sg.globalAlpha=1;
+    const blobs=(g,w,y0,y1,cols,rad)=>{for(let x=-10;x<w+10;x+=r(8,16)){const y=r(y0,y1);g.fillStyle=rp(cols);g.beginPath();g.arc(x,y,r(rad*0.6,rad),0,7);g.fill()}};
+    // far: misty canopy + stepped temple
+    blobs(fg,fw,70,96,['#24543a','#2a5e40'],22);fg.fillStyle='#24543a';fg.fillRect(0,90,fw,80);
+    const tx=fw*0.6;for(let i=0;i<6;i++){const w=110-i*16,y=150-i*12;fg.fillStyle=i%2?'#4a6a52':'#566e58';fg.fillRect(tx-w/2,y-12,w,12);fg.fillStyle='#3a5642';fg.fillRect(tx-w/2,y-2,w,2);fg.fillStyle='#6a8a62';fg.fillRect(tx-w/2,y-12,w,1)}
+    fg.fillStyle='#3a5642';fg.fillRect(tx-10,66,20,14);fg.fillStyle='#1a2a1e';fg.fillRect(tx-4,70,8,10);fg.fillStyle='#ffd060';fg.fillRect(tx-1,73,2,2);
+    for(let i=0;i<10;i++){fg.fillStyle='#4a7a3a';fg.fillRect(tx-55+r(0,110)|0,r(90,150)|0,r(4,10)|0,2)}
+    blobs(fg,fw,112,136,['#1c4a30','#215236','#173f29'],18);fg.fillStyle='rgba(200,235,200,0.16)';fg.fillRect(0,118,fw,30);
+    // mid: trunks, vines, ruined pillars, ferns
+    for(let x=r(0,30);x<mw;x+=r(70,120)){const w=r(10,20);mg.fillStyle='#2e2216';mg.fillRect(x,0,w,168);mg.fillStyle='#46341f';mg.fillRect(x+2,0,3,168);mg.fillStyle='#20180e';mg.fillRect(x+w-3,0,3,168);
+      mg.fillStyle='#2e2216';mg.beginPath();mg.moveTo(x-8,168);mg.lineTo(x,140);mg.lineTo(x+w,140);mg.lineTo(x+w+8,168);mg.fill()}
+    blobs(mg,mw,-6,22,['#1a4a24','#235a2c','#2e6a34','#14401e'],22);
+    for(let i=0;i<26;i++){const x=r(0,mw),l=r(30,120);mg.strokeStyle=R()<.5?'#2a6a2a':'#3a7a30';mg.lineWidth=1.5;mg.beginPath();mg.moveTo(x,0);mg.quadraticCurveTo(x+r(-14,14),l/2,x+r(-6,6),l);mg.stroke();mg.fillStyle='#4a8a3a';mg.fillRect(x+r(-4,4)|0,l|0,3,2)}
+    for(let x=r(20,60);x<mw;x+=r(110,170)){const h=r(40,70),y=168-h;mg.fillStyle='#6e7466';mg.fillRect(x,y,16,h);mg.fillStyle='#858c7c';mg.fillRect(x+2,y,3,h);mg.fillStyle='#4a5046';mg.fillRect(x,y,16,3);
+      for(let k=0;k<5;k++){mg.fillStyle='#3a7a30';mg.fillRect(x+r(0,14)|0,y+r(0,h-6)|0,r(3,7)|0,r(2,4)|0)}mg.fillStyle='#5a6052';mg.fillRect(x-4,y-5,24,5)}
+    for(let x=0;x<mw;x+=r(6,14)){const y=168;mg.fillStyle=rp(['#1e5a24','#2a6e2c','#185020']);for(let k=0;k<4;k++){mg.beginPath();mg.moveTo(x,y);mg.lineTo(x+r(-10,10),y-r(10,22));mg.lineTo(x+r(-3,3),y);mg.fill()}}
+    const ftw=FT.width;for(let x2=0;x2<ftw;x2+=24){for(let y=FLOOR_TOP;y<H;y+=12){const c=rp(['#5e6a50','#56624a','#646e54','#525c46']);tg.fillStyle=c;tg.fillRect(x2,y,24,12);tg.fillStyle='#2e3626';tg.fillRect(x2,y,24,1);tg.fillRect(x2,y,1,12);tg.fillStyle=shade(c,0.15);tg.fillRect(x2+1,y+1,22,1)}}
+    for(let i=0;i<600;i++){tg.fillStyle=rp(['#3a7a2a','#4a8a34','#2e6a24']);tg.fillRect(r(0,ftw)|0,r(FLOOR_TOP,H)|0,r(2,6)|0,r(1,3)|0)}
+    for(let i=0;i<140;i++){const x=r(0,ftw),y=r(FLOOR_TOP+2,H);tg.fillStyle='#5a9a3a';tg.fillRect(x|0,y|0,1,3);tg.fillRect(x+2|0,y+1|0,1,2)}
+    L.noCrowd=true;L.fog='rgba(10,40,20,';L.floorGlow='rgba(180,255,120,0.06)';L.parts='jungle';
+  }else if(kind===3){ // ---------- FROZEN CAVERN
+    ditherFill(sg,sw,FLOOR_TOP,['#02050e','#061226','#0a2040','#103256','#18486e'],(x,y)=>y/160);
+    for(let x=-4;x<sw;x+=r(5,12)){const l=r(8,34);sg.fillStyle='#3a7ab0';sg.beginPath();sg.moveTo(x,0);sg.lineTo(x+r(5,9),0);sg.lineTo(x+3,l);sg.fill();sg.fillStyle='#a0e0ff';sg.fillRect(x+1,0,1,l*0.6)}
+    // far: back wall, frozen waterfall, crystals
+    fg.fillStyle='#0a2440';fg.beginPath();fg.moveTo(0,168);let y=r(60,90);fg.lineTo(0,y);for(let x=0;x<=fw;x+=r(10,22)){y=clamp(y+r(-14,14),40,110);fg.lineTo(x,y)}fg.lineTo(fw,168);fg.fill();
+    const wx=fw*0.45;for(let yy=30;yy<168;yy++){const w=26+Math.sin(yy*0.08)*3;const gg=fg.createLinearGradient(wx-w/2,0,wx+w/2,0);gg.addColorStop(0,'#3a8ac8');gg.addColorStop(0.5,'#c8f0ff');gg.addColorStop(1,'#3a8ac8');fg.fillStyle=gg;fg.fillRect(wx-w/2,yy,w,1)}
+    for(let i=0;i<14;i++){fg.fillStyle='rgba(255,255,255,0.6)';fg.fillRect(wx-10+r(0,20)|0,r(30,160)|0,1,r(6,18)|0)}
+    const crystal=(g,x,y,h,c)=>{g.fillStyle=c;g.globalAlpha=0.25;g.beginPath();g.arc(x,y-h/2,h*0.7,0,7);g.fill();g.globalAlpha=1;
+      for(let k=-1;k<=1;k++){const hh=h*(k?0.7:1),xx=x+k*h*0.22;g.fillStyle=shade(c,-0.35);g.beginPath();g.moveTo(xx-h*0.12,y);g.lineTo(xx+k*h*0.15,y-hh);g.lineTo(xx+h*0.12,y);g.fill();
+        g.fillStyle=c;g.beginPath();g.moveTo(xx-h*0.03,y);g.lineTo(xx+k*h*0.15,y-hh);g.lineTo(xx+h*0.12,y);g.fill()}};
+    for(let i=0;i<9;i++)crystal(fg,r(0,fw),r(110,165),r(10,24),rp(['#40e0ff','#80a0ff','#60ffd8']));
+    // mid: stalagmites, hanging icicles, crystals
+    for(let x=r(0,30);x<mw;x+=r(40,80)){const h=r(30,80),w=r(16,30);mg.fillStyle='#1c4a74';mg.beginPath();mg.moveTo(x,168);mg.lineTo(x+w/2,168-h);mg.lineTo(x+w,168);mg.fill();mg.fillStyle='#4a9ad0';mg.beginPath();mg.moveTo(x+w/2-2,168);mg.lineTo(x+w/2,168-h);mg.lineTo(x+w/2+4,168);mg.fill();mg.fillStyle='#d0f4ff';mg.fillRect(x+w/2,168-h+4,1,h*0.5)}
+    for(let x=-4;x<mw;x+=r(14,30)){const l=r(20,60),w=r(6,12);mg.fillStyle='#2a6a9a';mg.beginPath();mg.moveTo(x,0);mg.lineTo(x+w,0);mg.lineTo(x+w/2,l);mg.fill();mg.fillStyle='#bfeaff';mg.fillRect(x+w/2-1,0,1,l*0.7)}
+    for(let i=0;i<8;i++)crystal(mg,r(0,mw),r(150,168),r(16,34),rp(['#40e0ff','#9a80ff','#60ffd8']));
+    const ftw=FT.width;for(let y=FLOOR_TOP;y<H;y++){const t=(y-FLOOR_TOP)/(H-FLOOR_TOP);tg.fillStyle=`rgb(${Math.round(150-60*t)},${Math.round(205-60*t)},${Math.round(235-40*t)})`;tg.fillRect(0,y,ftw,1)}
+    for(let i=0;i<70;i++){let x=r(0,ftw),y=r(FLOOR_TOP,H);tg.strokeStyle='rgba(255,255,255,0.55)';tg.lineWidth=1;tg.beginPath();tg.moveTo(x,y);for(let k=0;k<4;k++){x+=r(-14,14);y+=r(-3,3);tg.lineTo(x,clamp(y,FLOOR_TOP,H))}tg.stroke()}
+    for(let i=0;i<30;i++){const x=r(0,ftw);for(let y=FLOOR_TOP+3;y<H;y+=2){tg.globalAlpha=0.12*(1-(y-FLOOR_TOP)/60);tg.fillStyle=rp(['#40e0ff','#ffffff','#9a80ff']);tg.fillRect(x+Math.sin(y)*1.5,y,3,1)}}tg.globalAlpha=1;
+    for(let i=0;i<40;i++){tg.fillStyle='rgba(255,255,255,0.8)';tg.beginPath();tg.ellipse(r(0,ftw),r(FLOOR_TOP,H),r(8,26),r(1,3),0,0,7);tg.fill()}
+    L.noCrowd=true;L.fog='rgba(4,16,36,';L.floorGlow='rgba(120,220,255,0.10)';L.parts='snow';
+  }else{ // ---------- SAKURA SHRINE (Japan)
+    ditherFill(sg,sw,FLOOR_TOP,['#3a2a6a','#6a3e8e','#c06a9e','#f0a0a8','#ffd2b4','#fff0d0'],(x,y)=>y/146);
+    for(let i=0;i<10;i++){const y=r(20,90),x=r(-20,sw),l=r(40,120);sg.fillStyle=y<55?'#8a5aa8':'#f8c0c0';sg.fillRect(x,y,l,r(2,4)|0);sg.fillStyle='#fff0f0';sg.fillRect(x+6,y-1,l-12,1)}
+    // far: snow-capped volcano, hills, pagoda
+    const mx=fw*0.42;fg.fillStyle='#6a5a9a';fg.beginPath();fg.moveTo(mx-150,140);fg.lineTo(mx-22,46);fg.lineTo(mx+22,46);fg.lineTo(mx+150,140);fg.fill();
+    fg.fillStyle='#f4f0ff';fg.beginPath();fg.moveTo(mx-40,66);fg.lineTo(mx-22,46);fg.lineTo(mx+22,46);fg.lineTo(mx+42,68);fg.lineTo(mx+28,62);fg.lineTo(mx+16,72);fg.lineTo(mx+2,62);fg.lineTo(mx-12,72);fg.lineTo(mx-26,62);fg.fill();
+    fg.fillStyle='#7a6aaa';fg.beginPath();fg.moveTo(mx+22,46);fg.lineTo(mx+150,140);fg.lineTo(mx+60,140);fg.fill();
+    const ridge=(base,amp,col)=>{fg.fillStyle=col;fg.beginPath();fg.moveTo(0,168);let h=base;for(let x=0;x<=fw;x+=8){h=clamp(h+r(-amp,amp),base-18,base+6);fg.lineTo(x,h)}fg.lineTo(fw,168);fg.fill()};
+    ridge(128,4,'#5a3f7a');ridge(142,3,'#4a2f66');
+    const px=fw*0.8;fg.fillStyle='#2a1838';for(let i=0;i<5;i++){const y=130-i*11,w=30-i*4;fg.fillRect(px-w/2+4,y,w-8,9);fg.beginPath();fg.moveTo(px-w/2-5,y);fg.lineTo(px+w/2+5,y);fg.lineTo(px+w/2,y-4);fg.lineTo(px-w/2,y-4);fg.fill()}fg.fillRect(px-1,68,2,10);
+    // mid: torii, cherry trees, lanterns, shrine
+    const ox=mw*0.5;mg.fillStyle='#b8282a';mg.fillRect(ox-38,80,7,88);mg.fillRect(ox+31,80,7,88);mg.fillRect(ox-44,92,88,5);
+    mg.fillStyle='#1a0e10';mg.beginPath();mg.moveTo(ox-56,72);mg.quadraticCurveTo(ox,80,ox+56,72);mg.lineTo(ox+52,80);mg.quadraticCurveTo(ox,86,ox-52,80);mg.fill();
+    mg.fillStyle='#d83a34';mg.fillRect(ox-50,80,100,4);mg.fillStyle='#e85a50';mg.fillRect(ox-36,80,2,88);mg.fillRect(ox+33,80,2,88);mg.fillStyle='#2a1a1a';mg.fillRect(ox-6,84,12,8);
+    const tree=(x,s2)=>{mg.strokeStyle='#3a2420';mg.lineWidth=5*s2;mg.lineCap='round';mg.beginPath();mg.moveTo(x,168);mg.quadraticCurveTo(x-6*s2,130,x+4*s2,100*s2+20);mg.stroke();
+      mg.lineWidth=2.5*s2;mg.beginPath();mg.moveTo(x,128);mg.lineTo(x-26*s2,108);mg.moveTo(x+2,118);mg.lineTo(x+28*s2,98);mg.stroke();
+      for(let k=0;k<40;k++){const a=R()*Math.PI*2,d=R()*36*s2;mg.fillStyle=rp(['#ffb0c8','#ff90b4','#ffd0e0','#f888a8']);mg.beginPath();mg.arc(x+Math.cos(a)*d*1.3,100*s2+10+Math.sin(a)*d*0.6,r(4,8)*s2,0,7);mg.fill()}};
+    for(let x=r(10,40);x<mw;x+=r(90,140)){if(Math.abs(x-ox)<70)continue;tree(x,r(0.85,1.15))}
+    const toro=x=>{mg.fillStyle='#8a867c';mg.fillRect(x-2,140,4,28);mg.fillRect(x-7,136,14,4);mg.fillRect(x-6,128,12,8);mg.fillStyle='#ffd27a';mg.fillRect(x-3,130,6,4);mg.fillStyle='#6a665c';mg.beginPath();mg.moveTo(x-10,128);mg.lineTo(x,120);mg.lineTo(x+10,128);mg.fill();mg.fillRect(x-6,166,12,2)};
+    toro(ox-70);toro(ox+70);for(let x=40;x<mw;x+=180)if(Math.abs(x-ox)>110)toro(x);
+    const ftw=FT.width;for(let x2=0;x2<ftw;x2+=28){for(let y=FLOOR_TOP;y<H;y+=14){const c=rp(['#8e887c','#968f82','#86807a','#9a9488']);tg.fillStyle=c;tg.fillRect(x2+(y%28?14:0),y,28,14);tg.fillStyle='#5a564e';tg.fillRect(x2+(y%28?14:0),y,28,1);tg.fillRect(x2+(y%28?14:0),y,1,14);tg.fillStyle=shade(c,0.15);tg.fillRect(x2+(y%28?14:0)+1,y+1,26,1)}}
+    for(let i=0;i<700;i++){tg.fillStyle=rp(['#ffb0c8','#ff90b4','#ffd0e0']);tg.fillRect(r(0,ftw)|0,r(FLOOR_TOP,H)|0,2,1)}
+    L.crowdCols=['#3a2a5a','#5a2a4a','#2a3a5a','#6a3a5a'];L.fog='rgba(60,30,80,';L.floorGlow='rgba(255,160,200,0.08)';L.parts='petal';
   }
   L.sky=sky;L.far=far;L.mid=mid;L.floor=FT;
-  const cw=layerW(PARA[3]);L.crowd=[];for(let x=4;x<cw;x+=r(8,14))if(R()<.82)L.crowd.push({x,h:r(16,24),c:pick(L.crowdCols),ph:r(0,6),hair:R()<.5,cheer:R()<.5,w:r(8,11)});
+  const cw=layerW(PARA[3]);L.crowd=[];if(!L.noCrowd)for(let x=4;x<cw;x+=r(8,14))if(R()<.82)L.crowd.push({x,h:r(16,24),c:pick(L.crowdCols),ph:r(0,6),hair:R()<.5,cheer:R()<.5,w:r(8,11)});
   return L;
 }
 let STAGES=[];
@@ -960,18 +1033,25 @@ function drawStage(g,camX){
   const L=STAGES[G.stage]||STAGES[0];
   g.drawImage(L.sky,-Math.round(camX*PARA[0]),0);
   g.drawImage(L.far,-Math.round(camX*PARA[1]),0);
-  if(!L.kind){for(let i=0;i<10;i++){const xx=((i*53+G.tick*0.2)%layerW(PARA[1]))-camX*PARA[1],yy=132+(i*7)%30;g.fillStyle=G.tick%40<20===(i%2===0)?'#ffd0a0':'#ff9a70';g.fillRect(xx|0,yy,3,1)}}
+  if(L.kind===0){for(let i=0;i<10;i++){const xx=((i*53+G.tick*0.2)%layerW(PARA[1]))-camX*PARA[1],yy=132+(i*7)%30;g.fillStyle=G.tick%40<20===(i%2===0)?'#ffd0a0':'#ff9a70';g.fillRect(xx|0,yy,3,1)}}
   g.drawImage(L.mid,-Math.round(camX*PARA[2]),0);
-  if(L.kind){for(let i=0;i<L.neon.length;i++){if((G.tick+i*37)%180<6){const n=L.neon[i];g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(n.x-camX*PARA[2]-22,0,44,FLOOR_TOP)}}}
+  if(L.kind===1){for(let i=0;i<L.neon.length;i++){if((G.tick+i*37)%180<6){const n=L.neon[i];g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(n.x-camX*PARA[2]-22,0,44,FLOOR_TOP)}}}
   // crowd
   const cxo=camX*PARA[3],ex=G.excite||0;
   for(const p of L.crowd){const x=Math.round(p.x-cxo);if(x<-12||x>W+12)continue;const b=Math.abs(Math.sin(G.tick*0.13*(1+ex)+p.ph))*(1+ex*3),y=FLOOR_TOP+1-b;
     g.fillStyle=p.c;g.fillRect(x-p.w/2,y-p.h+6,p.w,p.h);g.beginPath();g.arc(x,y-p.h+4,3.6,0,7);g.fill();
     if(p.cheer&&ex>0.35){g.fillRect(x-p.w/2-2,y-p.h-4+Math.sin(G.tick*0.4+p.ph)*2,2,10);g.fillRect(x+p.w/2,y-p.h-4+Math.cos(G.tick*0.4+p.ph)*2,2,10)}
-    g.fillStyle=L.kind?'rgba(255,80,190,0.35)':'rgba(255,170,90,0.35)';g.fillRect(x-p.w/2,y-p.h+6,1,p.h-4)}
+    g.fillStyle=L.rim;g.fillRect(x-p.w/2,y-p.h+6,1,p.h-4)}
   // floor line-scroll perspective
   for(let y=FLOOR_TOP;y<H;y++){const f=1+(y-FLOOR)*0.012,sw=W/f,sx=camX+W/2-sw/2+PAD;g.drawImage(L.floor,sx,y,sw,1,0,y,W,1)}
   const gr=g.createLinearGradient(0,FLOOR_TOP,0,FLOOR_TOP+22);gr.addColorStop(0,L.fog+'0.55)');gr.addColorStop(1,L.fog+'0)');g.fillStyle=gr;g.fillRect(0,FLOOR_TOP,W,22);
+  // ambient particles
+  const T=G.tick,pw=W+40;
+  if(L.parts==='jungle'){for(let i=0;i<16;i++){const x=((i*97+T*0.25+Math.sin(T*0.02+i)*20)%pw+pw)%pw-20-camX*0.15%pw*0,y=60+((i*53)%100)+Math.sin(T*0.05+i)*8;if((T+i*23)%90<55){g.fillStyle='rgba(220,255,120,0.35)';g.fillRect(x-1,y-1,4,4);g.fillStyle='#f0ffa0';g.fillRect(x,y,2,2)}}
+    for(let i=0;i<8;i++){const x=((i*131-camX*0.9+Math.sin(T*0.03+i)*30)%pw+pw)%pw-20,y=((T*0.5+i*37)%(H+20))-10;g.fillStyle=i%2?'#3a8a2a':'#6aa83a';g.fillRect(x,y,3,2)}}
+  if(L.parts==='snow'){for(let i=0;i<46;i++){const x=((i*83-camX*(0.6+i%3*0.2)+Math.sin(T*0.02+i)*14)%pw+pw)%pw-20,y=((T*(0.35+i%4*0.12)+i*41)%(H+10))-5;g.fillStyle=i%5?'rgba(255,255,255,0.8)':'#ffffff';g.fillRect(x,y,i%3?1:2,i%3?1:2)}
+    for(let i=0;i<5;i++){if((T+i*40)%120<8){g.fillStyle='#ffffff';const x=(i*77+40)%W,y=40+(i*29)%90;g.fillRect(x-2,y,5,1);g.fillRect(x,y-2,1,5)}}}
+  if(L.parts==='petal'){for(let i=0;i<34;i++){const x=((i*91-camX*(0.7+i%3*0.15)+T*0.3+Math.sin(T*0.03+i)*22)%pw+pw)%pw-20,y=((T*(0.3+i%4*0.1)+i*47)%(H+10))-5;g.fillStyle=['#ffb0c8','#ff90b4','#ffe0ea'][i%3];g.fillRect(x,y,(T+i)%20<10?3:2,2)}}
 }
 
 /* ============================ GAME STATE ============================ */
@@ -1049,7 +1129,7 @@ const KB={l:false,r:false,u:false,d:false,g:false,lastL:0,lastR:0,dash:0};
 function toGame(x,y){return{x:(x-view.x)/view.s,y:(y-view.y)/view.s}}
 const GLABEL={L:'LIGHT',H:'HEAVY',U:'LAUNCHER',D:'SWEEP',P:'PARRY'};
 function pushAct(a,x,y){IN.q.push(a);if(IN.q.length>2)IN.q.shift();
-  const sp=(G.me||G.p1)&&(G.me||G.p1).ch.specials;const label=/^S[1-4U]$/.test(a)&&sp?sp[a]:GLABEL[a];
+  const sp=(G.me||G.p1)&&(G.me||G.p1).ch.specials;const meF=G.me||G.p1,inAir=meF&&meF.air;const label=sp&&inAir&&(a==='S1'||a==='S3')?sp[a==='S1'?'AS':'AS2']:(/^S[1-4U]$/.test(a)&&sp?sp[a]:GLABEL[a]);
   if(x!=null)IN.pops.push({x,y,text:label,t:performance.now(),col:a==='SU'?'#ffd23f':/^S[1-4]$/.test(a)?'#7fd8ff':a==='P'?'#8fe0ff':'#ffffff'})}
 function classify(pts,dur){
   const a=pts[0],b=pts[pts.length-1],dx=b.x-a.x,dy=b.y-a.y;let path=0;for(let i=1;i<pts.length;i++)path+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);
@@ -1267,9 +1347,9 @@ function renderHowto(g){
   L.forEach((r,i)=>{const y=44+i*22;gestIcon(g,r[0],22,y+4);txt(g,r[1],38,y,8,'#fff');if(r[2])txt(g,r[2],38,y+10,8,'#9a8fc8')});
   txt(g,'RIGHT THUMB (ATTACK)',254,22,8,'#ff4fa3','center');
   const R=[['tap','TAP','LIGHT'],['fwd','SWIPE FWD','HEAVY'],['up','SWIPE UP','ANTI-AIR'],['down','SWIPE DOWN','LOW SWEEP'],['back','SWIPE BACK','PARRY!'],
-    ['hold','HOLD STILL','BLOCK'],['arcF','ARC > FWD','SPECIAL 1'],['arcU','ARC > UP','SPECIAL 2'],['arcB','ARC > BACK','SPECIAL 3'],['arcD','ARC > DOWN','SPECIAL 4'],['two','2 FINGERS','SUPER']];
+    ['hold','HOLD STILL','BLOCK'],['arcF','ARC > FWD','SPECIAL 1'],['arcU','ARC > UP','SPECIAL 2'],['arcB','ARC > BACK','SPECIAL 3'],['arcD','ARC > DOWN','SPECIAL 4'],['arcF','AIR ARC F/B','AIR SPECIAL'],['two','2 FINGERS','SUPER']];
   g.font='8px '+FONT;
-  R.forEach((r,i)=>{const y=34+i*15;gestIcon(g,r[0],146,y+4);txt(g,r[1],160,y,8,'#fff');
+  R.forEach((r,i)=>{const y=33+i*14;gestIcon(g,r[0],146,y+4);txt(g,r[1],160,y,8,'#fff');
     const col=r[2].startsWith('PARRY')?'#8fe0ff':r[2]==='SUPER'?'#ffd23f':'#9a8fc8';
     g.font='8px '+FONT;const fits=160+g.measureText(r[1]).width+10+g.measureText(r[2]).width<=372;
     txt(g,r[2],372,fits?y:y+9,8,col,'right')});
@@ -1614,7 +1694,7 @@ function renderNetSel(g){const N=G.net;
 
 let last=performance.now(),acc=0;
 function frame(now){acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(!window.__freeze)step();acc-=1000/60;n++}if(n>=4)acc=0;render();requestAnimationFrame(frame)}
-function boot(){resize();STAGES=[buildStage(0),buildStage(1)];newDemo();requestAnimationFrame(frame)}
+function boot(){resize();STAGES=[0,1,2,3,4].map(buildStage);newDemo();requestAnimationFrame(frame)}
 if(document.fonts&&document.fonts.load){Promise.race([document.fonts.load('8px "Press Start 2P"'),new Promise(r=>setTimeout(r,1500))]).then(boot,boot)}else boot();
 window.__G=G;
 </script>
