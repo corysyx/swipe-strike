@@ -21,7 +21,8 @@ workflows:
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
 
-  # 2) Google Play release: signed .aab uploaded to the Internal testing track as a draft.
+  # 2) Google Play release: a signed .aab to download and upload in Play Console.
+  #    (Automatic upload to Google Play can be added later with a service account - see the guide.)
   android-release:
     name: Android release (Google Play)
     instance_type: linux_x2
@@ -30,8 +31,6 @@ workflows:
     environment:
       android_signing:
         - swipe_strike_upload_key        # the keystore you upload in Codemagic > Team > Code signing identities
-      groups:
-        - google_play                    # contains GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
       node: 22
       java: 21
     scripts:
@@ -43,11 +42,6 @@ workflows:
         script: cd android && chmod +x gradlew && ./gradlew bundleRelease
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
-    publishing:
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
-        submit_as_draft: true
 
   # 3) iPhone release: signed .ipa uploaded to TestFlight (built on Codemagic's Macs).
   ios-release:
