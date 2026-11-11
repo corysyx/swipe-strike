@@ -309,6 +309,9 @@ POSES.lkB=P({lean:-14,head:2,fl1:96,fl2:-16,bl1:-8,bl2:-4,fa1:55,fa2:95,ba1:-10,
 POSES.bird=P({rot:180,lean:0,head:0,fl1:96,fl2:0,bl1:-96,bl2:0,fa1:172,fa2:6,ba1:168,ba2:10,dy:-30});POSES.bird_w=POSES.crouch;POSES.birdA=Object.assign({},POSES.bird,{dy:-4});POSES.birdA_w=POSES.jump;
 POSES.stomp=P({lean:4,head:6,fl1:-4,fl2:0,bl1:70,bl2:-115,fa1:120,fa2:30,ba1:95,ba2:45});POSES.stomp_w=POSES.jump;
 POSES.cutter=P({lean:12,head:2,fa1:96,fa2:-6,ba1:-35,ba2:25,fl1:42,fl2:-12,bl1:-32,bl2:0,dx:4});POSES.cutter_w=P({lean:-6,fa1:15,fa2:145,ba1:35,ba2:125,fl1:26,fl2:-20,bl1:-22,bl2:-8,dx:-2});
+POSES.lowblow=P({lean:36,head:-4,fl1:82,fl2:-122,bl1:10,bl2:-122,fa1:62,fa2:-8,ba1:40,ba2:105,dx:3});POSES.lowblow_w=POSES.crouch;
+POSES.headbutt=P({lean:68,head:22,fa1:-25,fa2:40,ba1:-35,ba2:45,fl1:40,fl2:-70,bl1:-30,bl2:-50});POSES.headbutt_w=POSES.crouch;
+const PUNCH_SUB={kick:'heavy',skick:'jab2',knee:'elbow',sweep:'lowblow',airkick:'airjab2',airknee:'airjab',axe:'pound',flykick:'airjab2',upkick:'upper'};
 POSES.lowpalm=P({lean:30,head:-2,fl1:85,fl2:-135,bl1:12,bl2:-125,fa1:30,fa2:0,ba1:26,ba2:6,dx:2});POSES.lowpalm_w=POSES.crouch;
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
@@ -487,6 +490,21 @@ const CHARS=[
    AS:{s:7,a:1,r:14,hover:16,pose:'cutter',air:true,proj:{type:'boom',vx:4.2,vy:1.8,dmg:55,hs:18,bs:12,w:22,h:12,kb:2,life:120,ender:true}},
    AS2:{s:3,a:12,r:10,dmg:95,hits:2,multi:5,hs:22,bs:14,hb:B([-10,-84,46,84],1),kb:3,hover:12,vx:0.4,pose:'upkick',flipSpin:true,ender:true,air:true,lastKd:true},
    SU:{s:12,a:1,r:28,pose:'cutter',proj:{type:'hurricane',vx:1.4,dmg:420,hits:8,multi:6,hs:20,bs:12,w:50,h:56,kb:0.3,lastKd:true,launch:5,life:150}}})},
+  {id:'rocco',name:'ROCCO',arch:'BRUISER',archCol:'#ff5a2a',hp:1000,walk:1.8,dash:5.6,jumpV:6.2,jumpX:2.4,scale:1.22,reach:0.98,sw:12,hw:9,punchOnly:true,
+  col:{skin:'#b07850',top:'#b07850',pants:'#e8b020',belt:'#1a1a1e',hair:'#1a1418',band:'#1a1a1e',glove:'#c81e2a',shoe:'#1a1a1e',accent:'#ff5a2a'},
+  style:{hair:'bald',goatee:true,shirtless:true,boots:true,gloves:true},stats:[5,3,2],hPose:'heavy',rushPoses:['jab2','heavy'],
+  alts:[{pants:'#1a1a1e',belt:'#e8b020',glove:'#e8b020',accent:'#ffd23f'},{pants:'#2a8a4a',belt:'#f0ece4',glove:'#f0ece4',shoe:'#f0ece4',accent:'#9dffcf'},{pants:'#6a2a9a',belt:'#1a1a1e',glove:'#1a1a1e',accent:'#d0a0ff'}],
+  desc:'Heavyweight boxer. Punches only, but every one hurts: dashing straights, a low smash, a bull headbutt and a knockout rush.',
+  specials:{S1:'DASH STRAIGHT',S2:'DASH UPPERCUT',S3:'BULL HEADBUTT',S4:'LOW SMASH',AS:'HAMMER DROP',AS2:'FLYING STRAIGHT',SU:'KNOCKOUT KING'},quote:'Get up! I want to knock you down again!',
+  ai:{aa:'S3',ender:'S1',rush:true},
+  moves:(B,S)=>({
+   S1:{s:7,a:12,r:16,dmg:85,hs:22,bs:14,hb:B([6,-64,32,22]),kb:4,vx:6.4,pose:'heavy'},
+   S2:{s:7,a:14,r:20,dmg:95,hs:24,bs:14,hb:B([2,-94,30,76],1),kb:1.5,launch:6.8,kd:true,vx:5.2,pose:'upper'},
+   S3:{s:6,a:16,r:18,dmg:100,hs:24,bs:14,hb:B([0,-92,32,44],1),kb:3,kd:true,inv:[0,8],vy:5.6,vx:2.4,pose:'headbutt',landRec:12},
+   S4:{s:7,a:12,r:18,dmg:80,hs:20,bs:14,hb:B([6,-28,34,24]),lvl:'low',kb:3,kd:true,vx:6,pose:'lowblow',crouch:true},
+   AS:{s:6,a:30,r:8,dmg:95,hs:22,bs:14,hb:B([0,-50,36,48],1),lvl:'high',kb:2,hover:6,dive:6,diveV:[2.4,6.4],pose:'pound',ender:true,air:true,landRec:8,landQuake:true},
+   AS2:{s:5,a:16,r:10,dmg:90,hs:22,bs:14,hb:B([6,-62,34,24]),kb:4,hover:16,vx:5.2,pose:'airjab2',ender:true,air:true},
+   SU:{s:6,a:22,r:26,dmg:24,hs:30,bs:16,hb:B([0,-70,34,70],1),kb:0.2,vx:7,inv:[0,10],pose:'tide',rush:{hits:12,every:3,dmg:260,fin:140}}})},
 ];
 const CH={};
 function hueRot(hex,deg,sat=1,lit=0){let[r,g,b]=hex2rgb(hex).map(v=>v/255);const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s2=0,l=(mx+mn)/2;
@@ -571,7 +589,7 @@ function drawRig(g,ch,Q,pal,opt={}){
   const armHl=(back,upper)=>{const sl=st.sleeve;const useTop=sl==='full'||(sl==='upper'&&upper);return back?null:(useTop?pal.topL:pal.skinL)};
   const legLow=back=>st.boots?(back?pal.shoeD:pal.shoe):(back?pal.pantsD:pal.pants);
   // --- back arm
-  seg(Q.shB,Q.elB,5*S*th,armCol(1,1),null);seg(Q.elB,Q.haB,4.5*S*th,armCol(1,0),null);dot(Q.haB,2.7*S*th,pal.gloveD);
+  seg(Q.shB,Q.elB,5*S*th,armCol(1,1),null);seg(Q.elB,Q.haB,4.5*S*th,armCol(1,0),null);dot(Q.haB,(st.gloves?4.3:2.7)*S*th,pal.gloveD);
   // --- back leg
   seg(Q.hipB,Q.knB,6.5*S*th,pal.pantsD,null);seg(Q.knB,Q.ftB,5.5*S*th,legLow(1),null);foot(Q.knB,Q.ftB,pal.shoeD);
   // --- torso
@@ -656,13 +674,14 @@ function drawRig(g,ch,Q,pal,opt={}){
     hairPoly([[-0.35,0.95],[-0.4,0.3],[-1.0,0.25],[-1.9,0.55],[-1.6,0.85]],pal.hair);
     const e0=at(0.32,0.3),e1=at(0.4,1.0);g.beginPath();g.moveTo(e0.x,e0.y);g.lineTo(e1.x,e1.y);g.strokeStyle=pal.hair;g.lineWidth=1.6;g.stroke();
   }
+  if(st.goatee){poly([at(-0.62,0.72),at(-1.28,0.52),at(-0.82,0.2)],pal.hair);const m0=at(-0.4,0.66),m1=at(-0.48,1.0);g.beginPath();g.moveTo(m0.x,m0.y);g.lineTo(m1.x,m1.y);g.strokeStyle=pal.hair;g.lineWidth=1.4;g.stroke()}
   if(st.stache&&st.hair!=='mohawk'){const m0=at(-0.42,0.62),m1=at(-0.5,1.02),m2=at(-1.3,1.1);g.beginPath();g.moveTo(m0.x,m0.y);g.lineTo(m1.x,m1.y);g.lineTo(m2.x,m2.y);g.strokeStyle=OL;g.lineWidth=3;g.stroke();g.strokeStyle=pal.hair;g.lineWidth=1.6;g.stroke()}
   if(st.band){const a=at(0.35,-1.02),b=at(0.42,1.0);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.strokeStyle=OL;g.lineWidth=3.6*S*0.75;g.stroke();g.strokeStyle=pal.band;g.lineWidth=2.2*S*0.75;g.stroke()}
   // eye
   const e=at(0.08,0.62);g.fillStyle=OL;g.fillRect(Math.round(e.x-0.5),Math.round(e.y-1),1.6*S,2*S*0.8);
   if(!opt.flat){if(st.eyeGlow){g.fillStyle='rgba(255,30,60,0.45)';g.beginPath();g.arc(e.x,e.y,2.6*S,0,7);g.fill();g.fillStyle='#ff2a4a';g.fillRect(Math.round(e.x-1),Math.round(e.y-1),2*S,1.6*S)}else{g.fillStyle='#fff';g.fillRect(Math.round(e.x-1.4),Math.round(e.y-1),1,1)}}
   // --- front arm
-  seg(Q.shF,Q.elF,5*S*th,armCol(0,1),armHl(0,1));seg(Q.elF,Q.haF,4.5*S*th,armCol(0,0),armHl(0,0));dot(Q.haF,2.9*S*th,pal.glove,pal.gloveL);
+  seg(Q.shF,Q.elF,5*S*th,armCol(0,1),armHl(0,1));seg(Q.elF,Q.haF,4.5*S*th,armCol(0,0),armHl(0,0));dot(Q.haF,(st.gloves?4.6:2.9)*S*th,pal.glove,pal.gloveL);
 }
 
 function drawTail(g,pts,col,w0,OL){
@@ -877,6 +896,7 @@ class Fighter{
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
         if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor(this.rushT/3)%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
+        if(this.ch.punchOnly&&PUNCH_SUB[pn])pn=PUNCH_SUB[pn];
         if(this.grabbed)pn='slam';this.pn=pn;
         if(t<=m.s)return POSES[pn+'_w']||POSES[pn]||POSES.idle;
         if(t>m.s+m.a+m.r*0.6)return m.air?POSES.jump:POSES.idle;
@@ -1880,7 +1900,7 @@ function renderHowto(g){
 const cardObjs={};
 const RANDOM_CARD={id:'random'};
 function drawRoster(g,opt){
-  [...CHARS,RANDOM_CARD].forEach((c,i)=>{const PR=6,cw=60,chh=68,x=5+(i%PR)*63,y=16+Math.floor(i/PR)*71;
+  [...CHARS,RANDOM_CARD].forEach((c,i)=>{const PR=7,cw=52,chh=68,x=3+(i%PR)*54,y=16+Math.floor(i/PR)*71;
     if(c===RANDOM_CARD){g.fillStyle='#3a2a5a';g.fillRect(x,y,cw,chh);g.fillStyle='#140c28';g.fillRect(x+1,y+1,cw-2,chh-2);
       bigTxt(g,'?',x+cw/2,y+30+Math.sin(G.tick*0.1)*2,24,'#ffffff','#b48cff');g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(x+1,y+chh-13,cw-2,12);txt(g,'RANDOM',x+cw/2,y+chh-11,8,'#d8d0ff','center');
       BTN.push({x,y,w:cw,h:chh,cb:()=>{const r=pick(CHARS);opt.tap(r,CHARS.indexOf(r))}});return}
