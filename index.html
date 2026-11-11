@@ -954,7 +954,7 @@ function buildStage(kind){
       mg.strokeStyle=nc;mg.lineWidth=1;mg.strokeRect(nx+0.5,ny+0.5,nw-1,nh-1);
       mg.fillStyle='#fff';const cnt=vert?3:3;for(let i=0;i<cnt;i++){const gx=vert?nx+3:nx+4+i*((nw-8)/3),gy=vert?ny+4+i*((nh-6)/3):ny+3;
         mg.fillRect(gx,gy,6,1);mg.fillRect(gx+R()*5|0,gy,1,6);mg.fillRect(gx,gy+3+(R()*2|0),6,1);if(R()<.5)mg.fillRect(gx+5,gy+1,1,4)}
-      L.neon.push({x:(nx+nw/2),c:nc});
+      L.neon.push({x:(nx+nw/2),c:nc,nx,ny,nw,nh});
       x+=w+r(2,10)}
     for(let i=0;i<mw;i+=90){mg.fillStyle='#0c0a1a';mg.fillRect(i,40,2,124);mg.strokeStyle='#0c0a1a';mg.beginPath();mg.moveTo(i,44);mg.quadraticCurveTo(i+45,58,i+90,44);mg.stroke()}
     for(let i=20;i<mw;i+=137){mg.fillStyle='#d8e8ff';mg.fillRect(i,136,14,26);mg.fillStyle='#3ff0ff';mg.fillRect(i+2,138,10,10);mg.fillStyle='#ff3fa8';for(let k=0;k<3;k++)mg.fillRect(i+2+k*4,151,2,3)}
@@ -1044,7 +1044,7 @@ function drawStage(g,camX){
   g.drawImage(L.far,-Math.round(camX*PARA[1]),0);
   if(L.kind===0){for(let i=0;i<10;i++){const xx=((i*53+G.tick*0.2)%layerW(PARA[1]))-camX*PARA[1],yy=132+(i*7)%30;g.fillStyle=G.tick%40<20===(i%2===0)?'#ffd0a0':'#ff9a70';g.fillRect(xx|0,yy,3,1)}}
   g.drawImage(L.mid,-Math.round(camX*PARA[2]),0);
-  if(L.kind===1){for(let i=0;i<L.neon.length;i++){if((G.tick+i*37)%180<6){const n=L.neon[i];g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(n.x-camX*PARA[2]-22,0,44,FLOOR_TOP)}}}
+  if(L.kind===1){const mo=-Math.round(camX*PARA[2]);for(let i=0;i<L.neon.length;i++){const ph=(G.tick+i*53)%240;if(ph<10&&ph%4<2){const n=L.neon[i];g.fillStyle='rgba(8,6,20,0.7)';g.fillRect(mo+n.nx-4,n.ny-4,n.nw+8,n.nh+8)}}}// a sign's tube blinks off briefly
   // crowd
   const cxo=camX*PARA[3],ex=G.excite||0;
   for(const p of L.crowd){const x=Math.round(p.x-cxo);if(x<-12||x>W+12)continue;const b=Math.abs(Math.sin(G.tick*0.13*(1+ex)+p.ph))*(1+ex*3),y=FLOOR_TOP+1-b;
