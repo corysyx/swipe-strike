@@ -2171,6 +2171,7 @@ function bonusHit(tg,d){const B=G.bonus;tg.hp-=d;tg.flash=4;tg.shake=6;
   else{if(!tg.dead){tg.dead=true;B.broken++;addFx('spark',tg.x,tg.y-12,2);addFx('dust',tg.x,FLOOR);addFx('text',tg.x,tg.y-36,0,'+1','#ffd23f');SFX.hit(1)}}}
 function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
   if(G.superFlash){if(--G.superFlash.t<=0)G.superFlash=null;updFx();return}
+  if(G.cine){const tg=B.cineT&&!B.cineT.dead?B.cineT:null;if(tg)placeProxy(X,tg);const h=X.hp;stepCine();if(tg&&X.hp<h)bonusHit(tg,h-X.hp);X.hp=99999;if(!G.cine){resetProxy(X);P.state='idle';P.t=0;B.cineT=null}return}
   if(G.hitstop>0){G.hitstop--;updFx();return}
   B.t++;
   if(B.debris)for(const d of B.debris){d.life++;if(d.rest>1)continue;d.vy+=0.32;d.x+=d.vx;d.y+=d.vy;d.r+=d.vr;
@@ -2187,12 +2188,13 @@ function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
   const alive=B.targets.filter(t=>!t.dead);
   const near=alive.slice().sort((a,b)=>Math.abs(a.x-P.x)-Math.abs(b.x-P.x))[0];
   placeProxy(X,near||{x:P.x+P.facing*300,y:FLOOR-300,w:1,h:1});
+  const rt=P.rushT>0&&B.rushT&&!B.rushT.dead?B.rushT:null;if(rt)placeProxy(X,rt);
   const inp=live?playerInput():(playerInput(),EMPTY());
-  P.update(inp,X);
+  let h0=X.hp;P.update(inp,X);if(X.hp<h0&&(rt||near))bonusHit(rt||near,h0-X.hp);X.hp=99999;if(rt)placeProxy(X,near||rt);
   // projectiles hit the nearest prop
-  let h0=X.hp;updateProjs();if(near&&X.hp<h0)bonusHit(near,h0-X.hp);resetProxy(X);
+  h0=X.hp;updateProjs();if(near&&X.hp<h0)bonusHit(near,h0-X.hp);resetProxy(X);if(P.rushT<=0)B.rushT=null;
   // melee can hit any prop it touches
-  if(live)for(const t of alive){if(t.dead)continue;placeProxy(X,t);h0=X.hp;checkHits(P,X);if(X.hp<h0)bonusHit(t,h0-X.hp);resetProxy(X)}
+  if(live)for(const t of alive){if(t.dead)continue;placeProxy(X,t);h0=X.hp;checkHits(P,X);if(X.hp<h0)bonusHit(t,h0-X.hp);if(P.rushT>0&&!B.rushT)B.rushT=t;if(G.cine){B.cineT=t;X.hp=99999;break}resetProxy(X)}
   // a rolling or falling barrel that touches you knocks you down
   if(live&&B.type==='barrels'&&!P.isInv()&&P.state!=='hit'){const hu=P.hurt();
     for(const t of B.targets){if(t.dead)continue;const bb={x:t.x-11,y:t.y-30,w:22,h:30};if(!overlap(hu,bb))continue;
