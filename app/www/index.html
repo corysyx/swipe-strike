@@ -274,7 +274,7 @@ POSES.lowpalm=P({lean:30,head:-2,fl1:85,fl2:-135,bl1:12,bl2:-125,fa1:30,fa2:0,ba
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
-const MAX_LAUNCH=2;let FF_MUL=2.4,FF_LAND=6;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
+const MAX_LIGHTS=5;const MAX_LAUNCH=2;let FF_MUL=2.4,FF_LAND=6;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
 
 /* ============================ CHARACTERS ============================ */
 const CHARS=[
@@ -620,7 +620,7 @@ class Fighter{
   constructor(ch,side,ci=0){this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
-    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,gL:0,enderH:false,rushT:0,rushN:0,stance:0});
+    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,lHits:0,gL:0,enderH:false,rushT:0,rushN:0,stance:0});
     this.pose=Object.assign({},POSES.idle);this.dpose=Object.assign({},POSES.idle);this.pv={}}
   get air(){return this.y<FLOOR-0.1}
   get S(){return this.ch.scale}
@@ -670,10 +670,10 @@ class Fighter{
       if(this.t%5===0)addFx('dust',this.x-d*8,FLOOR);
       if(this.t>=dur){this.state='idle';this.t=0;this.vx=0}}
     else if(st==='attack')this.updMove(op);
-    else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0;this.launchN=0}}else this.vx*=0.995}
+    else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0}}else this.vx*=0.995}
     else if(st==='block'){this.vx*=0.85;if(this.buf==='H'&&this.pbCD<=0){this.buf=null;this.bufT=0;this.pushblock(op)}if(this.t>=this.stun){this.state='idle';this.t=0}}
     else if(st==='down'){this.vx*=0.8;if(this.t>=34&&!this.ko){this.state='getup';this.t=0}}
-    else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0}}
+    else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0}}
     else if(st==='parry'){if(this.t>=20){this.state='idle';this.t=0}}
     else if(st==='ko'||st==='win'){this.vx*=0.85}
     else if(st==='taunt'){this.vx=0;if(this.t>=50){this.state='idle';this.t=0}}
@@ -907,6 +907,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   const sc=m.super?Math.max(0.75,1-0.05*(B.combo-(nth-1))):Math.max(0.3,1-0.1*B.combo);const dmg=Math.max(1,Math.round(per*sc*(counterHit?1.25:1)));
   B.hp-=dmg;B.redT=40;B.combo++;B.wasCrouch=B.inp.down&&!B.air;
   Object.assign(B,{move:null,state:'hit',t:0,stun:m.hs+(counterHit?4:0)+(!isProj&&m.key==='L'&&A.gL>=5?10:0)});const gEnder=!isProj&&m.key==='H'&&A.enderH;B.vx=dir*((m.key==='L'&&A.gL>1)?0.5:(m.kb||2));
+  /* light limit: a combo can hold at most 5 ground lights; the 6th pushes them out and gives a moment of safety (stops tap-spam infinites) */
+  if(!isProj&&!A.air&&!B.air&&(m.key==='L'||m.key==='cL')){B.lHits=(B.lHits||0)+1;if(B.lHits>MAX_LIGHTS){B.stun=8;B.vx=dir*4.4;B.inv=Math.max(B.inv,18);B.lHits=0;addFx('text',B.x,B.y-80*B.S,0,'PUSHED','#7fd8ff')}}
   const finisher=(m.lastKd&&nth>=hits)||(m.ender&&nth>=hits&&(B.air||(A.airHits||0)>0));
   if(!isProj&&A.air){A.airHits=(A.airHits||0)+1}
   const isLaunch=!!m.launch&&(nth>=hits||!m.lastKd);let limited=false;
