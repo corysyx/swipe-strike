@@ -419,7 +419,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S1',zone:'S1',tele:'S3',slide:'S3'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'ki',vx:4,dmg:65,hs:20,bs:14,w:16,h:14,kb:2.5,life:220}},
-   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-90,24,70],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.4,vx:1.6,pose:'upper',landRec:FF_LAND,fastFall:FF_MUL},
+   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-90,24,70],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.4,vx:1.6,pose:'upper',landRec:FF_LAND,fastFall:FF_MUL,juggleCap:3},
    S3:{s:3,a:22,r:12,vx:4.4,projInv:[0,26],pose:'glide'},
    S4:{s:14,a:30,r:10,dmg:80,hs:20,bs:14,hb:B([0,-36,30,36],1),lvl:'high',kb:2,hop:[6.2,3.2],dive:14,diveV:[3.4,5],pose:'airheavy',landRec:6},
    AS2:{s:6,a:34,r:8,dmg:90,hs:22,bs:14,hb:B([0,-36,32,38],1),lvl:'high',kb:2,hover:5,dive:5,diveV:[4.4,5.6],pose:'airheavy',ender:true,air:true,landRec:8},
@@ -721,7 +721,7 @@ class Fighter{
   constructor(ch,side,ci=0){this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
-    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,lHits:0,comboDmg:0,bounceN:0,gL:0,enderH:false,rushT:0,rushN:0,stance:0});
+    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,lHits:0,comboDmg:0,bounceN:0,capN:0,gL:0,enderH:false,rushT:0,rushN:0,stance:0});
     this.pose=Object.assign({},POSES.idle);this.dpose=Object.assign({},POSES.idle);this.pv={}}
   get air(){return this.y<FLOOR-0.1}
   get S(){return this.ch.scale}
@@ -771,10 +771,10 @@ class Fighter{
       if(this.t%5===0)addFx('dust',this.x-d*8,FLOOR);
       if(this.t>=dur){this.state='idle';this.t=0;this.vx=0}}
     else if(st==='attack')this.updMove(op);
-    else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0}}else this.vx*=0.995}
+    else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0;this.capN=0}}else this.vx*=0.995}
     else if(st==='block'){this.vx*=0.85;if(this.buf==='H'&&this.pbCD<=0){this.buf=null;this.bufT=0;this.pushblock(op)}if(this.t>=this.stun){this.state='idle';this.t=0}}
     else if(st==='down'){this.vx*=0.8;if(this.t>=34&&!this.ko){this.state='getup';this.t=0}}
-    else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0}}
+    else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0;this.capN=0}}
     else if(st==='parry'){if(this.t>=20){this.state='idle';this.t=0}}
     else if(st==='ko'||st==='win'){this.vx*=0.85}
     else if(st==='taunt'){this.vx=0;if(this.t>=50){this.state='idle';this.t=0}}
@@ -1013,9 +1013,12 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   if(!isProj&&!A.air&&!B.air&&(m.key==='L'||m.key==='cL')){B.lHits=(B.lHits||0)+1;if(B.lHits>MAX_LIGHTS){B.stun=8;B.vx=dir*4.4;B.inv=Math.max(B.inv,18);B.lHits=0;addFx('text',B.x,B.y-80*B.S,0,'PUSHED','#7fd8ff')}}
   const finisher=(m.lastKd&&nth>=hits)||(m.ender&&nth>=hits&&(B.air||(A.airHits||0)>0));
   if(!isProj&&A.air){A.airHits=(A.airHits||0)+1}
-  const isLaunch=!!m.launch&&(nth>=hits||!m.lastKd);let limited=false;
+  /* juggleCap: this move can only juggle so many times per combo; the last allowed hit is a knockdown */
+  let capKd=false;if(m.juggleCap&&!isProj){B.capN=(B.capN||0)+1;if(B.capN>=m.juggleCap)capKd=true}
+  const isLaunch=!!m.launch&&!capKd&&(nth>=hits||!m.lastKd);let limited=false;
   if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.6;B.vx=dir*4.6;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true}}/* over the limit: pushed away, out of the combo */
   if(limited){}
+  else if(capKd){B.juggle=true;B.vy=-3.4;B.vx=dir*3.2;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true;B.capN=0;addFx('text',B.x,B.y-70,0,'KNOCKDOWN!','#ff4a4a');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(B.air||B.juggle||m.launch||m.kd||finisher||gEnder){
     const lv=gEnder?4.2:(m.launch&&(nth>=hits||!m.lastKd))?m.launch:(finisher?4.2:(m.kd?3.6:(B.air?(A.air&&!isProj?2.9:3.2):0)));
