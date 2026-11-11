@@ -223,6 +223,7 @@ POSES.roll=POSES.jump;POSES.roll_w=POSES.crouch;
 POSES.flykick=P({lean:-32,head:6,fl1:96,fl2:-4,bl1:18,bl2:-112,fa1:118,fa2:22,ba1:-40,ba2:20});POSES.flykick_w=POSES.crouch;
 POSES.bikeA=P({lean:-30,head:4,fl1:104,fl2:-8,bl1:40,bl2:-105,fa1:100,fa2:40,ba1:-30,ba2:40});
 POSES.bikeB=P({lean:-30,head:4,fl1:40,fl2:-105,bl1:104,bl2:-8,fa1:100,fa2:40,ba1:-30,ba2:40});POSES.bike_w=POSES.crouch;
+POSES.lowpalm=P({lean:30,head:-2,fl1:85,fl2:-135,bl1:12,bl2:-125,fa1:30,fa2:0,ba1:26,ba2:6,dx:2});POSES.lowpalm_w=POSES.crouch;
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
@@ -362,7 +363,7 @@ const CHARS=[
    S1:{s:10,a:1,r:20,pose:'palm',proj:{type:'dflame',vx:4.4,dmg:65,hs:20,bs:14,w:20,h:14,kb:2.5,life:200}},
    S2:{s:6,a:30,r:16,dmg:140,hits:6,multi:5,hs:14,bs:8,hb:B([2,-60,36,42]),kb:0.4,vx:3.4,hop:[2.4,0],hover:36,pose:'bike',lastKd:true,landRec:10},
    S3:{s:6,a:22,r:14,dmg:90,hs:22,bs:14,hb:B([8,-58,36,32],1),kb:5,kd:true,vx:7,hop:[1.8,0],hover:28,pose:'flykick',landRec:8},
-   S4:{s:10,a:1,r:22,pose:'cjab',crouch:true,proj:{type:'dflame',ground:true,vx:3.6,dmg:55,hs:18,bs:12,w:20,h:12,y:-10,lvl:'low',kb:2,life:200}},
+   S4:{s:10,a:1,r:22,pose:'lowpalm',crouch:true,proj:{type:'dflame',vx:3.6,dmg:55,hs:18,bs:12,w:20,h:12,lvl:'low',kb:2,life:200}},
    AS:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,proj:{type:'dflame',vx:3.4,vy:2.4,dmg:60,hs:20,bs:14,w:18,h:14,kb:2,life:90,ender:true}},
    AS2:{s:4,a:26,r:8,dmg:90,hs:22,bs:14,hb:B([8,-52,36,34],1),kb:5,hover:4,dive:4,diveV:[6,2.2],pose:'flykick',ender:true,air:true,landRec:6},
    SU:{s:12,a:1,r:30,pose:'palm',proj:{type:'dragon',vx:3.2,dmg:420,hits:7,multi:5,hs:22,bs:14,w:46,h:40,kb:0.3,lastKd:true,launch:5,life:240}}})},
