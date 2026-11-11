@@ -99,18 +99,62 @@ const SFX={
   tele:()=>osc('sine',1800,200,0.18,0.18),
 };
 // tiny chiptune sequencer (A minor: Am F G Em)
-let mStep=0,mNext=0;const SPB=60/148/4;
-const ROOTS=[0,-4,-2,-5],BASS=[0,0,12,0,0,12,0,7,0,0,12,0,10,12,7,3];
-const LEAD=[12,-1,15,-1,17,15,-1,12,19,-1,17,-1,15,-1,12,10, 12,-1,15,-1,17,-1,19,22,24,-1,22,19,17,-1,15,-1];
-function musicTick(){if(!AC||!musicOn)return;if(mNext<AC.currentTime)mNext=AC.currentTime+0.05;
-  while(mNext<AC.currentTime+0.12){const s=mStep%16,bar=(mStep>>4)%4,root=ROOTS[bar],t=mNext;
-    osc('square',55*Math.pow(2,(root+BASS[s])/12),0,SPB*0.9,0.16,0,musicGain,t);
-    if(s%4===0)osc('sine',160,40,0.13,0.55,0,musicGain,t);
-    if(s===4||s===12)noise(0.12,0.3,1800,'highpass',0,0,musicGain,t);
-    if(s%2===1)noise(0.03,0.08,8000,'highpass',0,0,musicGain,t);
-    const ln=LEAD[(mStep%32)];if(ln>=0&&((mStep>>5)%2===1))osc('square',220*Math.pow(2,(root+ln)/12),0,SPB*1.6,0.05,0,musicGain,t);
-    mStep++;mNext+=SPB}}
-function setMusic(on){musicOn=on;if(musicGain)musicGain.gain.value=on?0.32:0}
+// ---------- music: one theme for menus, one per stage (16th-note step sequencer)
+// numbers are semitones above A (bass at A1=55Hz, lead at A3=220Hz); -1 = rest
+const TRACKS={
+  menu:{bpm:148,roots:[0,-4,-2,-5],bassWave:'square',bass:[0,0,12,0,0,12,0,7,0,0,12,0,10,12,7,3],
+    lead:[12,-1,15,-1,17,15,-1,12,19,-1,17,-1,15,-1,12,10, 12,-1,15,-1,17,-1,19,22,24,-1,22,19,17,-1,15,-1],leadInst:'square',leadAlt:true,
+    drums:{kick:[0,4,8,12],snare:[4,12],hat:[1,3,5,7,9,11,13,15]}},
+  // SUNSET PIER: street funk in C
+  s0:{bpm:134,roots:[3,8,10,3],bassWave:'square',bassLen:0.6,bass:[0,-1,12,0,-1,0,12,-1,0,-1,10,0,7,-1,12,-1],
+    lead:[12,-1,14,16,-1,19,-1,16,14,-1,12,-1,9,-1,12,-1, 16,-1,19,-1,21,19,-1,16,14,-1,16,-1,12,-1,-1,-1],leadInst:'square',
+    drums:{kick:[0,3,8,11],snare:[4,12],clap:[12],hat:[0,2,4,6,8,10,12,14]}},
+  // NEON ALLEY: synthwave
+  s1:{bpm:118,roots:[0,-4,-7,-2],bassWave:'sawtooth',bassLen:0.5,bassVol:0.12,bass:[0,12,0,12,0,12,0,12,0,12,0,12,0,12,0,12],
+    lead:[12,15,19,24,19,15,12,15, 12,15,19,24,27,24,19,15, 12,15,19,24,19,15,12,15, 24,-1,22,-1,19,-1,15,-1],leadInst:'saw',
+    drums:{kick:[0,4,8,12],snare:[4,12],hat:[2,6,10,14],shaker:[1,3,5,7,9,11,13,15]}},
+  // LOST TEMPLE: tribal marimba + toms
+  s2:{bpm:112,roots:[0,0,-2,-5],bassWave:'triangle',bassVol:0.22,bass:[0,-1,-1,7,-1,-1,0,-1,12,-1,-1,7,-1,5,-1,-1],
+    lead:[12,-1,15,17,-1,19,17,15, 12,-1,10,-1,12,-1,-1,-1, 19,-1,22,19,17,-1,15,-1, 17,15,12,-1,10,-1,12,-1],leadInst:'pluck',
+    drums:{taiko:[0,8],tom:[3,6,10,13],shaker:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]}},
+  // FROZEN CAVERN: bells and pads
+  s3:{bpm:92,roots:[0,-4,-9,-5],bassWave:'sine',bassLen:3.6,bassVol:0.22,bass:[0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,-1],
+    lead:[24,-1,19,-1,27,-1,19,-1,24,-1,22,-1,19,-1,15,-1, 24,-1,19,-1,31,-1,27,-1,26,-1,24,-1,22,-1,19,-1],leadInst:'bell',pad:true,
+    drums:{kick:[0,10],wood:[4,12],hat:[6,14]}},
+  // SAKURA SHRINE: koto on a miyako-bushi scale + taiko
+  s4:{bpm:116,roots:[0,0,-4,0],bassWave:'triangle',bassVol:0.2,bass:[0,-1,7,-1,0,-1,8,-1,0,-1,7,-1,5,-1,1,-1],
+    lead:[12,-1,13,17,-1,19,20,-1,24,-1,20,19,-1,17,13,-1, 12,-1,17,-1,19,-1,13,12,-1,8,-1,7,-1,8,-1,-1],leadInst:'koto',
+    drums:{taiko:[0,6,8,11],wood:[4,12],shaker:[2,6,10,14]}},
+};
+const DRUM={
+  kick:t=>osc('sine',160,40,0.13,0.55,0,musicGain,t),
+  snare:t=>noise(0.12,0.3,1800,'highpass',0,0,musicGain,t),
+  clap:t=>{noise(0.05,0.22,1500,'bandpass',0,0,musicGain,t);noise(0.06,0.2,1500,'bandpass',0,0,musicGain,t+0.012)},
+  hat:t=>noise(0.03,0.08,8000,'highpass',0,0,musicGain,t),
+  shaker:t=>noise(0.035,0.04,6000,'highpass',0,0,musicGain,t),
+  tom:t=>osc('sine',230,95,0.18,0.38,0,musicGain,t),
+  taiko:t=>{osc('sine',110,46,0.38,0.62,0,musicGain,t);noise(0.08,0.14,320,'lowpass',0,0,musicGain,t)},
+  wood:t=>osc('sine',1250,900,0.05,0.16,0,musicGain,t),
+};
+function playLead(T,f,spb,t){const v=T.leadVol||0.05;
+  switch(T.leadInst){
+    case'saw':osc('sawtooth',f,0,spb*0.9,v*0.8,0,musicGain,t);osc('sawtooth',f*1.006,0,spb*0.9,v*0.5,0,musicGain,t);break;
+    case'pluck':osc('triangle',f,0,0.16,v*2.2,0,musicGain,t);osc('sine',f*4,0,0.05,v*0.6,0,musicGain,t);break;
+    case'bell':osc('sine',f,0,0.9,v*1.6,0,musicGain,t);osc('sine',f*2.76,0,0.25,v*0.5,0,musicGain,t);break;
+    case'koto':osc('triangle',f,0,0.3,v*2,0,musicGain,t);osc('square',f*2,0,0.04,v*0.5,0,musicGain,t);break;
+    default:osc('square',f,0,spb*1.6,v,0,musicGain,t)}}
+let mStep=0,mNext=0,curTrack='menu',trk=TRACKS.menu;
+function setTrack(name){if(name===curTrack||!TRACKS[name])return;curTrack=name;trk=TRACKS[name];mStep=0;
+  if(AC){const now=AC.currentTime;mNext=now+0.5;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(musicGain.gain.value,now);
+    musicGain.gain.linearRampToValueAtTime(0.0001,now+0.35);musicGain.gain.linearRampToValueAtTime(musicOn?0.32:0.0001,now+1.1)}}
+function musicTick(){if(!AC||!musicOn)return;const T=trk,spb=60/T.bpm/4;if(mNext<AC.currentTime)mNext=AC.currentTime+0.05;
+  while(mNext<AC.currentTime+0.12){const s=mStep%16,bar=(mStep>>4)%T.roots.length,root=T.roots[bar],t=mNext;
+    const b=T.bass[s];if(b>=0)osc(T.bassWave,55*Math.pow(2,(root+b)/12),0,spb*(T.bassLen||0.9),T.bassVol||0.16,0,musicGain,t);
+    const ln=T.lead[mStep%T.lead.length];if(ln>=0&&(!T.leadAlt||((mStep>>5)%2===1)))playLead(T,220*Math.pow(2,(root+ln)/12),spb,t);
+    for(const k in T.drums)if(T.drums[k].includes(s))DRUM[k](t);
+    if(T.pad&&s===0)for(const iv of[12,15,19])osc('sine',110*Math.pow(2,(root+iv)/12),0,spb*16,0.035,0,musicGain,t);
+    mStep++;mNext+=spb}}
+function setMusic(on){musicOn=on;if(musicGain){const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(on?0.32:0.0001,now)}}
 function vib(ms){if(G.resim)return;try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 
 /* ============================ POSES ============================
@@ -1485,6 +1529,7 @@ function render(){
 }
 function step(){
   G.tick++;pollTouch();
+  setTrack(G.mode==='fight'?'s'+G.stage:'menu');
   if(G.mode==='title'){stepFight()}
   else if(G.mode==='vs'){G.vsT++;if(G.vsT>=110){G.mode='fight';G.hint=IN.touch?G.hint:0;startRound();if(G.net)G.net.live=true}}
   else if(G.mode==='fight'&&G.net&&G.net.live){netTick();G.hint++}
