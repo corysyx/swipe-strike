@@ -1051,7 +1051,8 @@ function pollTouch(){
   if(IN.left){const L=IN.left,sc=Math.max(0.7,Math.min(1.5,innerHeight/420));let dx=L.x-L.ox,dy=L.y-L.oy;const mx=56*sc;
     const d=Math.hypot(dx,dy);if(d>mx){L.ox=L.x-dx/d*mx;L.oy=L.y-dy/d*mx;dx=L.x-L.ox;dy=L.y-L.oy}
     const T=17*sc;let h=Math.abs(dx)>T?Math.sign(dx):0;
-    const wasDown=IN.down;IN.down=dy>21*sc;if(IN.down)IN.lastDownT=now;const j=dy<-26*sc;if(j&&!IN.jump)IN.sj=now-(IN.lastDownT||0)<230;if(!j)IN.sj=false;IN.jump=j;
+    const wasDown=IN.down;IN.down=dy>21*sc;if(IN.down&&!wasDown)IN.lastDownT=now;// time from the START of the down flick, so holding crouch never super jumps
+    const j=dy<-26*sc;if(j&&!IN.jump)IN.sj=now-(IN.lastDownT||-1e9)<260;if(!j)IN.sj=false;IN.jump=j;
     if(h!==0&&IN.prevH===0){if(h===IN.lastHD&&now-IN.lastHT<260&&!IN.down&&!IN.jump){IN.dash=h}IN.lastHD=h;IN.lastHT=now}
     IN.prevH=h;IN.h=h}
   else{IN.h=0;IN.down=false;IN.jump=false;IN.prevH=0}
@@ -1069,7 +1070,7 @@ addEventListener('keydown',e=>{initAudio();const c=e.code,now=performance.now();
   if(c==='Escape'&&G.mode==='fight'&&!G.result){G.paused=!G.paused;return}
   if(c==='KeyA'||c==='ArrowLeft'){if(now-KB.lastL<260)KB.dash=-1;KB.lastL=now;KB.l=true}
   if(c==='KeyD'||c==='ArrowRight'){if(now-KB.lastR<260)KB.dash=1;KB.lastR=now;KB.r=true}
-  if(c==='KeyW'||c==='ArrowUp'){KB.u=true;KB.sj=now-(KB.lastD||0)<230}if(c==='KeyS'||c==='ArrowDown'){KB.d=true;KB.lastD=now}if(c==='Space'){KB.g=true;e.preventDefault()}
+  if(c==='KeyW'||c==='ArrowUp'){KB.u=true;KB.sj=now-(KB.lastD||-1e9)<260}if(c==='KeyS'||c==='ArrowDown'){if(!KB.d)KB.lastD=now;KB.d=true}if(c==='Space'){KB.g=true;e.preventDefault()}
   if(KEYACT[c]&&inFightControls())pushAct(KEYACT[c]);
   if(c==='Enter'&&!inFightControls()){const b=BTN.find(b=>b.def);if(b)b.cb()}});
 addEventListener('keyup',e=>{const c=e.code;if(c==='KeyA'||c==='ArrowLeft')KB.l=false;if(c==='KeyD'||c==='ArrowRight')KB.r=false;
