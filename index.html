@@ -213,6 +213,10 @@ POSES.airjab2=P({lean:22,ba1:96,ba2:0,fa1:38,fa2:115,fl1:55,fl2:-95,bl1:12,bl2:-
 POSES.airknee=P({lean:2,head:-4,fl1:98,fl2:-125,bl1:8,bl2:-80,fa1:70,fa2:95,ba1:28,ba2:90});
 POSES.airjab_w=POSES.airjab2_w=POSES.airknee_w=POSES.jump;
 const AIR_SEQ=['airjab','airkick','airjab2','airknee','airkick'];
+POSES.skick=P({lean:-10,head:2,fl1:95,fl2:-8,bl1:-12,bl2:-4,fa1:45,fa2:105,ba1:20,ba2:95});POSES.skick_w=P({lean:0,fl1:70,fl2:-110,fa1:45,fa2:100});
+POSES.jab2=P({lean:18,ba1:93,ba2:0,fa1:40,fa2:112,fl1:30,fl2:-14,bl1:-26,bl2:-4,dx:3});POSES.jab2_w=P({lean:4,ba1:28,ba2:120});
+POSES.knee=P({lean:10,fl1:88,fl2:-122,bl1:-14,bl2:-6,fa1:72,fa2:100,ba1:50,ba2:100,dx:2});POSES.knee_w=P({lean:2,fl1:40,fl2:-60});
+const GROUND_SEQ=['jab','skick','jab2','knee','skick'];
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
@@ -518,7 +522,7 @@ class Fighter{
   constructor(ch,side,ci=0){this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
-    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0});
+    hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,gL:0,enderH:false});
     this.pose=Object.assign({},POSES.idle);this.dpose=Object.assign({},POSES.idle);this.pv={}}
   get air(){return this.y<FLOOR-0.1}
   get S(){return this.ch.scale}
@@ -541,6 +545,8 @@ class Fighter{
   tryAct(a){if(a==='P'){if(this.air)return false;this.state='parry';this.t=0;this.vx=0;SFX.whoosh(0);return true}
     const m=this.pick(a);if(!m)return false;this.startMove(m);return true}
   startMove(m){
+    const chainL=this.state==='attack'&&this.move&&this.move.key==='L';
+    if(m.key==='L'){this.gL=chainL?(this.gL||0)+1:1;this.enderH=false}else{this.enderH=m.key==='H'&&chainL&&(this.gL||0)>=2;this.gL=0}
     Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(m.key==='AS'||m.key==='AS2')this.airSp=true;
     if(this.air)this.airAtk=true;
     if(m.super){this.flash=8;this.flashCol='#ffffff';this.meter=Math.max(0,this.meter-100);G.superFlash={f:this,t:46,name:this.ch.specials.SU};SFX.super();G.excite=1}
@@ -595,6 +601,7 @@ class Fighter{
     if(m.vx){if(t>a0-2&&t<=a1)this.vx=m.vx*this.facing;else if(!this.air)this.vx*=0.6}
     else if(!this.air)this.vx*=0.7;
     if(m.vy&&t===a0){this.vy=-m.vy;this.y=FLOOR-0.5}
+    if(m.key==='L'&&this.gL>1&&t<=m.s+1&&!this.air)this.vx=1.7*this.facing;
     if(m.proj&&t===a0)spawnProj(this,m.super?Object.assign({super:true},m.proj):m.proj);
     if(m.projs&&t===a0)for(const pr of m.projs)spawnProj(this,pr);
     if(m.beam&&t===a0)spawnBeam(this,m);
@@ -615,7 +622,7 @@ class Fighter{
     if(m.tele&&m.teleFwd&&t<=m.s&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(this.canCancel&&this.buf&&t>a0&&!this.air){
       const b=this.buf;let ok=false;
-      if(b==='SU')ok=!m.super;else if(b==='S1'||b==='S2')ok=!m.special;else ok=(m.key==='L'||m.key==='cL')&&b!=='L'&&b!=='P';
+      if(b==='SU')ok=!m.super;else if(b==='S1'||b==='S2')ok=!m.special;else ok=(m.key==='L'||m.key==='cL')&&b!=='P'&&(b!=='L'||(m.key==='L'&&(this.gL||0)<5&&!this.inp.down));
       if(ok){const nm=this.pick(b);if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
     }
     if(t>=tot){this.move=null;if(this.air){this.state='jump';this.airAtk=true;this.flip=false}else{this.state='idle';this.t=0}}
@@ -667,6 +674,7 @@ class Fighter{
       case 'attack':{const m=this.move;let pn=m.pose;
         if(pn==='rush'){const rp=this.ch.rushPoses||['jab','heavy'];pn=t<=m.s?'palm':rp[Math.floor(t/4)%2]}
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
+        if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
         if(this.grabbed)pn='slam';this.pn=pn;
         if(t<=m.s)return POSES[pn+'_w']||POSES[pn]||POSES.idle;
         if(t>m.s+m.a+m.r*0.6)return m.air?POSES.jump:POSES.idle;
@@ -775,15 +783,15 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   const counterHit=B.state==='attack'&&B.t<=B.move.s+B.move.a&&!B.move.counter;
   const sc=m.super?Math.max(0.75,1-0.05*(B.combo-(nth-1))):Math.max(0.3,1-0.1*B.combo);const dmg=Math.max(1,Math.round(per*sc*(counterHit?1.25:1)));
   B.hp-=dmg;B.redT=40;B.combo++;B.wasCrouch=B.inp.down&&!B.air;
-  Object.assign(B,{move:null,state:'hit',t:0,stun:m.hs+(counterHit?4:0)});B.vx=dir*(m.kb||2);
+  Object.assign(B,{move:null,state:'hit',t:0,stun:m.hs+(counterHit?4:0)+(!isProj&&m.key==='L'&&A.gL>=5?10:0)});const gEnder=!isProj&&m.key==='H'&&A.enderH;B.vx=dir*((m.key==='L'&&A.gL>1)?0.5:(m.kb||2));
   const finisher=(m.lastKd&&nth>=hits)||(m.ender&&nth>=hits&&(B.air||(A.airHits||0)>0));
   if(!isProj&&A.air){A.airHits=(A.airHits||0)+1}
   const isLaunch=!!m.launch&&(nth>=hits||!m.lastKd);let limited=false;
   if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.6;B.vx=dir*4.6;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true}}/* over the limit: pushed away, out of the combo */
   if(limited){}
   else if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
-  else if(B.air||B.juggle||m.launch||m.kd||finisher){
-    const lv=(m.launch&&(nth>=hits||!m.lastKd))?m.launch:(finisher?4.2:(m.kd?3.6:(B.air?(A.air&&!isProj?2.9:3.2):0)));
+  else if(B.air||B.juggle||m.launch||m.kd||finisher||gEnder){
+    const lv=gEnder?4.2:(m.launch&&(nth>=hits||!m.lastKd))?m.launch:(finisher?4.2:(m.kd?3.6:(B.air?(A.air&&!isProj?2.9:3.2):0)));
     if(lv>0||B.air){B.juggle=true;B.vy=-Math.max(lv,B.air?2.4:0);B.y=Math.min(B.y,FLOOR-1);B.juggleN++;if(B.juggleN>9)B.juggleInv=true}
   }
   if(!isProj&&A.air&&!m.ender&&!m.airGrab&&B.air){A.vy=B.vy+0.2;A.y=lerp(A.y,B.y+4,0.5)}// keep air combos level
@@ -819,7 +827,7 @@ function aiInput(ai,me,op){
     else if(me.state==='jump'&&!me.airSp&&dist<70&&op.air&&Math.random()<ai.c*0.04)inp.act=Math.random()<.5?'S1':'S3';return inp}
   if(me.state==='attack'&&me.move.key==='U'&&me.canCancel&&op.air&&Math.random()<ai.c*0.2){inp.jump=true;return inp}
   if(me.state==='attack'){if(me.canCancel&&me.move&&!me.move.special&&Math.random()<ai.c*0.12){
-      inp.act=(me.move.key==='L'||me.move.key==='cL')&&Math.random()<.4?'H':Hh.ender;if(me.meter>=100&&Math.random()<.5)inp.act='SU'}return inp}
+      inp.act=me.move.key==='L'&&(me.gL||0)<5&&Math.random()<.7?'L':(me.move.key==='L'||me.move.key==='cL')&&Math.random()<.5?'H':Hh.ender;if(me.meter>=100&&Math.random()<.5)inp.act='SU'}return inp}
   const pj=G.projs.find(p=>p.owner===op&&(p.beam||(Math.sign(p.vx)===Math.sign(me.x-p.x)&&Math.abs(me.x-p.x)<125)));
   const atk=s.st==='attack'&&s.mv&&(s.mv.hb||s.mv.grab)&&dist<135&&!s.mv.counter;
   if(atk||pj){const key=pj?'p'+pj.id:'m'+s.mid;
@@ -1272,7 +1280,7 @@ function uiTap(x,y){for(let i=BTN.length-1;i>=0;i--){const b=BTN[i];if(x>=b.x&&x
 const go=m=>{G.mode=m;SFX.sel()};
 
 /* ============================ RENDER ============================ */
-const SMEAR_LIMB={airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
+const SMEAR_LIMB={skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
 function drawFighterWorld(g,f,camX,opt={}){
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
@@ -1406,7 +1414,7 @@ function renderHowto(g){
     const col=r[2].startsWith('PARRY')?'#8fe0ff':r[2]==='SUPER'?'#ffd23f':'#9a8fc8';
     g.font='8px '+FONT;const fits=160+g.measureText(r[1]).width+10+g.measureText(r[2]).width<=372;
     txt(g,r[2],372,fits?y:y+9,8,col,'right')});
-  txt(g,'COMBO: TAP > SWIPE FWD > ARC',W/2,205,8,'#ffd23f','center');
+  txt(g,'COMBO: TAP x5 > SWIPE FWD OR ARC',W/2,205,8,'#ffd23f','center');
   txt(g,'AIR: SWIPE UP x2 > TAP x5 > SWIPE FWD/ARC',W/2,215,8,'#8fe0ff','center');
   button(g,6,4,32,12,'<',()=>{if(G.howFrom==='pause'){G.mode='fight'}else go('title')},{def:true});
 }
