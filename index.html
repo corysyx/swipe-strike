@@ -1143,10 +1143,10 @@ function aiExec(ai,inp,dir,dist,me){
 /* ============================ FX ============================ */
 function addFx(type,x,y,s=1,str,col,dir){
   if(G.resim)return;
-  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,text:50,ember:18,quake:34,sigil:80}[type]||16};
+  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80}[type]||16};
   if(type==='quake'){f.parts=Array.from({length:6+s*6},()=>({x:rnd(-14,14),vx:rnd(-2.2,2.2),vy:rnd(-4.5,-1.5)*s*0.8,c:pick(['#6a4a3a','#8a6a50','#c8b090','#4a3428'])}))}
   if(type==='spark'){f.parts=Array.from({length:6+s*4},()=>({a:rnd(0,Math.PI*2),v:rnd(1.5,3.5)*s,l:rnd(3,7)*s}))}
-  if(type==='dust'||type==='smoke'){f.parts=Array.from({length:type==='smoke'?8:4},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='smoke'?4:1),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
+  if(type==='dust'||type==='smoke'||type==='csmoke'){f.parts=Array.from({length:type==='dust'?4:8},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='dust'?1:4),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
   G.fx.push(f)}
 function updFx(){for(const f of G.fx)f.t++;G.fx=G.fx.filter(f=>f.t<f.life)}
 function drawFx(g,ox){
@@ -1170,8 +1170,8 @@ function drawFx(g,ox){
         g.strokeStyle='#ffffff';g.lineWidth=2.5;g.beginPath();g.moveTo(x-r*0.6,y-r*0.6);g.lineTo(x+r*0.6,y+r*0.6);g.moveTo(x+r*0.6,y-r*0.6);g.lineTo(x-r*0.6,y+r*0.6);g.moveTo(x,y-r*0.8);g.lineTo(x,y+r*0.8);g.stroke();
         g.fillStyle='rgba(176,64,255,0.18)';g.beginPath();g.arc(x,y,r+8,0,7);g.fill();g.globalAlpha=1;break}
       case'ring':{g.strokeStyle=`rgba(255,240,160,${1-k})`;g.lineWidth=2;g.beginPath();g.ellipse(x,y,6+f.t*3,(6+f.t*3)*0.6,0,0,7);g.stroke();break}
-      case'dust':case'smoke':{for(const p of f.parts){const px=x+p.x+p.vx*f.t*2,py=y+p.y+p.vy*f.t*2,r=p.r*(1+k*1.5);
-          g.fillStyle=f.type==='smoke'?`rgba(150,110,220,${0.7*(1-k)})`:`rgba(200,170,140,${0.55*(1-k)})`;g.beginPath();g.arc(px,py,r,0,7);g.fill()}break}
+      case'dust':case'smoke':case'csmoke':{for(const p of f.parts){const px=x+p.x+p.vx*f.t*2,py=y+p.y+p.vy*f.t*2,r=p.r*(1+k*1.5);
+          g.fillStyle=f.type==='csmoke'?`rgba(46,42,46,${0.75*(1-k)})`:f.type==='smoke'?`rgba(150,110,220,${0.7*(1-k)})`:`rgba(200,170,140,${0.55*(1-k)})`;g.beginPath();g.arc(px,py,r,0,7);g.fill()}break}
       case'ember':{g.fillStyle=k<0.5?'#ffe070':'#ff6a20';g.fillRect(x+Math.sin(f.t)*2,y-f.t*0.6,2,2);break}
       case'text':{const yy=y-f.t*0.5;g.globalAlpha=k>0.7?(1-k)/0.3:1;txt(g,f.str,x,yy,8,f.col,'center');g.globalAlpha=1;break}
     }}
@@ -1870,6 +1870,7 @@ function renderWorld(g){
   const order=(p2.state==='attack'&&p1.state!=='attack')?[p1,p2]:[p2,p1];
   for(const f of order)if(!f.hidden)drawFighterWorld(g,f,camX);
   for(const p of G.projs)if(!p.beam)drawProj(g,p,camX);
+  if(G.mode==='bonus')drawBonusFront(g,camX);
   drawFx(g,camX);
   if(G.impact>0){const inv=G.impact%2===0;g.fillStyle=inv?'#ffffff':'#000000';g.fillRect(-W,-H,W*3,H*3);const fp=flatPal(inv?'#000000':'#ffffff');
     for(const f of[p1,p2])if(!f.hidden)drawChar(g,f.ch,f.dpose,f.x-camX,f.y,f.facing,f,{pal:fp,air:f.air,flat:true,noTail:true,sq:f.sq});
@@ -2142,14 +2143,35 @@ function startBonus(type,after){
   const B=G.bonus={free:G.selMode==='bonus',type,t:0,phase:'intro',timer:type==='car'?40:30,timerF:0,targets:[],spawned:0,broken:0,total:type==='car'?1:16,after,spawnT:0,res:null};
   if(type==='car')B.targets.push({kind:'car',x:STAGE_W/2+60,y:FLOOR,w:150,h:84,hp:2400,max:2400,flash:0,shake:0});
   G.phase='fight';G.phaseT=0;G.mode='bonus';SFX.ok()}
+function carDebris(tg,kind,n){const B=G.bonus;B.debris=B.debris||[];const S=1.55,body='#c8202a';
+  const add=o=>B.debris.push(Object.assign({x:tg.x+o.ox*S,y:tg.y+o.oy*S,vx:o.vx,vy:o.vy,r:0,vr:o.vr??rnd(-0.3,0.3),life:0,rest:0},o));
+  for(let i=0;i<n;i++){const side=Math.random()<.5?-1:1;
+    if(kind==='glass')add({type:'glass',w:3,h:2,col:Math.random()<.5?'#bfe6ff':'#ffffff',ox:rnd(-28,28),oy:-38,vx:rnd(-3,3),vy:rnd(-6,-2)});
+    else if(kind==='bits')add({type:'panel',w:rnd(4,8),h:rnd(2,4),col:Math.random()<.6?body:'#8a141c',ox:rnd(-50,50),oy:-22,vx:rnd(-3,3),vy:rnd(-5,-2)});
+    else if(kind==='bumper')add({type:'panel',w:22,h:4,col:'#c8c8d0',ox:side*56,oy:-14,vx:side*rnd(1.5,3),vy:rnd(-5,-3)});
+    else if(kind==='mirror')add({type:'panel',w:5,h:4,col:body,ox:side*20,oy:-34,vx:side*rnd(2,3),vy:-5});
+    else if(kind==='hubcap')add({type:'wheel',w:6,h:6,col:'#c8c8d0',ox:side*36,oy:-8,vx:side*rnd(1.5,3),vy:-3,vr:side*0.4})}}
+function carExplode(tg){const B=G.bonus;B.boom={t:0,x:tg.x,y:tg.y-30};
+  for(const sx of [-36,36])carDebris(tg,'none',0),B.debris.push({type:'wheel',w:16,h:16,col:'#1a1a1e',x:tg.x+sx*1.55,y:tg.y-12,vx:Math.sign(sx)*rnd(3,5),vy:rnd(-9,-6),r:0,vr:Math.sign(sx)*0.35,life:0,rest:0});
+  for(const sx of [-1,1])B.debris.push({type:'panel',w:30,h:18,col:'#c8202a',x:tg.x+sx*20,y:tg.y-40,vx:sx*rnd(3,4.5),vy:rnd(-8,-5),r:0,vr:sx*0.25,life:0,rest:0});
+  B.debris.push({type:'panel',w:44,h:6,col:'#a8181e',x:tg.x,y:tg.y-70,vx:rnd(-1,1),vy:-10,r:0,vr:0.3,life:0,rest:0});
+  B.debris.push({type:'panel',w:30,h:8,col:'#c8202a',x:tg.x+60,y:tg.y-40,vx:4,vy:-7,r:0,vr:-0.2,life:0,rest:0});
+  carDebris(tg,'glass',18);carDebris(tg,'bits',16);carDebris(tg,'bumper',2);
+  G.shake=14;G.impact=4;G.hitstop=16;for(let i=0;i<5;i++)addFx('quake',tg.x+rnd(-70,70),FLOOR,2);addFx('ring',tg.x,tg.y-30);SFX.ko();vib(120);
+  if(AC&&!G.resim){noise(0.9,0.5,900,'lowpass',0,120);osc('sine',90,30,0.8,0.5)}}
 function bonusHit(tg,d){const B=G.bonus;tg.hp-=d;tg.flash=4;tg.shake=6;
+  if(tg.kind==='car'&&!tg.dead){const k=tg.hp/tg.max,st=k>0.75?0:k>0.5?1:k>0.25?2:3;if(st>(tg.lastSt||0)){tg.lastSt=st;carDebris(tg,'bits',6);carDebris(tg,st===1?'bumper':st===2?'glass':'hubcap',st===2?10:1);if(st===2)carDebris(tg,'mirror',1)}
+    else if(Math.random()<.35)carDebris(tg,'bits',2)}
   if(tg.kind==='car'){if(!G.resim){addFx('spark',tg.x+rnd(-40,40),tg.y-rnd(10,40),1);if(Math.random()<.4)addFx('dust',tg.x+rnd(-50,50),FLOOR)}
-    if(tg.hp<=0&&!tg.dead){tg.dead=true;B.broken=1;G.shake=10;G.impact=3;for(let i=0;i<6;i++)addFx('quake',tg.x+rnd(-50,50),FLOOR,2);addFx('ring',tg.x,tg.y-24);banner('DESTROYED!',90,24);SFX.ko();B.phase='end';B.t=0}}
+    if(tg.hp<=0&&!tg.dead){tg.dead=true;B.broken=1;carExplode(tg);banner('DESTROYED!',100,24);B.phase='end';B.t=0}}
   else{if(!tg.dead){tg.dead=true;B.broken++;addFx('spark',tg.x,tg.y-12,2);addFx('dust',tg.x,FLOOR);addFx('text',tg.x,tg.y-36,0,'+1','#ffd23f');SFX.hit(1)}}}
 function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
   if(G.superFlash){if(--G.superFlash.t<=0)G.superFlash=null;updFx();return}
   if(G.hitstop>0){G.hitstop--;updFx();return}
   B.t++;
+  if(B.debris)for(const d of B.debris){d.life++;if(d.rest>1)continue;d.vy+=0.32;d.x+=d.vx;d.y+=d.vy;d.r+=d.vr;
+    if(d.y>FLOOR-d.h/2){d.y=FLOOR-d.h/2;if(Math.abs(d.vy)>1.5){d.vy*=-0.38;d.vx*=0.6;d.vr*=0.6;d.rest=0}else{d.vy=0;d.vx*=0.8;d.vr*=0.7;d.rest++;if(d.type!=='wheel')d.r=Math.round(d.r/Math.PI)*Math.PI}}}
+  if(B.boom){B.boom.t++;if(B.boom.t%4===0&&B.boom.t<160)addFx('csmoke',B.boom.x+rnd(-30,30),B.boom.y-rnd(0,20));if(B.boom.t%7===0&&B.boom.t<120)addFx('ember',B.boom.x+rnd(-40,40),B.boom.y-rnd(0,10))}
   if(B.phase==='intro'){if(B.t===2){banner('BONUS STAGE',70,24);SFX.bell()}if(B.t===74)banner(B.type==='car'?'SMASH THE CAR!':'BREAK THE BARRELS!',50,16);if(B.t>=124){B.phase='go';B.t=0}}
   const live=B.phase==='go';
   // barrels drop in from above and roll along the floor
@@ -2157,7 +2179,7 @@ function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
     const x=clamp(P.x+(B.spawned%2?1:-1)*r2(60,150),G.camX+24,G.camX+W-24);B.targets.push({kind:'barrel',x,y:-20,w:30,h:64,vy:0,vx:0,hp:1,max:1,life:0,roll:B.spawned%2?-1:1,flash:0,shake:0})}
   for(const t of B.targets){if(t.dead)continue;t.life=(t.life||0)+1;if(t.flash>0)t.flash--;if(t.shake>0)t.shake--;
     if(t.kind==='barrel'){if(t.y<FLOOR){t.vy+=0.32;t.y=Math.min(FLOOR,t.y+t.vy);if(t.y>=FLOOR){t.vx=t.roll*0.9;addFx('dust',t.x,FLOOR)}}else{t.x+=t.vx;if(t.x<G.camX+12||t.x>G.camX+W-12)t.vx*=-1}
-      if(t.life>420){t.dead=true;t.missed=true;addFx('smoke',t.x,t.y-12)}}}
+      if(t.life>420){t.dead=true;t.missed=true;addFx('csmoke',t.x,t.y-12)}}}
   const alive=B.targets.filter(t=>!t.dead);
   const near=alive.slice().sort((a,b)=>Math.abs(a.x-P.x)-Math.abs(b.x-P.x))[0];
   placeProxy(X,near||{x:P.x+P.facing*300,y:FLOOR-300,w:1,h:1});
@@ -2183,6 +2205,12 @@ function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
 const r2=(a,b)=>a+Math.floor(Math.random()*(b-a));
 function drawBonusProps(g,camX){const B=G.bonus;if(!B)return;
   for(const t of B.targets){if(t.dead&&t.kind!=='car')continue;const sh=t.shake?((t.shake%2)?2:-2):0,x=Math.round(t.x-camX+sh),y=t.y;
+    if(t.kind==='car'&&t.dead){g.save();g.translate(x,y);g.scale(1.55,1.55);g.translate(-x,-y);
+      g.fillStyle='rgba(0,0,0,0.45)';g.beginPath();g.ellipse(x,FLOOR+1,60,5,0,0,7);g.fill();
+      g.fillStyle='#1a1414';g.fillRect(x-54,y-14,108,10);g.fillStyle='#2a2020';g.fillRect(x-50,y-20,100,7);g.fillStyle='#3a2a24';g.fillRect(x-24,y-26,40,7);
+      g.fillStyle='#0e0a0a';for(const wx of [x-36,x+36]){g.fillRect(wx-6,y-6,12,6)}
+      for(let k2=0;k2<4;k2++){const fx=x-36+k2*24,fh=6+Math.sin(G.tick*0.4+k2*1.7)*3;g.fillStyle='#ff6a1a';g.beginPath();g.ellipse(fx,y-22-fh/2,4,fh,0,0,7);g.fill();g.fillStyle='#ffd060';g.beginPath();g.ellipse(fx,y-20-fh/3,2,fh*0.5,0,0,7);g.fill()}
+      g.restore();continue}
     if(t.kind==='car'){g.save();g.translate(x,y);g.scale(1.55,1.55);g.translate(-x,-y);const k=t.dead?0:t.hp/t.max,st=t.dead?4:k>0.75?0:k>0.5?1:k>0.25?2:3;
       g.fillStyle='rgba(0,0,0,0.4)';g.beginPath();g.ellipse(x,FLOOR+1,62,5,0,0,7);g.fill();
       const body=t.flash?'#ffffff':(st>=4?'#3a2a2a':'#c8202a'),dark=st>=4?'#1a1212':'#8a141c';const sag=st*2;
@@ -2193,10 +2221,20 @@ function drawBonusProps(g,camX){const B=G.bonus;if(!B)return;
       g.fillStyle='#ffe080';g.fillRect(x+50,y-26+sag*0.5,6,4);g.fillStyle='#ff3030';g.fillRect(x-56,y-26+sag*0.5,4,4);
       g.fillStyle='#1a1a1e';for(const wx of [x-36,x+36]){g.beginPath();g.arc(wx,y-8,9-(st>=3?2:0),0,7);g.fill();g.fillStyle='#8a8a92';g.beginPath();g.arc(wx,y-8,4,0,7);g.fill();g.fillStyle='#1a1a1e'}
       if(st>=1){g.fillStyle='rgba(20,10,10,0.5)';g.fillRect(x-40,y-24+sag,14,5);g.fillRect(x+10,y-22+sag,10,6)}
-      g.restore();if(st>=3&&G.tick%6===0&&!G.resim)addFx('smoke',t.x+rnd(-40,40),y-60)}
+      g.restore();if(st>=3&&G.tick%6===0&&!G.resim)addFx('csmoke',t.x+rnd(-40,40),y-60)}
     else{g.fillStyle='rgba(0,0,0,0.35)';g.beginPath();g.ellipse(x,FLOOR+1,11,3,0,0,7);g.fill();const rot=t.y>=FLOOR?t.x*0.12:0;
       g.save();g.translate(x,y-20);g.scale(1.5,1.5);g.fillStyle=t.flash?'#fff':'#8a5a2a';g.fillRect(-10,-13,20,26);g.fillStyle='#6a4220';for(let k=-1;k<=1;k++)g.fillRect(-10,k*8-1,20,2);
       g.fillStyle='#3a3a42';g.fillRect(-11,-13,22,2);g.fillRect(-11,11,22,2);g.fillStyle='#a87040';g.fillRect(-6+Math.round(Math.sin(rot)*4),-12,2,24);g.restore()}}}
+function drawBonusFront(g,camX){const B=G.bonus;if(!B)return;
+  if(B.debris)for(const d of B.debris){const x=d.x-camX;if(x<-40||x>W+40)continue;g.save();g.translate(x,d.y);g.rotate(d.r);
+    if(d.type==='wheel'){g.fillStyle=d.col;g.beginPath();g.arc(0,0,d.w/2,0,7);g.fill();if(d.w>8){g.fillStyle='#8a8a92';g.beginPath();g.arc(0,0,d.w/4,0,7);g.fill();g.fillStyle='#1a1a1e';g.fillRect(-1,-d.w/4,2,d.w/2)}}
+    else{g.fillStyle='#120a0a';g.fillRect(-d.w/2-1,-d.h/2-1,d.w+2,d.h+2);g.fillStyle=d.col;g.fillRect(-d.w/2,-d.h/2,d.w,d.h);if(d.w>20){g.fillStyle='rgba(255,255,255,0.25)';g.fillRect(-d.w/2+2,-d.h/2+1,d.w-4,1)}}
+    g.restore()}
+  const b=B.boom;if(b&&b.t<60){const x=b.x-camX,y=b.y,k=b.t/60;
+    if(b.t<4){g.fillStyle='rgba(255,255,240,0.85)';g.fillRect(-W,-H,W*3,H*3)}
+    for(let i=0;i<7;i++){const a=i*0.9+b.t*0.05,rr=(18+i*6)*Math.min(1,b.t/10)*(1+k*0.6),ox=Math.cos(a)*rr*0.6,oy=Math.sin(a)*rr*0.35-k*20;
+      g.globalAlpha=Math.max(0,1-k*1.1);g.fillStyle=i%3===0?'#ffffff':(i%3===1?'#ffd060':'#ff6a1a');g.beginPath();g.arc(x+ox,y+oy,rr*0.55,0,7);g.fill()}
+    g.globalAlpha=Math.max(0,0.8-k);g.strokeStyle='#fff2c0';g.lineWidth=3;g.beginPath();g.ellipse(x,y+26,30+b.t*5,6+b.t*0.8,0,0,7);g.stroke();g.globalAlpha=1}}
 function renderBonusHUD(g){const B=G.bonus;if(!B)return;
   g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(W/2-34,4,68,26);bigTxt(g,String(B.timer),W/2,8,16,'#ffd23f','#c8202a');
   txt(g,'BONUS STAGE',8,6,8,'#ffd23f');txt(g,B.type==='car'?'SMASH THE CAR!':'BREAK THE BARRELS!',8,16,8,'#fff');
