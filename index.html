@@ -172,7 +172,7 @@ const AIR_SEQ=['airjab','airkick','airjab2','airknee','airkick'];
 POSES.press=P({rot:78,lean:0,head:-10,fa1:150,fa2:5,ba1:135,ba2:10,fl1:4,fl2:-6,bl1:-8,bl2:-6});POSES.press_w=POSES.jumpUp;
 POSES.sweep_w=POSES.crouch;POSES.cjab_w=POSES.crouch;POSES.airkick_w=POSES.jump;POSES.airheavy_w=POSES.jump;POSES.stance_w=POSES.stance;
 const POSE_KEYS=Object.keys(POSES.idle);
-const MAX_LAUNCH=5;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
+const MAX_LAUNCH=2;let LAUNCH_V=7.6,SJUMP_V=8.4,JUGGLE_G=0.27;
 
 /* ============================ CHARACTERS ============================ */
 const CHARS=[
@@ -730,7 +730,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   const finisher=(m.lastKd&&nth>=hits)||(m.ender&&nth>=hits&&(B.air||(A.airHits||0)>0));
   if(!isProj&&A.air){A.airHits=(A.airHits||0)+1}
   const isLaunch=!!m.launch&&(nth>=hits||!m.lastKd);let limited=false;
-  if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.2;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true;addFx('text',B.x,B.y-90*B.S,0,'LIMIT!','#ff5a5a')}}
+  if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.6;B.vx=dir*4.6;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true}}/* over the limit: pushed away, out of the combo */
   if(limited){}
   else if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(B.air||B.juggle||m.launch||m.kd||finisher){
@@ -1306,7 +1306,7 @@ function renderHUD(g){
   txt(g,G.training?'--':String(G.timer).padStart(2,'0'),W/2,8,16,G.timer<=10&&G.tick%30<15?'#ff4040':'#ffd23f','center');
   if(!G.demo)BTN.push({x:W/2-20,y:0,w:40,h:34,cb:()=>{G.paused=true;SFX.sel()}});
   if(!G.demo){g.fillStyle='rgba(255,255,255,0.45)';g.fillRect(W/2-4,29,3,6);g.fillRect(W/2+1,29,3,6)}
-  if(G.comboDisp){const c=G.comboDisp,right=c.side===1,x=right?W-10:10;g.globalAlpha=Math.min(1,c.t/20);bigTxt(g,c.n+' HITS',right?x-36:x+36,64,8,'#ffffff','#ff5a5a');if(c.l)txt(g,'LAUNCH '+Math.min(c.l,MAX_LAUNCH)+'/'+MAX_LAUNCH,right?x:x,74,8,c.l>=MAX_LAUNCH?'#ff5a5a':'#ffd23f',right?'right':'left');g.globalAlpha=1}
+  if(G.comboDisp){const c=G.comboDisp,right=c.side===1,x=right?W-10:10;g.globalAlpha=Math.min(1,c.t/20);bigTxt(g,c.n+' HITS',right?x-36:x+36,64,8,'#ffffff','#ff5a5a');g.globalAlpha=1}
   if(G.training){txt(g,'TRAINING  DUMMY:'+G.dummy.toUpperCase(),W/2,32+8,8,'#9dffcf','center')}
   if(G.net&&G.net.live){const N=G.net;txt(g,(N.ping||0)+'MS RB'+(N.rbLast||0),W/2,38,8,N.ping>150?'#ff8a3a':'#9dffcf','center');
     if(N.stalls&&G.tick%60<30&&N.frame-N.rconf>MAXRB)txt(g,'WAITING FOR RIVAL',W/2,50,8,'#ffd23f','center');
