@@ -512,6 +512,7 @@ class Fighter{
     if(st==='idle'||st==='walk'||st==='crouch')this.neutral(inp,op);
     else if(st==='land'){this.vx*=0.6;if(this.t>=this.landT){this.state='idle';this.t=0;this.neutral(inp,op)}}
     else if(st==='jump'){if(this.sj&&this.t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});if(this.buf&&(!this.airAtk||/^S[1-4]$/.test(this.buf))){const m=this.pick(this.buf);if(m){this.buf=null;this.bufT=0;this.startMove(m)}}}
+    else if(st==='dash'&&this.buf&&this.t>=(this.dashDir===this.facing?2:7)&&this.dashCancel(op)){}
     else if(st==='dash'){const d=this.dashDir,fwd=d===this.facing,dur=fwd?15:18;
       this.vx=d*this.ch.dash*Math.max(0,1-this.t/dur)*(fwd?1.5:1.25);if(!fwd&&this.t<7)this.inv=1;
       if(this.t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:10});
@@ -574,6 +575,9 @@ class Fighter{
     }
     if(t>=tot){this.move=null;if(this.air){this.state='jump';this.airAtk=true;this.flip=false}else{this.state='idle';this.t=0}}
   }
+  dashCancel(op){const v=this.vx;this.faceOpp(op);if(!this.tryAct(this.buf))return false;this.buf=null;this.bufT=0;
+    if(this.state==='attack'&&!this.move.vx&&!this.move.hop&&!this.move.grab)this.vx=v*0.6;// keep some dash momentum: slide into the move
+    addFx('dust',this.x-Math.sign(v||this.facing)*8,FLOOR);return true}
   pushblock(op){
     const dir=Math.sign(op.x-this.x)||this.facing;op.ext=dir*(op.air?6:8.5);this.pbCD=36;this.stun=Math.max(this.t+6,this.stun-3);this.vx=-dir*1.2;
     const my=this.y-40*this.S;addFx('ring',(this.x+op.x)/2,my);addFx('parry',this.x+dir*14,my,1);addFx('text',this.x,this.y-92*this.S,0,'PUSH!','#7fd8ff');
@@ -781,6 +785,7 @@ function aiInput(ai,me,op){
   }else ai.threat=null;
   if(s.air&&dist<100){if(ai.aaJ!==s.j){ai.aaJ=s.j;ai.doAA=Math.random()<ai.aa}
     if(ai.doAA&&dist<78&&op.vy>-2.5&&me.canBlock()){inp.act=Hh.aa;ai.doAA=false;return inp}}
+  if(me.state==='dash'&&me.dashDir===me.facing&&dist<70&&Math.random()<ai.c*0.25){inp.act=pick(['L','H','D',Hh.grab||'L']);return inp}
   if(!['idle','walk','crouch'].includes(me.state))return inp;
   if(me.meter>=100&&((dist<58&&Math.random()<0.06)||(Hh.zone&&dist>150&&Math.random()<0.02))){inp.act='SU';return inp}
   if(ai.planT>0){ai.planT--;return aiExec(ai,inp,dir,dist,me)}
