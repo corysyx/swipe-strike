@@ -68,11 +68,15 @@ const hex2rgb=h=>{const n=parseInt(h.slice(1),16);return[n>>16,n>>8&255,n&255]};
 const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.ceil(w);c.height=Math.ceil(h);return c};
 
 /* ============================ SOUND ============================ */
-let AC=null,master=null,musicGain=null,NB=null,musicOn=true;
+let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
+const SET=(()=>{let o={music:7,sfx:7,vib:true};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
+function saveSettings(){try{localStorage.setItem('ss_settings',JSON.stringify(SET))}catch(e){}}
+const musicLevel=()=>musicOn?0.32*SET.music/7:0.0001,sfxLevel=()=>SET.sfx/7;
+function applyVolumes(){if(!AC)return;const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(Math.max(0.0001,musicLevel()),now);sfxGain.gain.setValueAtTime(Math.max(0.0001,sfxLevel()),now)}
 function initAudio(){
   if(AC){if(AC.state==='suspended')AC.resume();return}
   try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=0.45;master.connect(AC.destination);
-    musicGain=AC.createGain();musicGain.gain.value=musicOn?0.32:0;musicGain.connect(master);
+    musicGain=AC.createGain();musicGain.gain.value=Math.max(0.0001,musicLevel());musicGain.connect(master);sfxGain=AC.createGain();sfxGain.gain.value=Math.max(0.0001,sfxLevel());sfxGain.connect(master);
     NB=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     setInterval(musicTick,25);
   }catch(e){AC=null}
@@ -80,10 +84,10 @@ function initAudio(){
 function env(g,t,a,d,v){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
 function osc(type,f0,f1,dur,vol,delay=0,out,at){if(!AC||G.resim)return;const t=at??AC.currentTime+delay;const o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f0,t);if(f1&&f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+dur);env(g,t,0.004,dur,vol);
-  o.connect(g).connect(out||master);o.start(t);o.stop(t+dur+0.05)}
+  o.connect(g).connect(out||sfxGain||master);o.start(t);o.stop(t+dur+0.05)}
 function noise(dur,vol,fq,type='lowpass',delay=0,fq2,out,at){if(!AC||G.resim)return;const t=at??AC.currentTime+delay;const s=AC.createBufferSource();s.buffer=NB;
   const f=AC.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(fq,t);if(fq2)f.frequency.exponentialRampToValueAtTime(fq2,t+dur);
-  const g=AC.createGain();env(g,t,0.003,dur,vol);s.connect(f).connect(g).connect(out||master);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05)}
+  const g=AC.createGain();env(g,t,0.003,dur,vol);s.connect(f).connect(g).connect(out||sfxGain||master);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05)}
 const SFX={
   hit:h=>{noise(h?0.2:0.11,h?0.9:0.6,h?1600:3200);osc('square',h?130:200,40,h?0.2:0.1,h?0.45:0.3)},
   block:()=>{noise(0.07,0.45,5000,'highpass');osc('square',1000,640,0.05,0.12)},
@@ -188,16 +192,16 @@ function playLead(T,f,spb,t){const v=T.leadVol||0.05;
 let mStep=0,mNext=0,curTrack='menu',trk=TRACKS.menu;
 function setTrack(name){if(name===curTrack||!TRACKS[name])return;curTrack=name;trk=TRACKS[name];mStep=0;
   if(AC){const now=AC.currentTime;mNext=now+0.5;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(musicGain.gain.value,now);
-    musicGain.gain.linearRampToValueAtTime(0.0001,now+0.35);musicGain.gain.linearRampToValueAtTime(musicOn?0.32:0.0001,now+1.1)}}
-function musicTick(){if(!AC||!musicOn)return;const T=trk,spb=60/T.bpm/4;if(mNext<AC.currentTime)mNext=AC.currentTime+0.05;
+    musicGain.gain.linearRampToValueAtTime(0.0001,now+0.35);musicGain.gain.linearRampToValueAtTime(Math.max(0.0001,musicLevel()),now+1.1)}}
+function musicTick(){if(!AC||!musicOn||SET.music<=0)return;const T=trk,spb=60/T.bpm/4;if(mNext<AC.currentTime)mNext=AC.currentTime+0.05;
   while(mNext<AC.currentTime+0.12){const s=mStep%16,bar=(mStep>>4)%T.roots.length,root=T.roots[bar],t=mNext;
     const b=T.bass[s];if(b>=0)osc(T.bassWave,55*Math.pow(2,(root+b)/12),0,spb*(T.bassLen||0.9),T.bassVol||0.16,0,musicGain,t);
     const ln=T.lead[mStep%T.lead.length];if(ln>=0&&(!T.leadAlt||((mStep>>5)%2===1)))playLead(T,220*Math.pow(2,(root+ln)/12),spb,t);
     for(const k in T.drums)if(T.drums[k].includes(s))DRUM[k](t);
     if(T.pad&&s===0)for(const iv of[12,15,19])osc('sine',110*Math.pow(2,(root+iv)/12),0,spb*16,0.035,0,musicGain,t);
     mStep++;mNext+=spb}}
-function setMusic(on){musicOn=on;if(musicGain){const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(on?0.32:0.0001,now)}}
-function vib(ms){if(G.resim)return;if(NATIVE){try{const H=CP('Haptics');H&&H.impact({style:ms>=30?'HEAVY':ms>=15?'MEDIUM':'LIGHT'})}catch(e){}return}try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function setMusic(on){musicOn=on;if(musicGain){const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(Math.max(0.0001,musicLevel()),now)}}
+function vib(ms){if(G.resim||!SET.vib)return;if(NATIVE){try{const H=CP('Haptics');H&&H.impact({style:ms>=30?'HEAVY':ms>=15?'MEDIUM':'LIGHT'})}catch(e){}return}try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 // ===== Native app layer (App Store / Google Play builds only; the web version never shows ads) =====
 const NATIVE=(()=>{try{return!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){return false}})();
 const CP=n=>{try{return window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins[n]}catch(e){return null}};
@@ -1919,11 +1923,13 @@ function renderTitle(g){
   g.fillStyle='rgba(8,4,20,0.55)';g.fillRect(0,0,W,H);
   const y=30+Math.sin(G.tick*0.05)*2;bigTxt(g,'SWIPE',W/2,y,24,'#ffffff','#ff4fa3');bigTxt(g,'STRIKE',W/2,y+28,24,'#fff6a0','#ff7a1a');
   txt(g,'GESTURE FIGHTER',W/2,y+48,8,'#7fd8ff','center');
-  button(g,W/2-62,102,124,18,'ARCADE',()=>{G.training=false;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{def:true});
-  button(g,W/2-62,124,124,18,'TRAINING',()=>{G.training=true;G.stage=TRAIN_STAGE;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#9dffcf'});
-  button(g,W/2-62,146,124,18,'VS ONLINE/LAN',()=>{NU.err='';NU.status='';go('net')},{col:'#ff4fa3'});
-  button(g,W/2-62,168,124,18,'HOW TO PLAY',()=>{G.howFrom='title';go('howto')},{col:'#7fd8ff'});
-  button(g,W-78,H-22,70,16,musicOn?'MUSIC ON':'MUSIC OFF',()=>{setMusic(!musicOn)},{col:'#b48cff'});
+  const mb=(i,l,cb,o)=>button(g,W/2-66,92+i*21,132,17,l,cb,o);
+  mb(0,'ARCADE',()=>{G.training=false;G.selMode='arcade';G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{def:true});
+  mb(1,'TRAINING',()=>{G.training=true;G.selMode='training';G.stage=TRAIN_STAGE;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#9dffcf'});
+  mb(2,'BONUS STAGES',()=>{G.training=false;G.selMode='bonus';G.bonusType=G.bonusType||'car';G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#ffd23f'});
+  mb(3,'VS ONLINE/LAN',()=>{NU.err='';NU.status='';go('net')},{col:'#ff4fa3'});
+  mb(4,'HOW TO PLAY',()=>{G.howFrom='title';go('howto')},{col:'#7fd8ff'});
+  button(g,W-78,H-22,70,16,'SETTINGS',()=>{G.setFrom='title';go('settings')},{col:'#b48cff'});
   if(NATIVE)button(g,6,6,54,16,'SHOP',()=>{ADS.checkPurchases();go('shop')},{col:'#ffd23f'});
   if(G.tick%60<40)txt(g,'TAP TO PLAY',8,H-18,8,'#ffd23f');
 }
@@ -2001,14 +2007,16 @@ function drawInfo(g,c){g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(4,157,376,38);t
 function renderSelect(g){
   g.fillStyle='#0b0820';g.fillRect(0,0,W,H);
   for(let i=-H;i<W;i+=16){g.fillStyle='rgba(80,40,140,0.18)';g.beginPath();g.moveTo(i+(G.tick*0.5%16),0);g.lineTo(i+8+(G.tick*0.5%16),0);g.lineTo(i+8+H+(G.tick*0.5%16),H);g.lineTo(i+H+(G.tick*0.5%16),H);g.fill()}
-  const s=G.sel;s.c1=s.c1||0;s.c2=s.c2||0;txt(g,G.training?(s.p1?'TAP AGAIN: COLOUR':'TRAINING - PICK FIGHTER'):(!s.p1?'SELECT YOUR FIGHTER':(s.p2?'TAP AGAIN: COLOUR':'SELECT OPPONENT')),W/2,5,8,'#ffd23f','center');
+  const s=G.sel;s.c1=s.c1||0;s.c2=s.c2||0;const solo=!G.training;txt(g,G.training?(s.p1?'TAP AGAIN: COLOUR':'TRAINING - PICK FIGHTER'):(!s.p1?(G.selMode==='bonus'?'BONUS STAGES - PICK FIGHTER':'SELECT YOUR FIGHTER'):'TAP AGAIN: COLOUR'),W/2,5,8,'#ffd23f','center');
   button(g,4,2,24,13,'<',()=>{if(G.sel.p1){G.sel={p1:null,p2:null,c1:0,c2:0,info:G.sel.info}}else go('title')});
   drawRoster(g,{tag:c=>{const isP1=s.p1===c.id,isP2=s.p2===c.id;if(!isP1&&!isP2)return null;
-      return{sel:isP1?'#4aa0ff':'#ff4a4a',ci:isP1?s.c1:s.c2,l:isP1?'1P':null,lc:'#4aa0ff',r:isP2?(G.training?'DUMMY':'CPU'):null,rc:'#ff4a4a',sw:isP1?s.c1:s.c2}},
-    tap:(c,i)=>{SFX.sel();s.info=i;if(!s.p1){s.p1=c.id;s.c1=0;if(G.training){s.p2=pick(CHARS.filter(q=>q.id!==c.id)).id;s.c2=0}}
+      return{sel:isP1?'#4aa0ff':'#ff4a4a',ci:isP1?s.c1:s.c2,l:isP1?'1P':null,lc:'#4aa0ff',r:isP2&&G.training?'DUMMY':null,rc:'#ff4a4a',sw:isP1?s.c1:s.c2}},
+    tap:(c,i)=>{SFX.sel();s.info=i;if(solo){if(s.p1===c.id)s.c1=(s.c1+1)%NCOL();else{s.p1=c.id;s.c1=0}s.p2=null;return}if(!s.p1){s.p1=c.id;s.c1=0;if(G.training){s.p2=pick(CHARS.filter(q=>q.id!==c.id)).id;s.c2=0}}
       else if(s.p2===c.id&&s.p1!==c.id){s.c2=(s.c2+1)%NCOL()}else if(s.p1===c.id&&(s.p2||G.training)){s.c1=(s.c1+1)%NCOL()}else if(s.p1===c.id&&!s.p2){s.p2=c.id;s.c2=1}else{s.p2=c.id;s.c2=0}}});
   drawInfo(g,CHARS[s.info]||CHARS[0]);
   const dn=['EASY','NORMAL','HARD'];
+  if(G.selMode==='bonus'){button(g,6,198,244,20,'BONUS: '+(G.bonusType==='car'?'CAR CRUSH':'BARREL BREAK'),()=>{G.bonusType=G.bonusType==='car'?'barrels':'car'},{col:'#ffd23f'});
+    button(g,254,198,124,20,s.p1?'PLAY!':'PICK 1P',()=>{if(s.p1)startFreeBonus()},{col:s.p1?'#ffd23f':'#555',def:true});return}
   button(g,6,198,110,20,G.training?'VS CPU':'CPU: '+dn[G.diff],()=>{if(!G.training)G.diff=(G.diff+1)%3},{col:'#ff8a3a'});
   button(g,120,198,130,20,(STAGES[G.stage]||{name:''}).name,()=>{G.stage=(G.stage+1)%STAGES.length},{col:'#b48cff'});
   const ready=!!s.p1;
@@ -2034,6 +2042,19 @@ function renderVS(g){
   if(!G.net)BTN.push({x:0,y:0,w:W,h:H,cb:()=>{G.vsT=999}});
   if(G.net)txt(g,'ONLINE MATCH',W/2,H-26,8,'#7fd8ff','center');
 }
+function renderSettings(g){
+  g.fillStyle='#0b0820';g.fillRect(0,0,W,H);for(let i=-H;i<W;i+=16){g.fillStyle='rgba(80,40,140,0.18)';g.beginPath();g.moveTo(i+(G.tick*0.5%16),0);g.lineTo(i+8+(G.tick*0.5%16),0);g.lineTo(i+8+H+(G.tick*0.5%16),H);g.lineTo(i+H+(G.tick*0.5%16),H);g.fill()}
+  bigTxt(g,'SETTINGS',W/2,12,16,'#fff6a0','#7a4aff');
+  const slider=(y,label,key,after)=>{txt(g,label,40,y+4,8,'#fff');const x0=150,n=10;
+    button(g,x0-24,y,20,16,'-',()=>{SET[key]=Math.max(0,SET[key]-1);after();saveSettings();SFX.sel()},{col:'#7fd8ff'});
+    for(let i=0;i<n;i++){const on=i<SET[key];g.fillStyle=on?(key==='music'?'#b48cff':'#ffd23f'):'#2a2244';g.fillRect(x0+i*15,y+2,12,12);BTN.push({x:x0+i*15,y,w:15,h:16,cb:()=>{SET[key]=(SET[key]===i+1)?i:i+1;after();saveSettings();SFX.sel()}})}
+    button(g,x0+n*15+4,y,20,16,'+',()=>{SET[key]=Math.min(10,SET[key]+1);after();saveSettings();SFX.sel()},{col:'#7fd8ff'});txt(g,SET[key]?String(SET[key]*10)+'%':'OFF',x0+n*15+30,y+4,8,'#d8d0ff')};
+  slider(50,'MUSIC','music',()=>{initAudio();applyVolumes()});
+  slider(80,'SOUND FX','sfx',()=>{initAudio();applyVolumes()});
+  txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
+  button(g,40,140,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
+  button(g,W/2-60,190,120,20,'BACK',()=>{const f=G.setFrom;if(f==='pause'){G.mode='fight'}else if(f==='bonus'){G.mode='bonus'}else go('title')},{def:true});
+}
 function renderPause(g){
   if(G.net){g.fillStyle='rgba(6,3,16,0.6)';g.fillRect(0,0,W,H);bigTxt(g,'MENU',W/2,40,16);txt(g,'THE MATCH KEEPS RUNNING!',W/2,58,8,'#ffd23f','center');
     button(g,W/2-70,80,140,18,'BACK TO FIGHT',()=>{G.paused=false},{def:true});
@@ -2046,7 +2067,7 @@ function renderPause(g){
   if(G.training)b('DUMMY: '+G.dummy.toUpperCase(),()=>{const o=['stand','block','jump','cpu'];G.dummy=o[(o.indexOf(G.dummy)+1)%o.length]},{col:'#9dffcf'});
   b('HOW TO PLAY',()=>{G.howFrom='pause';G.mode='howto'},{col:'#7fd8ff'});
   b('CHARACTER SELECT',()=>{G.paused=false;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#ff8a3a'});
-  b(musicOn?'MUSIC: ON':'MUSIC: OFF',()=>setMusic(!musicOn),{col:'#b48cff'});
+  b('SETTINGS',()=>{G.setFrom='pause';G.mode='settings'},{col:'#b48cff'});
   b('QUIT TO TITLE',()=>{G.paused=false;newDemo();go('title')},{col:'#ff4a4a'});
 }
 function renderResult(g){
@@ -2061,7 +2082,7 @@ function renderResult(g){
   if(G.training){b('AGAIN',()=>startMatch(),{def:true})}
   else if(champ){b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{def:true})}
   else if(r.won){b('NEXT FIGHT',()=>ADS.gate(()=>{const go=()=>{G.sel.p2=G.ladder[G.ladderIdx];G.stage=G.sel.p2===BOSS_ID?BOSS_STAGE:nextFightStage(G.lastFightStage??G.stage);G.lastFightStage=G.stage;startMatch()};
-    if(G.ladderIdx%3===0&&G.ladderIdx<G.ladder.length){const k=(G.ladderIdx/3-1)%BONUS_TYPES.length;startBonus(BONUS_TYPES[k],go)}else go()}),{def:true})}
+    if(G.ladderIdx%3===0&&G.ladderIdx<G.ladder.length){G.selMode='arcade';const k=(G.ladderIdx/3-1)%BONUS_TYPES.length;startBonus(BONUS_TYPES[k],go)}else go()}),{def:true})}
   else{b('CONTINUE',()=>ADS.gate(()=>{startMatch()}),{def:true})}
   b('CHARACTER SELECT',()=>ADS.gate(()=>{G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')}),{col:'#ff8a3a'});
   b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff4a4a'});
@@ -2088,6 +2109,7 @@ function render(){
     case'title':renderWorld(cx);BTN=[];renderTitle(cx);break;
     case'shop':renderWorld(cx);BTN=[];renderShop(cx);break;
     case'howto':renderHowto(cx);break;
+    case'settings':renderSettings(cx);break;
     case'net':renderNet(cx);break;
     case'netsel':renderNetSel(cx);break;
     case'select':renderSelect(cx);break;
@@ -2104,7 +2126,7 @@ function step(){
   else if(G.mode==='vs'){G.vsT++;if(G.vsT>=110){G.mode='fight';G.hint=IN.touch?G.hint:0;startRound();if(G.net)G.net.live=true}}
   else if(G.mode==='fight'&&G.net&&G.net.live){netTick();G.hint++}
   else if(G.mode==='fight'&&!G.paused&&!G.result){stepFight();G.hint++}
-  else if(G.mode==='bonus'&&G.bonus&&!G.bonus.res){stepBonus()}
+  else if(G.mode==='bonus'&&G.bonus&&!G.bonus.res&&!G.paused){stepBonus()}
 }
 /* ============================ BONUS STAGES (arcade, every 3 wins) ============================
    The player fights props instead of a fighter. A hidden proxy Fighter stands in for whichever
@@ -2117,7 +2139,7 @@ function startBonus(type,after){
   G.p1=P;G.p2=X;G.me=P;G.projs=[];G.fx=[];G.net=null;G.demo=false;G.result=null;G.paused=false;G.superFlash=null;G.cine=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.banner=null;
   P.reset(STAGE_W/2-70);resetProxy(X);P.meter=0;
   G.stage=type==='car'?1:12;G.camX=(STAGE_W-W)/2;
-  const B=G.bonus={type,t:0,phase:'intro',timer:type==='car'?40:30,timerF:0,targets:[],spawned:0,broken:0,total:type==='car'?1:16,after,spawnT:0,res:null};
+  const B=G.bonus={free:G.selMode==='bonus',type,t:0,phase:'intro',timer:type==='car'?40:30,timerF:0,targets:[],spawned:0,broken:0,total:type==='car'?1:16,after,spawnT:0,res:null};
   if(type==='car')B.targets.push({kind:'car',x:STAGE_W/2+60,y:FLOOR,w:150,h:84,hp:2400,max:2400,flash:0,shake:0});
   G.phase='fight';G.phaseT=0;G.mode='bonus';SFX.ok()}
 function bonusHit(tg,d){const B=G.bonus;tg.hp-=d;tg.flash=4;tg.shake=6;
@@ -2150,7 +2172,7 @@ function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
   const tgt=clamp(P.x-W/2+(near?(near.x-P.x)*0.3:0),0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.08;
   if(live){if(++B.timerF>=60){B.timerF=0;B.timer--;if(B.timer<=0){B.timer=0;banner('TIME!',80,32);B.phase='end';B.t=0}}
     if(B.type==='barrels'&&B.spawned>=B.total&&!B.targets.some(t=>!t.dead)){banner('FINISHED!',80,24);B.phase='end';B.t=0}}
-  if(B.phase==='end'&&B.t===90){const good=B.type==='car'?B.broken>0:B.broken>=Math.ceil(B.total*0.75);B.res={good,broken:B.broken,total:B.total,time:B.timer};G.bonusReward=good;SFX[good?'ok':'sel']()}
+  if(B.phase==='end'&&B.t===90){const good=B.type==='car'?B.broken>0:B.broken>=Math.ceil(B.total*0.75);B.res={good,broken:B.broken,total:B.total,time:B.timer};if(!B.free)G.bonusReward=good;SFX[good?'ok':'sel']()}
   if(G.comboDisp&&--G.comboDisp.t<=0)G.comboDisp=null;
   if(!G.resim)updFx()}
 const r2=(a,b)=>a+Math.floor(Math.random()*(b-a));
@@ -2177,8 +2199,13 @@ function renderBonusHUD(g){const B=G.bonus;if(!B)return;
   else txt(g,'BROKEN '+B.broken+'/'+B.total,W-8,8,8,'#ffd23f','right');
   if(B.res){g.fillStyle='rgba(8,4,20,0.82)';g.fillRect(W/2-120,56,240,100);bigTxt(g,B.res.good?'EXCELLENT!':'NICE TRY',W/2,64,16,B.res.good?'#fff6a0':'#fff',B.res.good?'#ff7a1a':'#5a5a7a');
     txt(g,B.type==='car'?(B.res.good?'CAR DESTROYED WITH '+B.res.time+'s LEFT':'THE CAR SURVIVED'):('BARRELS BROKEN: '+B.res.broken+'/'+B.res.total),W/2,90,8,'#fff','center');
+    if(B.free){button(g,W/2-112,124,72,20,'AGAIN',()=>{startFreeBonus()},{def:true});button(g,W/2-36,124,72,20,B.type==='car'?'BARRELS':'CAR',()=>{G.bonusType=B.type==='car'?'barrels':'car';startFreeBonus()},{col:'#ffd23f'});button(g,W/2+40,124,72,20,'MENU',()=>{G.bonus=null;newDemo();go('title')},{col:'#ff4a4a'});return}
     txt(g,B.res.good?'REWARD: FULL SUPER METER NEXT FIGHT':'NO REWARD THIS TIME',W/2,104,8,B.res.good?'#9dffcf':'#aaa','center');
-    button(g,W/2-60,124,120,20,'NEXT FIGHT',()=>{const a=B.after;G.bonus=null;a&&a()},{def:true})}}
+    button(g,W/2-60,124,120,20,'NEXT FIGHT',()=>{const a=B.after;G.bonus=null;a&&a()},{def:true});return}
+  if(G.paused){g.fillStyle='rgba(6,3,16,0.8)';g.fillRect(0,0,W,H);bigTxt(g,'PAUSE',W/2,40,16);button(g,W/2-70,66,140,18,'RESUME',()=>{G.paused=false},{def:true});button(g,W/2-70,90,140,18,'RESTART',()=>{G.paused=false;startBonus(B.type,B.after)});
+    button(g,W/2-70,114,140,18,'SETTINGS',()=>{G.setFrom='bonus';go('settings')},{col:'#b48cff'});button(g,W/2-70,138,140,18,B.free?'QUIT TO MENU':'SKIP (NO REWARD)',()=>{G.paused=false;if(B.free){G.bonus=null;newDemo();go('title')}else{const a=B.after;G.bonus=null;a&&a()}},{col:'#ff4a4a'});return}
+  button(g,W-26,34,20,14,'II',()=>{G.paused=true},{col:'#b48cff'})}
+function startFreeBonus(){G.selMode='bonus';startBonus(G.bonusType||'car',null)}
 /* ============================ NETPLAY (rollback) ============================
    GGPO-style: fixed input delay, predict remote input (repeat last held state,
    never repeat button presses), on a misprediction load the saved state from
