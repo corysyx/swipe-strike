@@ -2305,7 +2305,9 @@ function dummyInput(me,op){const inp=EMPTY();if(G.dummy==='cpu')return aiInput(G
   return inp}
 function separate(a,b){
   const minD=11*a.S*(a.ch.thick?1.15:1)+11*b.S*(b.ch.thick?1.15:1);
-  if(Math.abs(a.y-b.y)<46*Math.min(a.S,b.S)&&a.state!=='ko'&&b.state!=='ko'){const d=b.x-a.x;if(Math.abs(d)<minD){const push=(minD-Math.abs(d))/2,s=Math.sign(d)||a.facing;a.x-=s*push;b.x+=s*push}}
+  /* bodies only push when roughly level; an airborne fighter above the opponent's waist passes over them (cross-ups) */
+  const vth=(a.air||b.air?20:46)*Math.min(a.S,b.S);
+  if(Math.abs(a.y-b.y)<vth&&a.state!=='ko'&&b.state!=='ko'){const d=b.x-a.x;if(Math.abs(d)<minD){const push=(minD-Math.abs(d))/2,s=Math.sign(d)||a.facing;a.x-=s*push;b.x+=s*push}}
   const mid=(a.x+b.x)/2,half=W/2-14;
   for(const f of[a,b])f.x=clamp(f.x,Math.max(14,mid-half),Math.min(STAGE_W-14,mid+half));
 }
