@@ -155,6 +155,23 @@ const RECIPES={
   /* super activation: "BWAAM" stinger with a shimmering riser */
   super:[1.6,(c,o)=>{L_sub(c,o,1,60,40,1.1);[110,165,220,277,330].forEach((f,i)=>{oxTone(c,o,{type:'sawtooth',f0:f,dur:1.1,vol:0.12,lp:300,lp1:5200,q:2,sweep:0.2,a:0.01,det:i*5});oxTone(c,o,{type:'sawtooth',f0:f,dur:1.1,vol:0.09,lp:300,lp1:5200,q:2,sweep:0.2,a:0.01,det:-9})});
     oxNoise(c,o,{dur:1.3,vol:0.4,ft:'bandpass',f0:300,f1:9000,q:1.2,a:0.3,sweep:0.9});L_ring(c,o,0.1,2637,1.2,0.05);L_crack(c,o,0.7,3000,0.08)}],
+  /* super flash variants (classic arcade "super art" freeze) */
+  superA:[1.8,(c,o)=>{/* flash: bright metal SHING + deep boom + sparkle tail */
+    oxNoise(c,o,{dur:0.06,vol:1,ft:'highpass',f0:3500,q:0.6,drive:3});
+    [[2093,0.9],[2960,0.7],[3951,0.55],[5274,0.4],[7040,0.3]].forEach(([f,d],i)=>oxTone(c,o,{t:0.003,type:'sine',f0:f*1.06,f1:f,dur:d,vol:0.2/(1+i*0.4),a:0.001,sweep:0.05,det:i%2?9:-9}));
+    L_sub(c,o,1,70,32,0.9,0.01);L_body(c,o,0.8,150,48,0.35,5,0.005);
+    oxNoise(c,o,{t:0.02,dur:1.5,vol:0.35,ft:'bandpass',f0:8000,f1:2500,q:2.5,a:0.02});
+    for(let k=0;k<10;k++)oxTone(c,o,{t:0.08+k*0.07,type:'sine',f0:3000+((k*1777)%4000),dur:0.18,vol:0.05*(1-k/12),a:0.002})}],
+  superB:[1.8,(c,o)=>{/* charge: fast rising whine into a big boom */
+    oxTone(c,o,{type:'sawtooth',f0:200,f1:2400,dur:0.36,vol:0.16,lp:1200,lp1:9000,a:0.02,sweep:0.34});oxTone(c,o,{type:'sawtooth',f0:202,f1:2430,dur:0.36,vol:0.14,lp:1200,lp1:9000,a:0.02,sweep:0.34,det:15});
+    oxNoise(c,o,{dur:0.38,vol:0.5,ft:'bandpass',f0:600,f1:9000,q:1.5,a:0.3,sweep:0.36});
+    L_crack(c,o,1,2800,0.09,0.35);L_sub(c,o,1,75,28,1.1,0.35);L_body(c,o,0.9,160,45,0.4,6,0.35);
+    oxNoise(c,o,{t:0.35,dur:1.3,vol:0.55,ft:'lowpass',f0:2400,f1:80,drive:3,a:0.004});L_ring(c,o,0.1,2349,0.8,0.36)}],
+  superC:[1.8,(c,o)=>{/* thunder: electric crackle burst + boom + reverse-cymbal swell */
+    oxNoise(c,o,{dur:0.9,vol:0.45,ft:'highpass',f0:5000,f1:9000,q:0.5,a:0.25,hold:0.25});
+    oxTone(c,o,{t:0.25,type:'sawtooth',f0:110,dur:0.5,vol:0.18,drive:8,lp:4000});
+    for(let k=0;k<12;k++)oxNoise(c,o,{t:0.25+k*0.035+((k*37)%7)*0.004,dur:0.025,vol:0.7*(1-k/14),ft:'highpass',f0:2500,q:0.6,drive:2});
+    L_crack(c,o,1,2200,0.1,0.25);L_sub(c,o,1,62,26,1.2,0.25);oxNoise(c,o,{t:0.25,dur:1.4,vol:0.5,ft:'lowpass',f0:1200,f1:50,drive:4})}],
   /* K.O.: the biggest boom in the game, long tail */
   ko:[3,(c,o)=>{RECIPES.hitX[1](c,o);L_sub(c,o,1,80,22,2.2,0.02);oxNoise(c,o,{dur:2.6,vol:0.7,ft:'lowpass',f0:700,f1:35,drive:5,a:0.01,t:0.02});
     oxTone(c,o,{type:'sawtooth',f0:440,f1:55,dur:2,vol:0.12,lp:1600,lp1:200,t:0.05});oxTone(c,o,{type:'sawtooth',f0:443,f1:56,dur:2,vol:0.1,lp:1600,lp1:200,t:0.05})}],
@@ -181,7 +198,7 @@ async function bakeSfx(){if(sfxBaked||!AC||typeof OfflineAudioContext==='undefin
       if(!OX_NB||OX_NB.sampleRate!==sr){OX_NB=c.createBuffer(1,sr,sr);const d=OX_NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}
       const out=c.createGain();out.gain.value=0.9;out.connect(c.destination);fn(c,out);const buf=await c.startRendering(),d=buf.getChannelData(0);let pk=0;for(let i=0;i<d.length;i++){const v=d[i]<0?-d[i]:d[i];if(v>pk)pk=v}
       const tgt=Math.min(pk,SFX_PEAK[k]||1);if(pk>0&&tgt<pk){const m=tgt/pk;for(let i=0;i<d.length;i++)d[i]*=m}SFXB[k]=buf}catch(e){}}}
-const SFX_PEAK={hitL:0.72,hitM:0.86,hitH:1,hitX:1,ko:1,super:0.9,fight:0.9,land:0.8,blockH:0.8};
+const SFX_PEAK={superA:0.95,superB:0.95,superC:0.95,hitL:0.72,hitM:0.86,hitH:1,hitX:1,ko:1,super:0.9,fight:0.9,land:0.8,blockH:0.8};
 function sfxPan(x){return x==null?0:clamp((x-(G.camX+W/2))/(W/2),-1,1)*0.55}
 function play(name,vol=1,o={}){if(!AC||G.resim)return false;if(!sfxBus)sfxFx();const b=SFXB[name];if(!b)return false;
   const s=AC.createBufferSource();s.buffer=b;s.playbackRate.value=(o.rate||1)*(1+(Math.random()*2-1)*(o.vary??0.035));
@@ -200,7 +217,7 @@ const SFX={
   whoosh:h=>{if(!play(h?'whooshH':'whoosh',h?0.6:0.45,{vary:0.12})){noise(h?0.17:0.1,0.22,h?500:1100,'bandpass',0,h?2800:4200)}},
   parry:()=>{duckMusic(0.55,0.08);if(!play('parry',0.95,{verb:0.12,vary:0.03})){osc('triangle',1500,3000,0.25,0.4);osc('sine',2200,4400,0.32,0.22,0.03)}},
   special:()=>{if(!play('special',0.75,{verb:0.15,vary:0.05})){osc('sawtooth',220,880,0.25,0.15);noise(0.25,0.18,700,'bandpass',0,4200)}},
-  super:()=>{duckMusic(0.3,0.6);if(!play('super',0.95,{verb:0.45,vary:0})){osc('sawtooth',110,1760,0.7,0.22);osc('square',55,440,0.7,0.14);noise(0.7,0.28,300,'bandpass',0,7000)}},
+  super:()=>{duckMusic(0.3,0.6);if(!play('superA',0.95,{verb:0.55,vary:0})){osc('sawtooth',110,1760,0.7,0.22);osc('square',55,440,0.7,0.14);noise(0.7,0.28,300,'bandpass',0,7000)}},
   ko:()=>{duckMusic(0.15,1.2);if(!play('ko',1.1,{verb:0.7,vary:0})){osc('square',440,50,1.3,0.32);noise(0.9,0.5,1400,'lowpass',0,90)}},
   land:(v,x)=>{play('land',clamp(0.45+v*0.08,0.45,0.95),{pan:sfxPan(x),verb:0.15,vary:0.08})},
   freeze:x=>play('freeze',0.7,{pan:sfxPan(x),verb:0.3}),
