@@ -2935,11 +2935,9 @@ function renderNet(g){
     txt(g,'STAY ON THIS SCREEN UNTIL THEY JOIN',W/2,160,8,'#5a5080','center');if(TURN_API&&NU.relay)txt(g,'RELAY '+NU.relay,W-6,H-10,8,NU.relay==='READY'?'#9dffcf':'#ff8a3a','right');
     button(g,W/2-60,178,120,18,'CANCEL',()=>{NX.close();NU.status=''},{col:'#ff4a4a'})}
   else if(NU.status==='joining'){txt(g,'CONNECTING'+'.'.repeat((G.tick>>4)%4),W/2,100,8,'#7fd8ff','center');button(g,W/2-60,178,120,18,'CANCEL',()=>{NX.close();NU.status=''},{col:'#ff4a4a'})}
-  else{let y=48;const b=(l,cb,o,sub)=>{button(g,W/2-90,y,180,20,l,cb,o);if(sub)txt(g,sub,W/2,y+22,8,'#5a5080','center');y+=sub?38:26};
+  else{let y=72;const b=(l,cb,o,sub)=>{button(g,W/2-90,y,180,20,l,cb,o);if(sub)txt(g,sub,W/2,y+22,8,'#5a5080','center');y+=sub?38:26};
     b('HOST ONLINE',()=>hostOnline(),{def:true},'GET A ROOM CODE TO SHARE');
     b('JOIN ONLINE',()=>{NU.err='';panelJoin()},{col:'#7fd8ff'},'ENTER A FRIEND\'S CODE');
-    b('LAN NO INTERNET: HOST',()=>{NU.err='';panelLanHost()},{col:'#9dffcf'});
-    b('LAN NO INTERNET: JOIN',()=>{NU.err='';panelLanJoin()},{col:'#9dffcf'});
     txt(g,EMBED?'TIP: ONLINE NEEDS THE DOWNLOADED FILE':NU.tip?NU.tip:'ROLLBACK NETCODE  -  '+NDELAY+'F DELAY  -  '+MAXRB+'F ROLLBACK',W/2,H-24,8,EMBED||NU.tip?'#ffd23f':'#5a5080','center')}
   if(NU.err)txt(g,NU.err,W/2,H-12,8,'#ff6a6a','center');
 }
