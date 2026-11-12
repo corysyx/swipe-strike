@@ -377,6 +377,8 @@ function scheduleStep(T,t,spb){const C=compileSong(T),key=T.key||0,secName=C.for
   if(S.pad&&s===0&&!LITE)padChord(t,[ch[0]+key-12,ch[1]+key-12,ch[2]+key-12,ch[0]+key],spb*16,1,S.pad);
   // arpeggio
   if(S.arp&&!LITE){const seq=[0,1,2,3,2,1];const tones=[ch[0],ch[1],ch[2],ch[0]+12];const n=tones[seq[s%seq.length]]+key;voice(t,hz(n),spb*0.8,0.035,{oscs:[{type:'square'}],f0:3000,a:0.003,r:0.04,send:1})}
+  // soft electric-piano comping (rootless 3-5-7 voicing kept between G3 and C5)
+  if(S.comp&&S.comp[s]==='X'){for(const c of[ch[1],ch[2],ch[3]]){let n=c+key;while(n>3)n-=12;while(n<-10)n+=12;INST.ep(t,n,spb*(S.compLen||3),0.32)}}
   // lead (+ diatonic harmony a third below)
   if(S.leadSteps.length){const total=S.bars*16,idx=(bar*16+s)%S.leadSteps.length,tk=S.leadSteps[idx];
     if(tk!=='~'&&tk!=='_'&&tk!=='-'){let n=1;while(idx+n<S.leadSteps.length&&(S.leadSteps[idx+n]==='~'||S.leadSteps[idx+n]==='_'))n++;const semi=noteSemi(tk);
@@ -440,11 +442,15 @@ const TRACKS={
     C:{prog:[6,7,1,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',lead2:'lead',harm:true,fill:true,
        lead:'F5 _ E5 _ C5 _ B4 _ | G5 _ F5 _ E5 _ D5 _ | E5 _ _ _ A5 _ _ _ | A5 _ G5 E5 A4 _ _ _'}}},
   // TRAINING ROOM: laid-back funk with electric piano
-  s5:{bpm:100,key:3,scale:'dor',lead:'ep',form:['A','B'],loop:0,sec:{
-    A:{prog:[1,1,4,4],drums:'chill',bass:'chill',pad:'pad',
-       lead:'- E5 G5 A5 - G5 E5 - | D5 - C5 - A4 - - - | - F#5 A5 B5 - A5 F#5 - | E5 - D5 - - - - -'},
-    B:{prog:[7,7,1,1],drums:'chill',bass:'chill',pad:'pad',
-       lead:'- D5 G5 B5 - A5 G5 - | F#5 - D5 - B4 - - - | - C5 E5 A5 - G5 E5 - | D5 - C5 - A4 - - -'}}},
+  s5:{bpm:100,key:3,scale:'dor',lead:'ep',form:['A','A','B','C','A','B2','D','B'],loop:0,sec:{
+    /* built for long sessions: mostly groove + soft keys, only two sparse melodic phrases per 75-second loop */
+    A:{prog:[1,1,4,4],drums:'chill',bass:'chill',pad:'pad',comp:'----X--X------X-'},
+    B:{prog:[7,7,1,1],drums:'chill',bass:'chill',pad:'pad',comp:'--X-----X--X----'},
+    C:{prog:[1,1,4,4],drums:'chill',bass:'chill',pad:'pad',comp:'----X-------X---',leadVol:0.5,
+       lead:'E5 _ _ _ - - - - | - - - - - - - - | D5 _ - - G5 _ _ _ | E5 _ _ _ _ _ - -'},
+    B2:{prog:[6,6,7,7],drums:'chill',bass:'chill',pad:'pad',comp:'X-----X-----X---',compLen:5},
+    D:{prog:[4,4,1,1],drums:'chill',bass:'chill',pad:'pad',comp:'----X-------X---',lead2:'bell',leadVol:0.45,
+       lead:'- - - - A5 - G5 - | E5 _ _ _ - - - - | - - - - D5 - E5 - | A4 _ _ _ - - - -'}}},
   // MARKET STREET: erhu over funky bass
   s6:{bpm:128,key:5,scale:'ion',lead:'erhu',bassInst:'slap',form:['I','A','B','A','B'],loop:1,sec:{
     I:{prog:[1],drums:'intro',bass:'hold',gong:1},
