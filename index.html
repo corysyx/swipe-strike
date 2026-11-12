@@ -849,7 +849,7 @@ class Fighter{
     // finisher
     {const d=Math.round(R.fin*dmgScale(op,!!m.super,op.combo-R.hits));op.hp=Math.max(0,op.hp-d);addComboDmg(op,d)}op.combo++;comboShow(this,op);this.rushT=0;this.t=m.s+m.a+1;this.vx=0;
     Object.assign(op,{state:'hit',juggle:true,vy:-4.6,vx:this.facing*7,y:FLOOR-1,t:0});op.juggleN++;op.redT=60;
-    G.hitstop=16;G.impact=4;G.zoomKick=0.22;G.shake=6;G.excite=1;addFx('spark',px,py,2,null,null,this.facing);addFx('quake',op.x,FLOOR,2);addFx('text',this.x,this.y-96*this.S,0,'ENDLESS TIDE!',this.col.accent);SFX.hit(1);
+    G.hitstop=16;G.impact=4;G.zoomKick=0.22;G.shake=6;G.excite=1;addFx('spark',px,py,2,null,null,this.facing);addFx('quake',op.x,FLOOR,2);addFx('text',this.x,this.y-96*this.S,0,((this.ch.specials&&this.ch.specials.SU)||'SUPER')+'!',this.col.accent);SFX.hit(1);
     if(op.hp<=0){op.hp=1;op.hp=0;KO(op,this,this.facing)}}
   updMove(op){
     if(this.rushT>0){this.updRush(op);return}
