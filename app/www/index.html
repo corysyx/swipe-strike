@@ -2518,7 +2518,7 @@ function renderPause(g){
   if(dbgAny())b('DEBUG: RESET ALL',()=>{Object.assign(DBG,JSON.parse(JSON.stringify(DBG_DEF)));saveDbg()},{col:'#ff8aff'});
   b('CHARACTER SELECT',()=>{G.paused=false;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#ff8a3a'});
   b('SETTINGS',()=>{G.setFrom='pause';G.mode='settings'},{col:'#b48cff'});
-  b('QUIT TO TITLE',()=>{G.paused=false;newDemo();go('title')},{col:'#ff4a4a'});
+  b('MAIN MENU',()=>{G.paused=false;newDemo();go('title')},{col:'#ff4a4a'});
 }
 /* arcade ladder: 8 fights - 7 random opponents, then the final boss (bonus stages still after every 3 wins) */
 const ARCADE_FIGHTS=8;
