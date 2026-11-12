@@ -356,7 +356,7 @@ function padChord(t,ch,d,v,kind){for(const s of ch){if(kind==='organ')voice(t,hz
   else if(kind==='choir')voice(t,hz(s),d,0.055*v,{oscs:[{type:'sawtooth',det:-12},{type:'sawtooth',det:12}],ft:'bandpass',f0:900,q:2,a:0.35,r:0.5,vib:[4.5,0.006]});
   else voice(t,hz(s),d,0.05*v,{oscs:[{type:'sawtooth',det:(s%2?-10:10)}],f0:1600,a:0.3,r:0.4})}}
 // --- song state ---
-function songChord(T,deg){const sc=SCALES[T.scale||'aeo'],i=(deg-1+70)%7,oct=Math.floor((deg-1)/7);const st=k=>sc[(i+k)%7]+12*Math.floor((i+k)/7)+12*oct;return[st(0),st(2),st(4),st(6)]}// semis from A (root, 3rd, 5th, 7th)
+function songChord(T,deg,S){const sc=SCALES[(S&&S.scale)||T.scale||'aeo'],i=(deg-1+70)%7,oct=Math.floor((deg-1)/7);const st=k=>sc[(i+k)%7]+12*Math.floor((i+k)/7)+12*oct;return[st(0),st(2),st(4),st(6)]}// semis from A (root, 3rd, 5th, 7th)
 function compileSong(T){if(T._c)return T._c;const secs={};
   for(const k in T.sec){const S=T.sec[k],bars=S.prog.length,res=S.res||2;const lead=[];if(S.lead){const toks=S.lead.replace(/\|/g,' ').trim().split(/\s+/);for(const tk of toks){lead.push(tk);for(let r=1;r<res;r++)lead.push('~')}}
     secs[k]=Object.assign({bars,leadSteps:lead},S)}
@@ -364,7 +364,7 @@ function compileSong(T){if(T._c)return T._c;const secs={};
 let SS={fi:0,bar:0,step:0,lastLead:null,fillCrash:false};
 function songReset(){SS={fi:0,bar:0,step:0,lastLead:null,fillCrash:false}}
 function scheduleStep(T,t,spb){const C=compileSong(T),key=T.key||0,secName=C.form[SS.fi],S=C.secs[secName],s=SS.step,bar=SS.bar;
-  const deg=S.prog[bar],ch=songChord(T,deg),root=ch[0]+key;
+  const deg=S.prog[bar],ch=songChord(T,deg,S),root=ch[0]+key;
   const lastBar=bar===S.bars-1,fill=S.fill&&lastBar&&s>=8;
   // drums
   const D=DRUMSETS[S.drums||T.drums||'rock']||{};
@@ -373,7 +373,7 @@ function scheduleStep(T,t,spb){const C=compileSong(T),key=T.key||0,secName=C.for
   else for(const k in D){const p=D[k];if(!p)continue;const c=p[s];if(c==='x')hitDrum(KIT[k]?k:'hat',t,1);else if(c==='g')hitDrum(KIT[k]?k:'hat',t,0.4);else if(c==='o')hitDrum('ohat',t,1)}
   // bass
   const BP=BASSP[S.bass||T.bass||'drive8'];if(BP){const c=BP[s];if(c&&c!=='='&&c!=='-'){let n=1;while(s+n<16&&BP[s+n]==='=')n++;let semi=root-36;while(semi>-30)semi-=12;while(semi<-41)semi+=12;
-    const nextDeg=S.prog[(bar+1)%S.bars];let off=0,v=1;if(c==='O')off=12;else if(c==='5')off=7;else if(c==='3')off=ch[1]-ch[0];else if(c==='7')off=ch[3]-ch[0];else if(c==='x')v=0.55;else if(c==='b'){off=(songChord(T,nextDeg)[0]+key-36)-semi;while(off>12)off-=12;while(off<-12)off+=12;off-=1}
+    const nextDeg=S.prog[(bar+1)%S.bars];let off=0,v=1;if(c==='O')off=12;else if(c==='5')off=7;else if(c==='3')off=ch[1]-ch[0];else if(c==='7')off=ch[3]-ch[0];else if(c==='x')v=0.55;else if(c==='b'){off=(songChord(T,nextDeg,S)[0]+key-36)-semi;while(off>12)off-=12;while(off<-12)off+=12;off-=1}
     bassNote(t,semi+off,spb*n*(c==='x'?0.5:0.92),v,S.bassInst||T.bassInst)}}
   // guitar
   const LITE=SET.lite;
@@ -392,7 +392,7 @@ function scheduleStep(T,t,spb){const C=compileSong(T),key=T.key||0,secName=C.for
   if(S.leadSteps.length){const total=S.bars*16,idx=(bar*16+s)%S.leadSteps.length,tk=S.leadSteps[idx];
     if(tk!=='~'&&tk!=='_'&&tk!=='-'){let n=1;while(idx+n<S.leadSteps.length&&(S.leadSteps[idx+n]==='~'||S.leadSteps[idx+n]==='_'))n++;const semi=noteSemi(tk);
       if(semi!=null){const inst=INST[S.lead2||T.lead||'lead'];const sm=semi+key,leg=SS.lastLead!=null&&Math.abs(SS.lastLead-sm)<=5&&(T.legato!==false);inst(t,sm,spb*n*0.94,LEAD_MIX*(S.leadVol||1),leg?hz(SS.lastLead):0);SS.lastLead=sm;
-        if(S.harm&&!LITE){const sc=SCALES[T.scale||'aeo'];let pc=((semi%12)+12)%12,ix=sc.indexOf(pc);if(ix>=0){const low=sc[(ix+5)%7]-(ix<2?12:0);const hs=semi-pc+low;inst(t,hs+key,spb*n*0.94,0.6*LEAD_MIX*(S.leadVol||1),0)}}}}
+        if(S.harm&&!LITE){const sc=SCALES[S.scale||T.scale||'aeo'];let pc=((semi%12)+12)%12,ix=sc.indexOf(pc);if(ix>=0){const low=sc[(ix+5)%7]-(ix<2?12:0);const hs=semi-pc+low;inst(t,hs+key,spb*n*0.94,0.6*LEAD_MIX*(S.leadVol||1),0)}}}}
     else if(tk==='-')SS.lastLead=null}
   // advance
   SS.fillCrash=false;SS.step++;if(SS.step>=16){SS.step=0;SS.bar++;if(SS.bar>=S.bars){SS.bar=0;if(S.fill)SS.fillCrash=true;SS.fi++;if(SS.fi>=C.form.length)SS.fi=Math.min(C.loop,C.form.length-1)}}}
@@ -479,19 +479,20 @@ const TRACKS={
        lead:'A4 _ _ B4 C5 _ B4 A4 | E5 _ _ _ C5 _ A4 _ | G#4 _ A4 B4 E5 _ D5 C5 | B4 _ A4 _ _ _ _ _'},
     B:{prog:[4,4,1,5],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
        lead:'D5 _ _ E5 F5 _ E5 D5 | A5 _ _ _ F5 _ D5 _ | C5 _ D5 E5 A5 _ G#5 _ | B5 _ _ _ E5 _ _ _'}}},
-  // CARRIER DECK: heroic air-base anthem - brass lead with long soaring notes, pumping octave bass, synth strings
-  s8:{bpm:132,key:2,scale:'mix',lead:'brassLead',form:['I','A','A2','B','C','C2','A2'],loop:1,sec:{
-    I:{prog:[1,1],drums:'march',bass:'hold',brass:'hit',gong:0},
-    A:{prog:[1,7,4,1],drums:'heroic',bass:'oct',gtr:'push',pad:'pad',
-       lead:'A4 _ _ _ C#5 _ E5 _ | D5 _ _ _ _ _ C#5 B4 | A4 _ _ _ E5 _ F#5 _ | E5 _ _ _ _ _ - -'},
-    A2:{prog:[1,7,4,5],drums:'heroic',bass:'octpush',gtr:'push',pad:'pad',brass:'accent',
-       lead:'A4 _ _ _ C#5 _ E5 _ | G5 _ _ _ F#5 _ E5 D5 | E5 _ _ _ A5 _ G5 _ | F#5 _ _ _ E5 _ _ _'},
-    B:{prog:[6,4,7,7],drums:'heroicB',bass:'gallop',gtr:'gallop',pad:'pad',fill:true,
-       lead:'F#5 _ E5 _ C#5 _ E5 _ | F#5 _ A5 _ _ _ E5 _ | D5 _ E5 _ F#5 _ G5 _ | A5 _ _ _ B5 _ _ _'},
-    C:{prog:[1,7,6,4],drums:'heroicB',bass:'oct',gtr:'power',brass:'hold2',pad:'pad',harm:true,orch:2,
-       lead:'C#6 _ _ _ B5 _ A5 _ | B5 _ _ _ D5 _ _ _ | C#5 _ E5 _ A5 _ B5 _ | A5 _ _ _ _ _ - -'},
-    C2:{prog:[4,7,1,1],drums:'heroicB',bass:'octpush',gtr:'power',brass:'hold2',pad:'pad',harm:true,fill:true,
-       lead:'D6 _ _ _ C#6 _ B5 _ | B5 _ _ _ G5 _ A5 _ | A5 _ _ _ _ _ _ _ | E5 _ F#5 _ G5 _ A5 _'}}},
+  // CARRIER DECK: heroic air-base anthem in C# minor ~123 bpm (key/tempo matched to the reference) - brass lead, pumping octave bass,
+  // synth strings, a dark flat-second (phrygian) bridge. Original melody.
+  s8:{bpm:123,key:4,scale:'aeo',lead:'brassLead',form:['I','A','A2','B','C','C2','A2'],loop:1,sec:{
+    I:{prog:[1,2],scale:'phr',drums:'march',bass:'hold',brass:'hit'},
+    A:{prog:[1,6,7,1],drums:'heroic',bass:'oct',gtr:'push',pad:'pad',
+       lead:'A3 _ _ _ E4 _ _ D4 | C4 _ _ _ _ _ B3 C4 | D4 _ _ _ C4 _ B3 G3 | A3 _ _ _ _ _ - -'},
+    A2:{prog:[1,6,4,7],drums:'heroic',bass:'octpush',gtr:'push',pad:'pad',brass:'accent',
+       lead:'A3 _ _ _ E4 _ _ D4 | C4 _ _ _ A4 _ G4 _ | F4 _ _ _ E4 _ D4 C4 | D4 _ _ _ _ _ - -'},
+    B:{prog:[1,2,1,2],scale:'phr',drums:'heroicB',bass:'gallop',gtr:'gallop',pad:'pad',fill:true,
+       lead:'E4 _ F4 E4 _ _ D4 _ | F4 _ _ _ E4 _ _ _ | E4 _ F4 E4 _ _ G4 _ | F4 _ E4 _ D4 _ _ _'},
+    C:{prog:[6,7,1,1],drums:'heroicB',bass:'oct',gtr:'power',brass:'hold2',pad:'pad',harm:true,orch:2,
+       lead:'C5 _ _ _ B4 _ G4 _ | D5 _ _ _ B4 _ G4 _ | A4 _ _ _ _ _ E4 _ | A4 _ _ _ _ _ - -'},
+    C2:{prog:[4,6,7,7],drums:'heroicB',bass:'octpush',gtr:'power',brass:'hold2',pad:'pad',harm:true,fill:true,
+       lead:'A4 _ _ _ F4 _ D4 _ | C5 _ _ _ A4 _ F4 _ | B4 _ _ _ D5 _ _ _ | B4 _ A4 _ G4 _ _ _'}}},
   // SHADOW SHRINE: dark, heavy, half-time into a double-time chorus
   s9:{bpm:120,key:4,scale:'phr',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
     I:{prog:[1,2],drums:'intro',bass:'hold',pad:'choir',gong:1},
