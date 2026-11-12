@@ -1927,7 +1927,6 @@ function renderHUD(g){
 function renderTitle(g){
   g.fillStyle='rgba(8,4,20,0.55)';g.fillRect(0,0,W,H);
   const y=30+Math.sin(G.tick*0.05)*2;bigTxt(g,'SWIPE',W/2,y,24,'#ffffff','#ff4fa3');bigTxt(g,'STRIKE',W/2,y+28,24,'#fff6a0','#ff7a1a');
-  txt(g,'GESTURE FIGHTER',W/2,y+48,8,'#7fd8ff','center');
   const mb=(i,l,cb,o)=>button(g,W/2-66,92+i*21,132,17,l,cb,o);
   mb(0,'ARCADE',()=>{G.training=false;G.selMode='arcade';G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{def:true});
   mb(1,'TRAINING',()=>{G.training=true;G.selMode='training';G.stage=TRAIN_STAGE;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#9dffcf'});
