@@ -2805,10 +2805,23 @@ function drawBonusFront(g,camX){const B=G.bonus;if(!B)return;
       g.globalAlpha=Math.max(0,1-k*1.1);g.fillStyle=i%3===0?'#ffffff':(i%3===1?'#ffd060':'#ff6a1a');g.beginPath();g.arc(x+ox,y+oy,rr*0.55,0,7);g.fill()}
     g.globalAlpha=Math.max(0,0.8-k);g.strokeStyle='#fff2c0';g.lineWidth=3;g.beginPath();g.ellipse(x,y+26,30+b.t*5,6+b.t*0.8,0,0,7);g.stroke();g.globalAlpha=1}}
 function renderBonusHUD(g){const B=G.bonus;if(!B)return;
-  g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(W/2-34,4,68,26);bigTxt(g,String(B.timer),W/2,8,16,'#ffd23f','#c8202a');
-  txt(g,'BONUS STAGE',8,6,8,'#ffd23f');txt(g,B.type==='car'?'SMASH THE CAR!':'BREAK THE BARRELS!',8,16,8,'#fff');
-  if(B.type==='car'){const t=B.targets[0],k=Math.max(0,t.hp/t.max);g.fillStyle='#120a16';g.fillRect(W-128,8,120,10);g.fillStyle='#ff4a4a';g.fillRect(W-127,9,118*k,8);txt(g,'CAR',W-128,20,8,'#fff')}
-  else txt(g,'BROKEN '+B.broken+'/'+B.total,W-8,8,8,'#ffd23f','right');
+  /* same look as the fight HUD: framed life bars, boxed timer, pause icon under it, super meter */
+  const P=G.p1,bw=158,bh=10,by=8;
+  const frame=(x,ratio,red,right,grad)=>{g.fillStyle='#120a16';g.fillRect(x-2,by-2,bw+4,bh+4);g.fillStyle='#4a1020';g.fillRect(x,by,bw,bh);
+    const fill=(r,col)=>{const ww=Math.round(bw*clamp(r,0,1));g.fillStyle=col;right?g.fillRect(x+bw-ww,by,ww,bh):g.fillRect(x,by,ww,bh)};
+    if(red!=null)fill(red,'#ff3030');const gr=g.createLinearGradient(0,by,0,by+bh);gr.addColorStop(0,grad[0]);gr.addColorStop(0.4,grad[1]);gr.addColorStop(1,grad[2]);fill(ratio,gr);
+    g.fillStyle='rgba(255,255,255,0.5)';g.fillRect(x,by+1,bw,1)};
+  frame(12,P.hp/P.ch.hp,null,false,['#fff6a0','#ffd23f','#e08a10']);txt(g,P.ch.name,12,by+bh+4,8,'#fff');
+  const rx=W-12-bw;
+  if(B.type==='car'){const t=B.targets[0],k=Math.max(0,t.hp/t.max);B.redK=Math.max(k,Math.min(B.redK??1,(B.redK??1)-0.004));
+    frame(rx,k,B.redK,true,t.flash?['#ffffff','#ffd0d0','#ff8080']:['#ffd0a0','#ff7a4a','#c02020']);txt(g,'CAR',rx+bw,by+bh+4,8,'#fff','right')}
+  else{const left=B.total-B.broken;frame(rx,left/B.total,null,true,['#ffe0b0','#c08040','#7a4a22']);txt(g,'BARRELS  '+B.broken+'/'+B.total,rx+bw,by+bh+4,8,'#fff','right')}
+  g.fillStyle='#120a16';g.fillRect(W/2-16,3,32,24);g.fillStyle='#2a1440';g.fillRect(W/2-14,5,28,20);
+  txt(g,String(Math.max(0,B.timer)).padStart(2,'0'),W/2,8,16,B.timer<=10&&G.tick%30<15?'#ff4040':'#ffd23f','center');
+  if(!B.res){BTN.push({x:W/2-20,y:0,w:40,h:34,cb:()=>{G.paused=true;SFX.sel()}});g.fillStyle='rgba(255,255,255,0.45)';g.fillRect(W/2-4,29,3,6);g.fillRect(W/2+1,29,3,6)}
+  txt(g,'BONUS STAGE',W/2,by+bh+28,8,'#ffd23f','center');
+  {const mw=96,my=H-12,mx=10,m=clamp(P.meter/100,0,1),full=m>=1;g.fillStyle='#120a16';g.fillRect(mx-2,my-2,mw+4,8);g.fillStyle='#101a40';g.fillRect(mx,my,mw,4);
+    g.fillStyle=full?(G.tick%10<5?'#ffffff':'#7fd8ff'):'#3a7aff';g.fillRect(mx,my,Math.round(mw*m),4);txt(g,full?'SUPER!':'SA',mx+mw+4,my-2,8,full?'#ffd23f':'#7fa0ff')}
   if(B.res){g.fillStyle='rgba(8,4,20,0.82)';g.fillRect(W/2-120,56,240,100);bigTxt(g,B.res.good?'EXCELLENT!':'NICE TRY',W/2,64,16,B.res.good?'#fff6a0':'#fff',B.res.good?'#ff7a1a':'#5a5a7a');
     txt(g,B.type==='car'?(B.res.good?'CAR DESTROYED WITH '+B.res.time+'s LEFT':'THE CAR SURVIVED'):('BARRELS BROKEN: '+B.res.broken+'/'+B.res.total),W/2,90,8,'#fff','center');
     if(B.free){button(g,W/2-112,124,72,20,'AGAIN',()=>{startFreeBonus()},{def:true});button(g,W/2-36,124,72,20,B.type==='car'?'BARRELS':'CAR',()=>{G.bonusType=B.type==='car'?'barrels':'car';startFreeBonus()},{col:'#ffd23f'});button(g,W/2+40,124,72,20,'MENU',()=>{G.bonus=null;newDemo();go('title')},{col:'#ff4a4a'});return}
@@ -2816,7 +2829,7 @@ function renderBonusHUD(g){const B=G.bonus;if(!B)return;
     button(g,W/2-60,124,120,20,'NEXT FIGHT',()=>{const a=B.after;G.bonus=null;a&&a()},{def:true});return}
   if(G.paused){g.fillStyle='rgba(6,3,16,0.8)';g.fillRect(0,0,W,H);bigTxt(g,'PAUSE',W/2,40,16);button(g,W/2-70,66,140,18,'RESUME',()=>{G.paused=false},{def:true});button(g,W/2-70,90,140,18,'RESTART',()=>{G.paused=false;startBonus(B.type,B.after)});
     button(g,W/2-70,114,140,18,'SETTINGS',()=>{G.setFrom='bonus';go('settings')},{col:'#b48cff'});button(g,W/2-70,138,140,18,B.free?'QUIT TO MENU':'SKIP (NO REWARD)',()=>{G.paused=false;if(B.free){G.bonus=null;newDemo();go('title')}else{const a=B.after;G.bonus=null;a&&a()}},{col:'#ff4a4a'});return}
-  button(g,W-26,34,20,14,'II',()=>{G.paused=true},{col:'#b48cff'})}
+}
 function startFreeBonus(){G.selMode='bonus';startBonus(G.bonusType||'car',null)}
 /* ============================ NETPLAY (rollback) ============================
    GGPO-style: fixed input delay, predict remote input (repeat last held state,
