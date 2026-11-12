@@ -359,7 +359,7 @@ const CHARS=[
    S4:{s:5,a:16,r:16,dmg:70,hs:20,bs:14,hb:B([6,-14,36,14]),lvl:'low',kd:true,vx:5,pose:'sweep',crouch:true},
    AS:{s:6,a:34,r:6,dmg:95,hs:20,bs:14,hb:B([0,-48,42,52],1),lvl:'high',kb:2,hover:6,dive:6,diveV:[3.8,5.2],pose:'airheavy',ender:true,air:true,landRec:8},
    AS2:{s:4,a:20,r:8,dmg:90,hits:4,multi:5,hs:14,bs:10,hb:B([-24,-60,48,40],1),kb:0.8,hover:24,vx:1.4,pose:'kick',spin:true,ender:true,air:true},
-   SU:{s:6,a:42,r:22,dmg:430,multi:5,hits:8,hs:16,bs:8,hb:B([0,-62,32,44]),kb:0.8,vx:3,pose:'rush',lastKd:true}})},
+   SU:{s:6,a:42,r:22,dmg:430,multi:5,hits:8,hs:16,bs:8,hb:B([0,-62,32,44]),kb:0.8,vx:3,pose:'rush',finPose:'upper',lastKd:true}})},
  {id:'sol',name:'SOL',arch:'ZONER',archCol:'#c86bff',hp:950,walk:1.1,dash:3.6,jumpV:6.0,jumpX:1.8,scale:1.2,reach:1.45,armK:1.32,legK:1.08,torsoK:1.05,sw:10,hw:9,
   col:{skin:'#c98a5e',top:'#f08a24',pants:'#f08a24',belt:'#8a2a1a',hair:'#c98a5e',band:'#5a2a1a',glove:'#c98a5e',shoe:'#c98a5e',accent:'#c86bff'},
   style:{hair:'bald',robe:true,sleeve:'none',beads:true,sash:true,beltTail:true},stats:[3,1,5],
@@ -402,7 +402,7 @@ const CHARS=[
    AS:{s:4,a:5,r:20,grab:true,airGrab:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
    AS2:{s:7,a:1,r:14,hover:16,pose:'jab',air:true,projs:[{type:'kunai',vx:4.6,vy:2.2,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:3.8,vy:3.4,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:5.4,vy:1.2,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true}]},
    S2:{s:9,a:1,r:18,pose:'cjab',crouch:true,proj:{type:'kunai',vx:5.5,dmg:45,hs:14,bs:10,w:16,h:8,y:-16*S,lvl:'low',kb:2,life:120}},
-   SU:{s:10,a:36,r:20,tele:8,dmg:430,hits:6,multi:6,hs:16,bs:10,hb:B([-20,-70,60,70],1),kb:1,pose:'rush',lastKd:true}})},
+   SU:{s:10,a:36,r:20,tele:8,dmg:430,hits:6,multi:6,hs:16,bs:10,hb:B([-20,-70,60,70],1),kb:0.4,vx:1.6,pose:'rush',finPose:'upkick',lastKd:true}})},
  {id:'genryu',name:'GENRYU',arch:'COUNTER',archCol:'#9dffcf',hp:1050,walk:1.25,dash:3.8,jumpV:6.0,jumpX:2,scale:1.2,reach:1.1,sw:11,hw:9,
   col:{skin:'#e2b08a',top:'#2f6b4a',pants:'#203a2c',belt:'#d9c48a',hair:'#e8e8ee',band:'#e8e8ee',glove:'#e2b08a',shoe:'#3a2a1a',accent:'#9dffcf'},
   style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true},stats:[4,2,3],hPose:'palm',
@@ -441,7 +441,7 @@ const CHARS=[
     AS:'DIVING TALON',AS2:'AIR FLURRY',SU:'THOUSAND MANTIS',cSU:'DRAGON CRANE'},quote:'Two styles. One outcome.',
   ai:{aa:'S2',ender:'S1',rush:true},
   moves:(B,S)=>({
-   S1:{s:4,a:24,r:14,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([6,-62,32,26]),kb:0.4,pose:'rush',lastKd:true},
+   S1:{s:4,a:24,r:14,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([6,-62,32,26]),kb:0.4,pose:'rush',finPose:'heavy',lastKd:true},
    S2:{s:3,a:16,r:18,dmg:105,hits:3,multi:5,hs:22,bs:14,hb:B([0,-92,28,74],1),kb:1,launch:6.2,lastKd:true,inv:[0,6],vy:6.2,vx:1.4,pose:'upkick',landRec:14},
    S3:{s:6,a:18,r:14,dmg:80,hits:2,multi:8,hs:20,bs:12,hb:B([0,-30,30,30]),lvl:'low',kb:2,vx:5,lastKd:true,pose:'roll',crouch:true},
    S4:{s:5,a:0,r:10,stanceSwap:true,pose:'stance'},
@@ -451,7 +451,7 @@ const CHARS=[
    cS4:{s:5,a:0,r:10,stanceSwap:true,pose:'stance'},
    AS:{s:5,a:34,r:6,dmg:90,hs:20,bs:14,hb:B([0,-36,32,38],1),lvl:'high',kb:2,hover:5,dive:5,diveV:[4.6,5],pose:'airheavy',ender:true,air:true,landRec:6},
    AS2:{s:4,a:18,r:8,dmg:95,hits:6,multi:3,hs:12,bs:8,hb:B([4,-64,36,42]),kb:0.4,hover:22,pose:'rush',ender:true,air:true},
-   SU:{s:8,a:36,r:22,dmg:430,hits:12,multi:3,hs:14,bs:8,hb:B([0,-66,36,52]),kb:0.35,vx:2.2,pose:'rush',lastKd:true,launch:5},
+   SU:{s:8,a:36,r:22,dmg:430,hits:12,multi:3,hs:14,bs:8,hb:B([0,-66,36,52]),kb:0.35,vx:2.2,pose:'rush',finPose:'upper',lastKd:true,launch:5},
    cSU:{s:6,a:32,r:22,dmg:420,hits:8,multi:4,hs:18,bs:8,hb:B([-12,-104,48,100],1),kb:0.3,carry:true,vy:7.4,vx:1.2,inv:[0,10],pose:'upkick',flipSpin:true,lastKd:true,launch:6,landRec:16}})},
   {id:'taolin',name:'TAOLIN',arch:'KUNG FU',archCol:'#ff6a1a',hp:960,walk:1.65,dash:4.8,jumpV:6.6,jumpX:2.4,scale:1.17,reach:1,sw:11,hw:8,
   col:{skin:'#e2b080',top:'#e2b080',pants:'#16141c',belt:'#c8202a',hair:'#18121a',band:'#c8202a',glove:'#f0ece4',shoe:'#16141c',accent:'#ff6a1a'},
@@ -479,7 +479,7 @@ const CHARS=[
    S1:{s:12,a:1,r:18,pose:'palm',proj:{type:'ki',vx:3.4,dmg:60,hs:20,bs:14,w:16,h:14,kb:2.5,life:64}},
    S2:{s:3,a:20,r:20,dmg:105,hits:3,multi:6,hs:22,bs:14,hb:B([0,-96,30,80],1),kb:1,launch:6.4,lastKd:true,inv:[0,6],vy:6.4,vx:1.2,pose:'upkick',landRec:14},
    S3:{s:8,a:34,r:14,dmg:120,hits:5,multi:6,hs:16,bs:10,hb:B([-30,-62,60,30],1),kb:0.6,hop:[3.2,0],hover:34,vx:3.2,pose:'bird',spin:true,lastKd:true,landRec:10},
-   S4:{s:4,a:26,r:16,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([8,-72,36,40]),kb:0.4,pose:'rush',lastKd:true},
+   S4:{s:4,a:26,r:16,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([8,-72,36,40]),kb:0.4,pose:'rush',finPose:'lkA',lastKd:true},
    AS:{s:4,a:22,r:6,dmg:80,hs:20,bs:14,hb:B([-6,-22,28,26],1),lvl:'high',kb:1.5,hover:4,dive:4,diveV:[1.2,6.4],pose:'stomp',air:true,bounce:5.8,landRec:6},
    AS2:{s:5,a:26,r:10,dmg:100,hits:4,multi:6,hs:14,bs:10,hb:B([-28,-62,58,30],1),kb:0.6,hover:26,vx:2.8,pose:'birdA',spin:true,ender:true,air:true,lastKd:true},
    SU:{s:6,a:22,r:26,dmg:24,hs:30,bs:16,hb:B([0,-70,34,70],1),kb:0.2,vx:6.6,inv:[0,10],pose:'tide',rush:{hits:14,every:3,dmg:280,fin:130}}})},
@@ -930,13 +930,13 @@ class Fighter{
       case 'win':return POSES.win;
       case 'taunt':case 'cine':return POSES.reaper;
       case 'attack':{const m=this.move;let pn=m.pose;
-        if(pn==='rush'){const rp=this.ch.rushPoses||['jab','heavy'];pn=t<=m.s?'palm':rp[Math.floor(t/4)%2]}
+        if(pn==='rush'){const rp=this.ch.rushPoses||['jab','heavy'];if(t<=m.s)pn='palm';else{const mu=m.multi||4,k=Math.floor((t-m.s-1+2)/mu);pn=(m.finPose&&k>=(m.hits||1)-1)?m.finPose:rp[k%2]}}
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
         if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
-        if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor(this.rushT/3)%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
+        if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor((this.rushT+1)/(m.rush.every||3))%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.ch.punchOnly&&PUNCH_SUB[pn])pn=PUNCH_SUB[pn];
         if(this.grabbed)pn='slam';this.pn=pn;
         if(t<=m.s)return POSES[pn+'_w']||POSES[pn]||POSES.idle;
