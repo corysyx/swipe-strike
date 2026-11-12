@@ -332,6 +332,7 @@ function bakeKit(){if(kitBaking||!AC||typeof OfflineAudioContext==='undefined')r
       oc.startRendering().then(b=>{KITB[k]=b}).catch(()=>{})}catch(e){}}}
 function hitDrum(k,t,v){const b=KITB[k];if(b&&mBus&&b.sampleRate===AC.sampleRate){const s=AC.createBufferSource(),g=AC.createGain();s.buffer=b;g.gain.value=v;s.connect(g).connect(mBus);s.start(t)}else(KIT[k]||KIT.hat)(t,v)}
 // instruments for pitched parts (semi = semitones from A4)
+const LEAD_MIX=0.6;/* melody level under the band (about -4.5 dB) */
 const INST={
   lead:(t,s,d,v,gl)=>voice(t,hz(s),d,0.213*v,{oscs:[{type:'sawtooth',det:-6},{type:'square',det:6,gain:0.5}],f0:5200,f1:2400,ftime:d,a:0.012,r:0.09,vib:[5.6,0.012],glide:gl,send:1}),
   square:(t,s,d,v,gl)=>voice(t,hz(s),d,0.175*v,{oscs:[{type:'square'},{type:'square',det:9,gain:0.4}],f0:4200,a:0.006,r:0.06,vib:[6,0.008],glide:gl,send:1}),
@@ -386,8 +387,8 @@ function scheduleStep(T,t,spb){const C=compileSong(T),key=T.key||0,secName=C.for
   // lead (+ diatonic harmony a third below)
   if(S.leadSteps.length){const total=S.bars*16,idx=(bar*16+s)%S.leadSteps.length,tk=S.leadSteps[idx];
     if(tk!=='~'&&tk!=='_'&&tk!=='-'){let n=1;while(idx+n<S.leadSteps.length&&(S.leadSteps[idx+n]==='~'||S.leadSteps[idx+n]==='_'))n++;const semi=noteSemi(tk);
-      if(semi!=null){const inst=INST[S.lead2||T.lead||'lead'];const sm=semi+key,leg=SS.lastLead!=null&&Math.abs(SS.lastLead-sm)<=5&&(T.legato!==false);inst(t,sm,spb*n*0.94,S.leadVol||1,leg?hz(SS.lastLead):0);SS.lastLead=sm;
-        if(S.harm&&!LITE){const sc=SCALES[T.scale||'aeo'];let pc=((semi%12)+12)%12,ix=sc.indexOf(pc);if(ix>=0){const low=sc[(ix+5)%7]-(ix<2?12:0);const hs=semi-pc+low;inst(t,hs+key,spb*n*0.94,0.6*(S.leadVol||1),0)}}}}
+      if(semi!=null){const inst=INST[S.lead2||T.lead||'lead'];const sm=semi+key,leg=SS.lastLead!=null&&Math.abs(SS.lastLead-sm)<=5&&(T.legato!==false);inst(t,sm,spb*n*0.94,LEAD_MIX*(S.leadVol||1),leg?hz(SS.lastLead):0);SS.lastLead=sm;
+        if(S.harm&&!LITE){const sc=SCALES[T.scale||'aeo'];let pc=((semi%12)+12)%12,ix=sc.indexOf(pc);if(ix>=0){const low=sc[(ix+5)%7]-(ix<2?12:0);const hs=semi-pc+low;inst(t,hs+key,spb*n*0.94,0.6*LEAD_MIX*(S.leadVol||1),0)}}}}
     else if(tk==='-')SS.lastLead=null}
   // advance
   SS.fillCrash=false;SS.step++;if(SS.step>=16){SS.step=0;SS.bar++;if(SS.bar>=S.bars){SS.bar=0;if(S.fill)SS.fillCrash=true;SS.fi++;if(SS.fi>=C.form.length)SS.fi=Math.min(C.loop,C.form.length-1)}}}
