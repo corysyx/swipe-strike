@@ -271,11 +271,13 @@ const DRUMSETS={
   boss:{kick:'x.xxx.xxx.xxx.xx',snare:'....x.......x...',hat:'x.x.x.x.x.x.x.x.',ride:'x...x...x...x...'},
   market:{kick:'x...x..xx...x...',snare:'....x.......x..g',hat:'x.xgx.xgx.xgx.xg',wood:'x..x..x...x.x...'},
   marketB:{kick:'x..x..x...x..x..',snare:'....x..g.g..x...',hat:'x.xox.x.x.xox.x.',wood:'..x...x...x...xx',metal:'............x...'},
+  heroic:{kick:'x.....x.x.......',snare:'....x.......x...',hat:'x.x.x.x.x.x.x.x.'},
+  heroicB:{kick:'x.....x.x.x.....',snare:'....x.......x..g',hat:'x.xox.x.x.xox.x.',ride:'x...x...x...x...'},
   chill:{kick:'x......x..x.....',snare:'....x.......x...',hat:'x.xgx.xgx.xgx.xg'},
   intro:{kick:'x...............',snare:'',hat:''},
   none:{}
 };
-const BASSP={drive8:'R=R=R=R=R=R=O=5=',gallop:'R=RRR=RRR=RRO=OO',drive16:'xxxxxxxxxxxxOxxx',slap:'R==xO=-xR=xO-5O-',funk:'R=-R--5-O=-7-5R-',polka:'R=-=5=-=R=-=5=-=',
+const BASSP={oct:'R=O=R=O=R=O=R=O=',octpush:'R=O=R=O=R=O=5=O=',drive8:'R=R=R=R=R=R=O=5=',gallop:'R=RRR=RRR=RRO=OO',drive16:'xxxxxxxxxxxxOxxx',slap:'R==xO=-xR=xO-5O-',funk:'R=-R--5-O=-7-5R-',polka:'R=-=5=-=R=-=5=-=',
   bass8:'R=O=R=O=R=O=5=O=',walk:'R===3===5===O===',half:'R=======R=====5=',tribal:'R==R==R=R==5==O=',pump:'R=RxR=RxR=RxR=5b',hold:'R===============',sparse:'R=======--------',chill:'R==-R-5-O=-5-3--'};
 const GTRP={chug:'x-xxx-x-x-xxx-x-',power:'P=======P=====P=',gallop:'P=xxP=xxP=xxP=P=',metal:'xxxxxxxxP===xxxx',offbeat:'--P---P---P---P-',hold:'P===============',push:'P=====P=====P===',stab:'P-------P-------'};
 const BRASSP={stabs:'X-----X---X-----',hit:'X===============',push:'------X-------X-',funk:'--X--X----X-X---',hold2:'X=======X=======',accent:'X-----------X-X-',hits3:'X-X---X---------'};
@@ -473,15 +475,19 @@ const TRACKS={
        lead:'A4 _ _ B4 C5 _ B4 A4 | E5 _ _ _ C5 _ A4 _ | G#4 _ A4 B4 E5 _ D5 C5 | B4 _ A4 _ _ _ _ _'},
     B:{prog:[4,4,1,5],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
        lead:'D5 _ _ E5 F5 _ E5 D5 | A5 _ _ _ F5 _ D5 _ | C5 _ D5 E5 A5 _ G#5 _ | B5 _ _ _ E5 _ _ _'}}},
-  // CARRIER DECK: fast military rock
-  s8:{bpm:154,key:2,scale:'aeo',lead:'lead',form:['I','A','A','B','C'],loop:1,sec:{
-    I:{prog:[1,1],drums:'march',bass:'drive16',gtr:'chug'},
-    A:{prog:[1,3,7,4],drums:'drive',bass:'drive16',gtr:'chug',brass:'stabs',
-       lead:'E5 _ E5 _ D5 E5 _ G5 | _ _ E5 _ C5 _ _ _ | D5 _ D5 _ C5 D5 _ F5 | _ _ D5 _ A4 _ _ _'},
-    B:{prog:[6,7,1,1],drums:'drive',bass:'gallop',gtr:'gallop',brass:'hold2',
-       lead:'C5 _ E5 _ F5 _ A5 _ | B5 _ A5 _ G5 _ D5 _ | E5 _ _ _ A5 _ _ _ | G5 F5 E5 D5 E5 _ _ _'},
-    C:{prog:[4,5,6,7],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,orch:2,
-       lead:'F5 _ A5 _ D6 _ C6 _ | B5 _ G5 _ E5 _ B5 _ | C6 _ A5 _ F5 _ C6 _ | D6 _ B5 _ G5 _ D6 _'}}},
+  // CARRIER DECK: heroic air-base anthem - brass lead with long soaring notes, pumping octave bass, synth strings
+  s8:{bpm:132,key:2,scale:'mix',lead:'brassLead',form:['I','A','A2','B','C','C2','A2'],loop:1,sec:{
+    I:{prog:[1,1],drums:'march',bass:'hold',brass:'hit',gong:0},
+    A:{prog:[1,7,4,1],drums:'heroic',bass:'oct',gtr:'push',pad:'pad',
+       lead:'A4 _ _ _ C#5 _ E5 _ | D5 _ _ _ _ _ C#5 B4 | A4 _ _ _ E5 _ F#5 _ | E5 _ _ _ _ _ - -'},
+    A2:{prog:[1,7,4,5],drums:'heroic',bass:'octpush',gtr:'push',pad:'pad',brass:'accent',
+       lead:'A4 _ _ _ C#5 _ E5 _ | G5 _ _ _ F#5 _ E5 D5 | E5 _ _ _ A5 _ G5 _ | F#5 _ _ _ E5 _ _ _'},
+    B:{prog:[6,4,7,7],drums:'heroicB',bass:'gallop',gtr:'gallop',pad:'pad',fill:true,
+       lead:'F#5 _ E5 _ C#5 _ E5 _ | F#5 _ A5 _ _ _ E5 _ | D5 _ E5 _ F#5 _ G5 _ | A5 _ _ _ B5 _ _ _'},
+    C:{prog:[1,7,6,4],drums:'heroicB',bass:'oct',gtr:'power',brass:'hold2',pad:'pad',harm:true,orch:2,
+       lead:'C#6 _ _ _ B5 _ A5 _ | B5 _ _ _ D5 _ _ _ | C#5 _ E5 _ A5 _ B5 _ | A5 _ _ _ _ _ - -'},
+    C2:{prog:[4,7,1,1],drums:'heroicB',bass:'octpush',gtr:'power',brass:'hold2',pad:'pad',harm:true,fill:true,
+       lead:'D6 _ _ _ C#6 _ B5 _ | B5 _ _ _ G5 _ A5 _ | A5 _ _ _ _ _ _ _ | E5 _ F#5 _ G5 _ A5 _'}}},
   // SHADOW SHRINE: dark, heavy, half-time into a double-time chorus
   s9:{bpm:120,key:4,scale:'phr',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
     I:{prog:[1,2],drums:'intro',bass:'hold',pad:'choir',gong:1},
