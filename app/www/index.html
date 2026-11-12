@@ -2444,7 +2444,7 @@ function renderSelect(g){
   button(g,120,198,130,20,(STAGES[G.stage]||{name:''}).name,()=>{G.stage=(G.stage+1)%STAGES.length},{col:'#b48cff'});
   const ready=!!s.p1;
   button(g,254,198,124,20,ready?'FIGHT!':'PICK 1P',()=>{if(!s.p1)return;if(!s.p2)s.p2=pick(CHARS.filter(q=>q.id!==s.p1)).id;
-    if(!G.training){const rest=CHARS.map(q=>q.id).filter(id=>id!==s.p1&&id!==s.p2).sort(()=>Math.random()-.5);const boss=rest.indexOf('magatsu');if(boss>=0){rest.splice(boss,1);rest.push('magatsu')}rest.push(BOSS_ID);G.ladder=[s.p2,...rest];G.ladderIdx=0}startMatch()},{col:ready?'#ffd23f':'#555',def:true});
+    if(!G.training){G.ladder=buildLadder(s.p1,s.p2);G.ladderIdx=0}startMatch()},{col:ready?'#ffd23f':'#555',def:true});
 }
 function renderVS(g){
   const k=G.vsT,a=G.p1.ch,b=G.p2.ch;g.fillStyle='#000';g.fillRect(0,0,W,H);
@@ -2520,17 +2520,23 @@ function renderPause(g){
   b('SETTINGS',()=>{G.setFrom='pause';G.mode='settings'},{col:'#b48cff'});
   b('QUIT TO TITLE',()=>{G.paused=false;newDemo();go('title')},{col:'#ff4a4a'});
 }
+/* arcade ladder: 8 fights - 6 random, the sub-boss Magatsu, then the final boss (bonus stages still after every 3 wins) */
+const ARCADE_FIGHTS=8;
+function buildLadder(p1,first){const sub='magatsu',useSub=p1!==sub&&first!==sub;
+  const pool=CHARS.map(q=>q.id).filter(id=>id!==p1&&id!==first&&id!==sub).sort(()=>Math.random()-.5);
+  const need=ARCADE_FIGHTS-2-(useSub?1:0);return[first,...pool.slice(0,need),...(useSub?[sub]:[]),BOSS_ID]}
+function arcadeAgain(){const s=G.sel;s.p2=pick(CHARS.filter(q=>q.id!==s.p1&&q.id!=='magatsu')).id;s.c2=0;G.ladder=buildLadder(s.p1,s.p2);G.ladderIdx=0;G.stage=randFightStage();G.lastFightStage=G.stage;G.selMode='arcade';startMatch()}
 function renderResult(g){
   const r=G.result;r.t++;g.fillStyle=`rgba(6,3,16,${Math.min(0.75,r.t/40)})`;g.fillRect(0,0,W,H);if(r.t<30)return;
   const champ=!G.net&&r.won&&G.ladderIdx>=G.ladder.length;const opp=G.me===G.p2?G.p1:G.p2,w=r.won?(G.me||G.p1):opp;
-  if(champ){bigTxt(g,'CHAMPION!',W/2,40,24,'#fff6a0','#ffd23f');txt(g,'YOU BEAT ALL '+G.ladder.length+' FIGHTERS',W/2,62,8,'#fff','center')}
+  if(champ){bigTxt(g,'CHAMPION!',W/2,40,24,'#fff6a0','#ffd23f')}
   else bigTxt(g,r.won?'YOU WIN!':'YOU LOSE',W/2,40,24,r.won?'#fff6a0':'#ffd0d0',r.won?'#ff7a1a':'#c02040');
   const q=wrap(g,'"'+w.ch.quote+'"',300);q.forEach((l,i)=>txt(g,l,W/2,78+i*10,8,'#d8d0ff','center'));txt(g,'- '+w.ch.name,W/2,80+q.length*10,8,w.ch.archCol,'center');
   let y=118;const b=(l,cb,o)=>{button(g,W/2-70,y,140,18,l,cb,o);y+=22};
   if(G.net){const N=G.net;if(N){txt(g,'ROLLBACKS MAX '+N.rbMax+'F  DESYNC FIXES '+N.resyncs,W/2,H-10,8,'#5a5080','center');
       b('REMATCH',()=>{N.ready=false;N.rready=false;G.result=null;N.live=false;G.mode='netsel'},{def:true});b('LEAVE',()=>{NX.ctrlSend({t:'bye'});netLost('')},{col:'#ff4a4a'})}return}
   if(G.training){b('AGAIN',()=>startMatch(),{def:true})}
-  else if(champ){b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{def:true})}
+  else if(champ){y=126;b('AGAIN?',()=>ADS.gate(()=>arcadeAgain()),{def:true});b('MAIN MENU',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff8a3a'});return}
   else if(r.won){b('NEXT FIGHT',()=>ADS.gate(()=>{const go=()=>{G.sel.p2=G.ladder[G.ladderIdx];G.stage=G.sel.p2===BOSS_ID?BOSS_STAGE:nextFightStage(G.lastFightStage??G.stage);G.lastFightStage=G.stage;startMatch()};
     if(G.ladderIdx%3===0&&G.ladderIdx<G.ladder.length){G.selMode='arcade';const k=(G.ladderIdx/3-1)%BONUS_TYPES.length;startBonus(BONUS_TYPES[k],go)}else go()}),{def:true})}
   else{b('CONTINUE',()=>ADS.gate(()=>{startMatch()}),{def:true})}
