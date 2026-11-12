@@ -516,6 +516,17 @@ const TRACKS={
        lead:'A4 _ A4 C5 - A4 D5 - | E5 _ D5 C5 A4 _ _ _ | F#5 _ F#5 E5 - D5 E5 - | A5 _ G5 E5 D5 _ _ _'},
     B:{prog:[3,4,7,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
        lead:'G5 _ E5 _ C5 _ E5 G5 | F#5 _ A5 _ F#5 _ D5 _ | B4 _ D5 _ G5 _ F#5 G5 | A5 _ _ _ _ _ _ _'}}},
+  // GRASS BOX: sunny, bouncy, happy meadow tune
+  s14:{bpm:138,key:3,scale:'ion',lead:'flute',form:['I','A','A2','B','A','C'],loop:1,sec:{
+    I:{prog:[1,4],drums:'intro',bass:'hold',arp:true},
+    A:{prog:[1,4,5,1],drums:'disco',bass:'drive8',arp:true,pad:'pad',
+       lead:'C#5 _ B4 A4 B4 _ C#5 E5 | F#5 _ E5 _ C#5 _ _ _ | B4 _ C#5 B4 G#4 _ E4 _ | A4 _ _ _ _ _ - -'},
+    A2:{prog:[1,4,5,1],drums:'disco',bass:'drive8',arp:true,pad:'pad',harm:true,
+       lead:'C#5 _ B4 A4 B4 _ C#5 E5 | F#5 _ A5 _ F#5 _ E5 _ | C#5 _ E5 _ B4 _ C#5 B4 | A4 _ _ _ _ _ - -'},
+    B:{prog:[6,4,1,5],drums:'funk',bass:'drive8',pad:'pad',lead2:'bell',
+       lead:'F#4 _ A4 _ C#5 _ _ _ | D5 _ C#5 _ A4 _ _ _ | E5 _ C#5 _ A4 _ C#5 _ | B4 _ _ _ _ _ - -'},
+    C:{prog:[4,5,3,6,4,5,1,1],drums:'disco',bass:'drive8',arp:true,pad:'pad',harm:true,brass:'accent',
+       lead:'D5 _ F#5 _ A5 _ F#5 _ | E5 _ G#5 _ B5 _ G#5 _ | C#5 _ E5 _ G#5 _ E5 _ | F#5 _ _ _ C#5 _ _ _ | D5 _ C#5 _ B4 _ A4 _ | B4 _ C#5 _ D5 _ B4 _ | A4 _ _ _ E5 _ C#5 _ | A4 _ _ _ _ _ - -'}}},
   // STEEL FOUNDRY: industrial metal
   s12:{bpm:160,key:7,scale:'phr',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
     I:{prog:[1,1],drums:'boss',bass:'drive16',gtr:'metal'},
@@ -1656,7 +1667,7 @@ const PARA=[0.12,0.35,0.7,0.86];
 const layerW=p=>Math.ceil(W+(STAGE_W-W)*p)+4;
 function buildStage(kind){
   const R=seeded(4242+kind*1013),r=(a,b)=>a+R()*(b-a),rp=a=>a[R()*a.length|0];
-  const L={kind,name:['SUNSET PIER','NEON ALLEY','LOST TEMPLE','FROZEN CAVERN','SAKURA SHRINE','TRAINING ROOM','MARKET STREET','MOSCOW WINTER','CARRIER DECK','SHADOW SHRINE','MOUNTAIN DOJO','BOXING ARENA','STEEL FOUNDRY','CELESTIAL THRONE'][kind],rim:['rgba(255,170,90,0.35)','rgba(255,80,190,0.35)','rgba(160,255,120,0.25)','rgba(140,220,255,0.3)','rgba(255,160,200,0.35)','rgba(120,200,255,0.3)','rgba(255,140,80,0.35)','rgba(200,220,255,0.3)','rgba(255,255,255,0.3)','rgba(255,140,60,0.3)','rgba(255,220,160,0.3)','rgba(255,250,220,0.35)','rgba(255,120,40,0.35)','rgba(255,230,160,0.4)'][kind]};
+  const L={kind,name:['SUNSET PIER','NEON ALLEY','LOST TEMPLE','FROZEN CAVERN','SAKURA SHRINE','TRAINING ROOM','MARKET STREET','MOSCOW WINTER','CARRIER DECK','SHADOW SHRINE','MOUNTAIN DOJO','BOXING ARENA','STEEL FOUNDRY','CELESTIAL THRONE','GRASS BOX'][kind],rim:['rgba(255,170,90,0.35)','rgba(255,80,190,0.35)','rgba(160,255,120,0.25)','rgba(140,220,255,0.3)','rgba(255,160,200,0.35)','rgba(120,200,255,0.3)','rgba(255,140,80,0.35)','rgba(200,220,255,0.3)','rgba(255,255,255,0.3)','rgba(255,140,60,0.3)','rgba(255,220,160,0.3)','rgba(255,250,220,0.35)','rgba(255,120,40,0.35)','rgba(255,230,160,0.4)','rgba(255,255,225,0.35)'][kind]};
   const sw=layerW(PARA[0]),sky=mkCanvas(sw,FLOOR_TOP),sg=sky.getContext('2d');
   const fw=layerW(PARA[1]),far=mkCanvas(fw,FLOOR_TOP),fg=far.getContext('2d');
   const mw=layerW(PARA[2]),mid=mkCanvas(mw,FLOOR_TOP),mg=mid.getContext('2d');
@@ -1995,6 +2006,33 @@ function buildStage(kind){
     L.noCrowd=true;L.fog='rgba(255,220,200,';L.floorGlow='rgba(255,220,120,0.12)';L.parts='dust';
     L.dynMid=(g,mo,T)=>{for(let i=0;i<L.flames.length;i++){const f=L.flames[i],x=mo+f.x;if(x<-30||x>W+30)continue;const fl=Math.sin(T*0.5+i*2.1)*0.8+Math.sin(T*0.23+i)*0.6,s=f.s;
       g.fillStyle=`rgba(255,200,80,${0.14+0.04*fl})`;g.beginPath();g.arc(x,f.y,16*s,0,7);g.fill();g.fillStyle='#ffb030';g.beginPath();g.ellipse(x,f.y-2*s,3*s,(5+fl)*s,0,0,7);g.fill();g.fillStyle='#fff6c0';g.beginPath();g.ellipse(x,f.y-1*s,1.5*s,(2.6+fl*0.5)*s,0,0,7);g.fill()}};
+  }else if(kind===14){ // ---------- GRASS BOX (designed from a drawing by the developer's daughter)
+    ditherFill(sg,sw,FLOOR_TOP,['#9cd2e2','#a8d9e5','#b6e0e7','#c4e7e8','#d2eeea'],(x,y)=>y/150);
+    // soft painted clouds: blurred white puffs, pre-rendered once so they can drift cheaply
+    const cloud=(w,h)=>{const c=mkCanvas(w+24,h+24),cg=c.getContext('2d');try{cg.filter='blur(3px)'}catch(e){}cg.fillStyle='#ffffff';
+      for(let k=0;k<7;k++){cg.beginPath();cg.ellipse(12+w*(0.12+k*0.12),12+h*0.55+Math.sin(k*1.7)*h*0.12,w*0.16,h*(0.32+((k*37)%5)*0.03),0,0,7);cg.fill()}
+      cg.fillRect(12+w*0.1,12+h*0.55,w*0.8,h*0.32);return c};
+    L.clouds=[];for(let i=0;i<7;i++){const w=r(60,150)|0,h=r(14,26)|0;L.clouds.push({img:cloud(w,h),x:r(0,fw),y:r(4,90),sp:r(0.04,0.12)})}
+    for(let i=0;i<4;i++){const c=cloud(r(40,90)|0,r(10,16)|0);sg.globalAlpha=0.55;sg.drawImage(c,r(0,sw-60),r(0,60));sg.globalAlpha=1}
+    // far: gentle rolling hills
+    const hill=(base,amp,len,col)=>{fg.fillStyle=col;fg.beginPath();fg.moveTo(0,168);for(let x=0;x<=fw;x+=4)fg.lineTo(x,base+Math.sin(x/len+base)*amp+Math.sin(x/(len*0.37))*amp*0.3);fg.lineTo(fw,168);fg.fill()};
+    hill(132,7,70,'#a8d8a0');hill(146,6,50,'#90cc84');
+    // mid: grassy mounds with tall blades on both sides of the box, a few little flowers
+    const blade=(x,y,h,lean,col,w)=>{mg.strokeStyle=col;mg.lineWidth=w;mg.lineCap='round';mg.beginPath();mg.moveTo(x,y);mg.quadraticCurveTo(x+lean*0.3,y-h*0.6,x+lean,y-h);mg.stroke()};
+    const tuft=(x,y,n,hmax)=>{for(let k=0;k<n;k++){const h=r(hmax*0.45,hmax),lean=r(-hmax*0.35,hmax*0.35);blade(x+r(-10,10),y,h,lean,rp(['#5a9a3e','#6aaa48','#78b852','#4e8c36']),r(1.2,2.4))}};
+    const mound=(x,w,h)=>{mg.fillStyle='#5f9e43';mg.beginPath();mg.ellipse(x,168,w,h,0,Math.PI,0);mg.fill();mg.fillStyle='#74b455';mg.beginPath();mg.ellipse(x-w*0.15,168,w*0.8,h*0.8,0,Math.PI,0);mg.fill();
+      mg.fillStyle='rgba(255,255,255,0.12)';mg.beginPath();mg.ellipse(x-w*0.3,168-h*0.55,w*0.3,h*0.18,-0.3,0,7);mg.fill()};
+    const cx=mw*0.5;
+    for(const [x,w,h] of [[30,70,38],[mw-30,80,42],[cx-260,46,22],[cx+250,52,26]]){mound(x,w,h);tuft(x-w*0.4,168-h*0.55,9,52);tuft(x+w*0.35,168-h*0.4,7,40)}
+    for(let x=r(20,60);x<mw;x+=r(40,80))if(Math.abs(x-cx)>40)tuft(x,168,4,r(16,30));
+    for(let i=0;i<14;i++){const x=r(0,mw),y=r(158,166);mg.fillStyle='#4e8c36';mg.fillRect(x,y,1,6);mg.fillStyle=rp(['#ffffff','#ffe066','#ffb0d0','#c8a0ff']);for(let k=0;k<4;k++)mg.fillRect(x-1+(k%2)*2,y-1+(k>>1)*2,2,2);mg.fillStyle='#ffd23f';mg.fillRect(x,y,1,1)}
+    // floor: bright lawn, soft mowing stripes, short blades
+    const ftw=FT.width;ditherFill(tg,ftw,H,['#9bd86a','#8ccf5c','#7fc650','#74bc47'],(x,y)=>y<FLOOR_TOP?-1:(y-FLOOR_TOP)/(H-FLOOR_TOP));
+    for(let x2=0;x2<ftw;x2+=48){tg.fillStyle='rgba(255,255,255,0.07)';tg.fillRect(x2,FLOOR_TOP,24,H-FLOOR_TOP)}
+    for(let i=0;i<1600;i++){const x=r(0,ftw)|0,y=r(FLOOR_TOP,H)|0;tg.fillStyle=rp(['#6ab040','#5ea238','#a8e078','#b8ea88']);tg.fillRect(x,y-1,1,2)}
+    for(let i=0;i<60;i++){tg.fillStyle=rp(['#ffffff','#ffe066','#ffb0d0']);tg.fillRect(r(0,ftw)|0,r(FLOOR_TOP+4,H)|0,2,2)}
+    L.noCrowd=true;L.fog='rgba(220,245,230,';L.floorGlow='rgba(255,255,220,0.10)';L.parts='meadow';
+    L.dynFar=(g,fo,T)=>{const fw2=layerW(PARA[1]);for(const c of L.clouds){const x=((c.x+T*c.sp)%(fw2+180))-90+fo;g.drawImage(c.img,x|0,c.y|0)}};
   }else{ // ---------- SAKURA SHRINE (Japan)
     ditherFill(sg,sw,FLOOR_TOP,['#3a2a6a','#6a3e8e','#c06a9e','#f0a0a8','#ffd2b4','#fff0d0'],(x,y)=>y/146);
     for(let i=0;i<10;i++){const y=r(20,90),x=r(-20,sw),l=r(40,120);sg.fillStyle=y<55?'#8a5aa8':'#f8c0c0';sg.fillRect(x,y,l,r(2,4)|0);sg.fillStyle='#fff0f0';sg.fillRect(x+6,y-1,l-12,1)}
@@ -2056,6 +2094,9 @@ function drawStage(g,camX){
       for(let i=0;i<10;i++){const k=(cyc*2+i*7)%28,vx=((i*37)%13-6)*0.35,x=wx+vx*k,y=96+k*0.6+k*k*0.06;g.fillStyle=i%2?'#ffe080':'#ffffff';g.fillRect(x,y,2,1)}}
     for(let i=0;i<10;i++){const x=((i*113-camX*0.8+T*0.3)%pw+pw)%pw-20,y=((i*67+T*(0.4+i%3*0.2))%(FLOOR_TOP+20))-10;g.fillStyle=i%2?'rgba(255,160,60,0.7)':'rgba(255,220,120,0.6)';g.fillRect(x,y,1,2)}}
   if(L.parts==='grid'){const sy=(T*0.4)%(FLOOR_TOP+40)-20;const sg2=g.createLinearGradient(0,sy-10,0,sy+10);sg2.addColorStop(0,'rgba(140,220,255,0)');sg2.addColorStop(0.5,'rgba(140,220,255,0.10)');sg2.addColorStop(1,'rgba(140,220,255,0)');g.fillStyle=sg2;g.fillRect(0,sy-10,W,20)}
+  if(L.parts==='meadow'){for(let i=0;i<18;i++){const x=((i*97-camX*(0.5+i%3*0.2)+T*0.25+Math.sin(T*0.02+i)*18)%pw+pw)%pw-20,y=30+((i*41+Math.sin(T*0.017+i*1.3)*14+T*0.05)%130);g.fillStyle='rgba(255,255,255,0.9)';g.fillRect(x,y,2,2);g.fillStyle='rgba(255,255,255,0.45)';g.fillRect(x-1,y-1,1,1);g.fillRect(x+2,y-1,1,1)}
+    for(let i=0;i<3;i++){const bx=((i*150+T*(0.3+i*0.08)-camX*0.7)%(W+80)+W+80)%(W+80)-40,by=70+i*24+Math.sin(T*0.04+i*2)*14,fl=(T+i*7)%10<5;g.fillStyle=['#ffb0d0','#ffe066','#c8a0ff'][i];
+      g.fillRect(bx-(fl?3:1),by-2,fl?3:1,3);g.fillRect(bx+1,by-2,fl?3:1,3);g.fillStyle='#4a3a2a';g.fillRect(bx,by-2,1,4)}}
   if(L.parts==='petal'){for(let i=0;i<34;i++){const x=((i*91-camX*(0.7+i%3*0.15)+T*0.3+Math.sin(T*0.03+i)*22)%pw+pw)%pw-20,y=((T*(0.3+i%4*0.1)+i*47)%(H+10))-5;g.fillStyle=['#ffb0c8','#ff90b4','#ffe0ea'][i%3];g.fillRect(x,y,(T+i)%20<10?3:2,2)}}
 }
 
@@ -2959,7 +3000,7 @@ function renderNetSel(g){const N=G.net;
 let last=performance.now(),acc=0;
 let dbgSlowN=0;function dbgStepOK(){if(DBG.speed<=1||!dbgLive()||(G.mode!=='fight'&&G.mode!=='bonus')||G.paused)return true;return(++dbgSlowN%DBG.speed)===0}
 function frame(now){G.fpsAvg=lerp(G.fpsAvg||16.7,Math.min(100,now-last),0.05);acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(!window.__freeze&&dbgStepOK())step();acc-=1000/60;n++}if(n>=4)acc=0;render();requestAnimationFrame(frame)}
-function boot(){ADS.init();resize();STAGES=[0,1,2,3,4,5,6,7,8,9,10,11,12,13].map(buildStage);try{document.fonts&&document.fonts.ready.then(()=>{STAGES[TRAIN_STAGE]=buildStage(TRAIN_STAGE)})}catch(e){}newDemo();requestAnimationFrame(frame)}
+function boot(){ADS.init();resize();STAGES=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(buildStage);try{document.fonts&&document.fonts.ready.then(()=>{STAGES[TRAIN_STAGE]=buildStage(TRAIN_STAGE)})}catch(e){}newDemo();requestAnimationFrame(frame)}
 if(document.fonts&&document.fonts.load){Promise.race([document.fonts.load('8px "Press Start 2P"'),new Promise(r=>setTimeout(r,1500))]).then(boot,boot)}else boot();
 window.__G=G;
 </script>
