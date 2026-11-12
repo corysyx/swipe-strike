@@ -2758,7 +2758,15 @@ const NU={status:'',code:'',err:'',tip:''}; // lobby ui state
    always connect through a relay when a direct path is blocked:
    {urls:['turn:HOST:3478?transport=udp','turn:HOST:3478?transport=tcp','turns:HOST:443?transport=tcp'],username:'USER',credential:'PASS'} */
 const NET_TURN=[];
-function iceCfg(){return{iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun2.l.google.com:19302']},{urls:'stun:stun.cloudflare.com:3478'},
+/* TURN_API: your Cloudflare Worker URL. It hands out short-lived relay passes so no secret ever ships in the game. */
+const TURN_API='';
+let TURN_CACHE=null;NU.tok=0;NU.relay='';
+async function fetchIce(){if(!TURN_API)return null;const now=Date.now();if(TURN_CACHE&&TURN_CACHE.exp>now)return TURN_CACHE.list;
+  try{const ctl=typeof AbortController!=='undefined'?new AbortController():null;const tm=setTimeout(()=>ctl&&ctl.abort(),4000);
+    const r=await fetch(TURN_API,{signal:ctl&&ctl.signal,cache:'no-store'});clearTimeout(tm);if(!r.ok){NU.relay='OFF';return null}
+    const j=await r.json();if(!j||!Array.isArray(j.iceServers)){NU.relay='OFF';return null}
+    TURN_CACHE={list:j.iceServers,exp:now+6*3600e3};NU.relay='READY';return j.iceServers}catch(e){NU.relay='OFF';return null}}
+function iceCfg(extra){return{iceServers:[...(extra||[]),{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun2.l.google.com:19302']},{urls:'stun:stun.cloudflare.com:3478'},
   ...NET_TURN,{urls:['turn:eu-0.turn.peerjs.com:3478','turn:us-0.turn.peerjs.com:3478'],username:'peerjs',credential:'peerjsp'}],iceCandidatePoolSize:2}}
 const NDIAG={route:'',weakSince:0,iceFailed:false,oppAway:false,bye:false,reset(){this.route='';this.weakSince=0;this.iceFailed=false;this.oppAway=false;this.bye=false}};
 async function routeOf(pc){try{const st=await pc.getStats();let pair=null;st.forEach(r=>{if(r.type==='transport'&&r.selectedCandidatePairId)pair=st.get(r.selectedCandidatePairId)});
@@ -2790,23 +2798,25 @@ const CODECH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const genCode=()=>Array.from({length:5},()=>CODECH[Math.random()*CODECH.length|0]).join('');
 function hostOnline(){
   if(!window.Peer||!netOK()){NU.err='ONLINE NOT AVAILABLE HERE';return}
-  NX.close();NDIAG.reset();NU.err='';NU.tip='';NU.code=genCode();NU.status='hosting';
-  let peer;try{peer=new Peer('swst-'+NU.code.toLowerCase(),{debug:0,config:iceCfg()})}catch(e){NU.err='WEBRTC BLOCKED IN THIS VIEW';NU.status='';return}
+  NX.close();NDIAG.reset();NU.err='';NU.tip='';NU.code=genCode();NU.status='hosting';const tok=++NU.tok;
+  fetchIce().then(ice=>{if(NU.tok!==tok||NU.status!=='hosting')return;
+  let peer;try{peer=new Peer('swst-'+NU.code.toLowerCase(),{debug:0,config:iceCfg(ice)})}catch(e){NU.err='WEBRTC BLOCKED IN THIS VIEW';NU.status='';return}
   NX.peer=peer;
   peer.on('error',e=>{if(e.type==='unavailable-id'){hostOnline();return}NU.err=EMBED?EMBED_MSG:('NET ERROR: '+e.type).toUpperCase().slice(0,40);if(NU.status==='hosting')NU.status=''});
   peer.on('disconnected',()=>{if(NU.status==='hosting'&&!peer.destroyed)setTimeout(()=>{try{if(peer.disconnected&&!peer.destroyed)peer.reconnect()}catch(e){}},1000)});
   peer.on('connection',c=>{c.on('open',()=>{if(c.label==='ctrl')NX.ctrl=c;else NX.inp=c;watchConn(c);c.on('data',onNet);c.on('close',onClosed);
-    if(NX.ctrl&&NX.inp&&!G.net)netConnected(0)})});
+    if(NX.ctrl&&NX.inp&&!G.net)netConnected(0)})})});
 }
 function joinOnline(code){
   if(!window.Peer||!netOK()){NU.err='ONLINE NOT AVAILABLE HERE';return}
-  NX.close();NDIAG.reset();NU.err='';NU.tip='';NU.status='joining';const id='swst-'+code.trim().toLowerCase();
-  let peer;try{peer=new Peer({debug:0,config:iceCfg()})}catch(e){NU.err='WEBRTC BLOCKED IN THIS VIEW';NU.status='';return}
+  NX.close();NDIAG.reset();NU.err='';NU.tip='';NU.status='joining';const id='swst-'+code.trim().toLowerCase();const tok=++NU.tok;
+  fetchIce().then(ice=>{if(NU.tok!==tok||NU.status!=='joining')return;
+  let peer;try{peer=new Peer({debug:0,config:iceCfg(ice)})}catch(e){NU.err='WEBRTC BLOCKED IN THIS VIEW';NU.status='';return}
   NX.peer=peer;const to=setTimeout(()=>{if(!G.net){NU.err='COULD NOT CONNECT TO ROOM '+code.toUpperCase();NU.tip='TIP: 4G/5G CAN BLOCK GAMES - TRY WI-FI';NU.status='';NX.close()}},25000);
   peer.on('error',e=>{clearTimeout(to);NU.err=EMBED&&e.type!=='peer-unavailable'?EMBED_MSG:(e.type==='peer-unavailable'?'NO ROOM '+code.toUpperCase():'NET ERROR: '+e.type).toUpperCase().slice(0,40);NU.status=''});
   peer.on('open',()=>{const mk=(label,reliable)=>{const c=peer.connect(id,{label,reliable,serialization:'json'});
       c.on('open',()=>{if(label==='ctrl')NX.ctrl=c;else NX.inp=c;watchConn(c);c.on('data',onNet);c.on('close',onClosed);if(NX.ctrl&&NX.inp&&!G.net){clearTimeout(to);netConnected(1)}})};
-    mk('ctrl',true);mk('inp',false)});
+    mk('ctrl',true);mk('inp',false)})});
 }
 // ---- copy/paste codes (works on a LAN with no internet)
 async function packSDP(sdp){try{const cs=new Blob([sdp]).stream().pipeThrough(new CompressionStream('deflate-raw'));const b=new Uint8Array(await new Response(cs).arrayBuffer());
@@ -2926,7 +2936,7 @@ function renderNet(g){
   if(NU.status==='hosting'){txt(g,'YOUR ROOM CODE',W/2,52,8,'#9a8fc8','center');bigTxt(g,NU.code,W/2,82,32,'#fff6a0','#ffd23f');
     txt(g,'TELL YOUR FRIEND TO PRESS JOIN',W/2,110,8,'#fff','center');txt(g,'AND ENTER THIS CODE',W/2,120,8,'#fff','center');
     txt(g,'WAITING'+'.'.repeat((G.tick>>4)%4),W/2,140,8,'#7fd8ff','center');
-    txt(g,'STAY ON THIS SCREEN UNTIL THEY JOIN',W/2,160,8,'#5a5080','center');
+    txt(g,'STAY ON THIS SCREEN UNTIL THEY JOIN',W/2,160,8,'#5a5080','center');if(TURN_API&&NU.relay)txt(g,'RELAY '+NU.relay,W-6,H-10,8,NU.relay==='READY'?'#9dffcf':'#ff8a3a','right');
     button(g,W/2-60,178,120,18,'CANCEL',()=>{NX.close();NU.status=''},{col:'#ff4a4a'})}
   else if(NU.status==='joining'){txt(g,'CONNECTING'+'.'.repeat((G.tick>>4)%4),W/2,100,8,'#7fd8ff','center');button(g,W/2-60,178,120,18,'CANCEL',()=>{NX.close();NU.status=''},{col:'#ff4a4a'})}
   else{let y=48;const b=(l,cb,o,sub)=>{button(g,W/2-90,y,180,20,l,cb,o);if(sub)txt(g,sub,W/2,y+22,8,'#5a5080','center');y+=sub?38:26};
