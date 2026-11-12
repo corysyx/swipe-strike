@@ -2516,12 +2516,11 @@ function renderPause(g){
   b('SETTINGS',()=>{G.setFrom='pause';G.mode='settings'},{col:'#b48cff'});
   b('QUIT TO TITLE',()=>{G.paused=false;newDemo();go('title')},{col:'#ff4a4a'});
 }
-/* arcade ladder: 8 fights - 6 random, the sub-boss Magatsu, then the final boss (bonus stages still after every 3 wins) */
+/* arcade ladder: 8 fights - 7 random opponents, then the final boss (bonus stages still after every 3 wins) */
 const ARCADE_FIGHTS=8;
-function buildLadder(p1,first){const sub='magatsu',useSub=p1!==sub&&first!==sub;
-  const pool=CHARS.map(q=>q.id).filter(id=>id!==p1&&id!==first&&id!==sub).sort(()=>Math.random()-.5);
-  const need=ARCADE_FIGHTS-2-(useSub?1:0);return[first,...pool.slice(0,need),...(useSub?[sub]:[]),BOSS_ID]}
-function arcadeAgain(){const s=G.sel;s.p2=pick(CHARS.filter(q=>q.id!==s.p1&&q.id!=='magatsu')).id;s.c2=0;G.ladder=buildLadder(s.p1,s.p2);G.ladderIdx=0;G.stage=randFightStage();G.lastFightStage=G.stage;G.selMode='arcade';startMatch()}
+function buildLadder(p1,first){const pool=CHARS.map(q=>q.id).filter(id=>id!==p1&&id!==first).sort(()=>Math.random()-.5);
+  return[first,...pool.slice(0,ARCADE_FIGHTS-2),BOSS_ID]}
+function arcadeAgain(){const s=G.sel;s.p2=pick(CHARS.filter(q=>q.id!==s.p1)).id;s.c2=0;G.ladder=buildLadder(s.p1,s.p2);G.ladderIdx=0;G.stage=randFightStage();G.lastFightStage=G.stage;G.selMode='arcade';startMatch()}
 function renderResult(g){
   const r=G.result;r.t++;g.fillStyle=`rgba(6,3,16,${Math.min(0.75,r.t/40)})`;g.fillRect(0,0,W,H);if(r.t<30)return;
   const champ=!G.net&&r.won&&G.ladderIdx>=G.ladder.length;const opp=G.me===G.p2?G.p1:G.p2,w=r.won?(G.me||G.p1):opp;
@@ -2537,7 +2536,7 @@ function renderResult(g){
     if(G.ladderIdx%3===0&&G.ladderIdx<G.ladder.length){G.selMode='arcade';const k=(G.ladderIdx/3-1)%BONUS_TYPES.length;startBonus(BONUS_TYPES[k],go)}else go()}),{def:true})}
   else{b('CONTINUE',()=>ADS.gate(()=>{startMatch()}),{def:true})}
   b('CHARACTER SELECT',()=>ADS.gate(()=>{G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')}),{col:'#ff8a3a'});
-  b('TITLE',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff4a4a'});
+  b('MAIN MENU',()=>ADS.gate(()=>{newDemo();go('title')}),{col:'#ff4a4a'});
 }
 function renderOverlay(){
   const g=ox;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,ov.width,ov.height);if(!inFightControls())return;
