@@ -73,7 +73,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 
 /* ============================ SOUND ============================ */
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
-const SET=(()=>{let o={music:7,sfx:7,vib:true};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
+const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 function saveSettings(){try{localStorage.setItem('ss_settings',JSON.stringify(SET))}catch(e){}}
 const musicLevel=()=>musicOn?0.32*SET.music/7:0.0001,sfxLevel=()=>SET.sfx/7;
 function applyVolumes(){if(!AC)return;const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(Math.max(0.0001,musicLevel()),now);sfxGain.gain.setValueAtTime(Math.max(0.0001,sfxLevel()),now)}
@@ -109,71 +109,270 @@ const SFX={
 // tiny chiptune sequencer (A minor: Am F G Em)
 // ---------- music: one theme for menus, one per stage (16th-note step sequencer)
 // numbers are semitones above A (bass at A1=55Hz, lead at A3=220Hz); -1 = rest
-const TRACKS={
-  menu:{bpm:148,roots:[0,-4,-2,-5],bassWave:'square',bass:[0,0,12,0,0,12,0,7,0,0,12,0,10,12,7,3],
-    lead:[12,-1,15,-1,17,15,-1,12,19,-1,17,-1,15,-1,12,10, 12,-1,15,-1,17,-1,19,22,24,-1,22,19,17,-1,15,-1],leadInst:'square',leadAlt:true,
-    drums:{kick:[0,4,8,12],snare:[4,12],hat:[1,3,5,7,9,11,13,15]}},
-  // SUNSET PIER: street funk in C
-  s0:{bpm:134,roots:[3,8,10,3],bassWave:'square',bassLen:0.6,bass:[0,-1,12,0,-1,0,12,-1,0,-1,10,0,7,-1,12,-1],
-    lead:[12,-1,14,16,-1,19,-1,16,14,-1,12,-1,9,-1,12,-1, 16,-1,19,-1,21,19,-1,16,14,-1,16,-1,12,-1,-1,-1],leadInst:'square',
-    drums:{kick:[0,3,8,11],snare:[4,12],clap:[12],hat:[0,2,4,6,8,10,12,14]}},
-  // NEON ALLEY: synthwave
-  s1:{bpm:118,roots:[0,-4,-7,-2],bassWave:'sawtooth',bassLen:0.5,bassVol:0.12,bass:[0,12,0,12,0,12,0,12,0,12,0,12,0,12,0,12],
-    lead:[12,15,19,24,19,15,12,15, 12,15,19,24,27,24,19,15, 12,15,19,24,19,15,12,15, 24,-1,22,-1,19,-1,15,-1],leadInst:'saw',
-    drums:{kick:[0,4,8,12],snare:[4,12],hat:[2,6,10,14],shaker:[1,3,5,7,9,11,13,15]}},
-  // LOST TEMPLE: tribal marimba + toms
-  s2:{bpm:112,roots:[0,0,-2,-5],bassWave:'triangle',bassVol:0.22,bass:[0,-1,-1,7,-1,-1,0,-1,12,-1,-1,7,-1,5,-1,-1],
-    lead:[12,-1,15,17,-1,19,17,15, 12,-1,10,-1,12,-1,-1,-1, 19,-1,22,19,17,-1,15,-1, 17,15,12,-1,10,-1,12,-1],leadInst:'pluck',
-    drums:{taiko:[0,8],tom:[3,6,10,13],shaker:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]}},
-  // FROZEN CAVERN: bells and pads
-  s3:{bpm:92,roots:[0,-4,-9,-5],bassWave:'sine',bassLen:3.6,bassVol:0.22,bass:[0,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,-1],
-    lead:[24,-1,19,-1,27,-1,19,-1,24,-1,22,-1,19,-1,15,-1, 24,-1,19,-1,31,-1,27,-1,26,-1,24,-1,22,-1,19,-1],leadInst:'bell',pad:true,
-    drums:{kick:[0,10],wood:[4,12],hat:[6,14]}},
-  // SAKURA SHRINE: koto on a miyako-bushi scale + taiko
-  s4:{bpm:116,roots:[0,0,-4,0],bassWave:'triangle',bassVol:0.2,bass:[0,-1,7,-1,0,-1,8,-1,0,-1,7,-1,5,-1,1,-1],
-    lead:[12,-1,13,17,-1,19,20,-1,24,-1,20,19,-1,17,13,-1, 12,-1,17,-1,19,-1,13,12,-1,8,-1,7,-1,8,-1,-1],leadInst:'koto',
-    drums:{taiko:[0,6,8,11],wood:[4,12],shaker:[2,6,10,14]}},
-  // TRAINING ROOM: laid-back lab groove (electric piano feel)
-  s5:{bpm:96,roots:[0,-3,-5,-7],bassWave:'triangle',bassVol:0.2,bassLen:0.8,bass:[0,-1,-1,0,-1,-1,7,-1,0,-1,-1,0,-1,10,-1,-1],
-    lead:[12,-1,16,-1,19,-1,16,-1,23,-1,-1,21,-1,19,-1,-1, 12,-1,16,-1,19,-1,21,-1,19,-1,16,-1,14,-1,-1,-1],leadInst:'bell',leadVol:0.035,pad:true,
-    drums:{kick:[0,7,10],snare:[4,12],hat:[2,6,10,14],shaker:[1,3,5,7,9,11,13,15]}},
-  // MARKET STREET: lively pentatonic plucks over wood blocks and a gong
-  s6:{bpm:128,roots:[0,0,-5,-3],bassWave:'triangle',bassVol:0.2,bass:[0,-1,7,-1,0,-1,7,9,0,-1,7,-1,5,-1,7,-1],
-    lead:[12,14,16,-1,19,16,14,12, 9,-1,12,14,12,-1,9,7, 12,-1,16,19,21,19,16,-1, 14,16,14,12,9,-1,12,-1],leadInst:'pluck',
-    drums:{gong:[0],wood:[2,6,10,14],tom:[4,12],shaker:[1,3,5,7,9,11,13,15]}},
-  // MOSCOW WINTER: minor-key squeezebox polka
-  s7:{bpm:144,roots:[0,0,-4,-5],bassWave:'square',bassLen:0.5,bassVol:0.1,bass:[0,-1,7,-1,0,-1,7,-1,0,-1,7,-1,-5,-1,7,-1],
-    lead:[7,-1,8,7,5,-1,3,-1, 2,3,5,-1,7,-1,-1,-1, 12,-1,11,12,14,-1,12,11, 8,-1,7,-1,5,7,8,-1],leadInst:'square',leadAlt:true,
-    drums:{kick:[0,8],snare:[4,12],hat:[2,6,10,14]}},
-  // CARRIER DECK: heroic march with snare rolls
-  s8:{bpm:120,roots:[0,5,-5,0],bassWave:'square',bassLen:0.6,bassVol:0.12,bass:[0,-1,0,-1,7,-1,0,-1,0,-1,0,-1,7,-1,5,-1],
-    lead:[0,-1,4,7,12,-1,12,-1, 11,-1,7,-1,9,-1,7,-1, 4,-1,7,12,16,-1,14,12, 11,-1,12,-1,14,-1,-1,-1],leadInst:'square',
-    drums:{kick:[0,8],snare:[0,2,3,4,8,10,11,12],hat:[6,14]}},
-  // SHADOW SHRINE: slow, eerie bells over a low drone
-  s9:{bpm:76,roots:[0,0,1,-1],bassWave:'sine',bassLen:3.8,bassVol:0.24,bass:[0,-1,-1,-1,-1,-1,-1,-1,0,-1,-1,-1,-1,-1,-1,-1],
-    lead:[12,-1,-1,-1,13,-1,-1,-1,12,-1,-1,8,-1,-1,7,-1, 19,-1,-1,-1,18,-1,-1,-1,13,-1,12,-1,-1,-1,-1,-1],leadInst:'bell',pad:true,
-    drums:{taiko:[0],wood:[10]}},
-  // MOUNTAIN DOJO: koto and taiko
-  s10:{bpm:104,roots:[0,0,-2,-4],bassWave:'triangle',bassVol:0.2,bass:[0,-1,-1,7,-1,-1,0,-1,0,-1,-1,7,-1,5,-1,-1],
-    lead:[12,-1,15,-1,17,-1,15,12, 10,-1,12,-1,-1,-1,-1,-1, 17,-1,19,-1,20,-1,19,17, 15,-1,12,-1,10,-1,12,-1],leadInst:'koto',
-    drums:{taiko:[0,10],wood:[4,12],shaker:[2,6,14]}},
-  // BOXING ARENA: driving rock
-  s11:{bpm:150,roots:[0,0,-2,-4],bassWave:'sawtooth',bassLen:0.4,bassVol:0.11,bass:[0,0,12,0,0,0,10,0,0,0,12,0,7,0,10,0],
-    lead:[7,-1,7,10,-1,7,5,-1, 3,-1,5,-1,7,-1,-1,-1, 7,-1,7,10,-1,12,10,-1, 7,-1,5,3,5,-1,-1,-1],leadInst:'saw',
-    drums:{kick:[0,6,8],snare:[4,12],clap:[12],hat:[0,2,4,6,8,10,12,14]}},
-  // STEEL FOUNDRY: heavy industrial groove with metal hits
-  s12:{bpm:112,roots:[0,0,1,-2],bassWave:'square',bassLen:0.35,bassVol:0.14,bass:[0,0,-1,0,-1,0,12,-1,0,0,-1,0,1,-1,0,-1],
-    lead:[12,-1,-1,13,-1,-1,12,-1,-1,-1,-1,-1,-1,-1,-1,-1, 15,-1,-1,13,-1,-1,12,-1,10,-1,-1,-1,-1,-1,-1,-1],leadInst:'saw',leadVol:0.035,
-    drums:{kick:[0,3,8,11],snare:[4,12],metal:[6,14],hat:[2,10]}},
-  // CELESTIAL THRONE: grand, ominous final-boss theme
-  s13:{bpm:118,roots:[0,-4,-2,-5],bassWave:'sawtooth',bassLen:0.5,bassVol:0.12,bass:[0,0,12,0,0,0,12,0,-2,-2,10,-2,-5,-5,7,-5],
-    lead:[12,-1,15,-1,19,-1,24,-1, 22,-1,19,-1,15,-1,14,-1, 12,-1,15,-1,19,-1,27,-1, 26,-1,24,-1,22,-1,-1,-1],leadInst:'saw',pad:true,
-    drums:{kick:[0,4,8,12],snare:[4,12],gong:[0],hat:[2,6,10,14]}},
-  // BONUS STAGE: bouncy, upbeat
-  bonus:{bpm:160,roots:[0,5,7,5],bassWave:'square',bassLen:0.4,bassVol:0.1,bass:[0,-1,12,-1,0,-1,12,-1,0,-1,12,-1,7,-1,12,-1],
-    lead:[12,14,16,19,-1,16,19,-1, 21,19,16,-1,14,-1,12,-1, 12,14,16,19,-1,21,24,-1, 21,19,16,14,12,-1,-1,-1],leadInst:'square',leadAlt:true,
-    drums:{kick:[0,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14],clap:[12]}},
+// ===================== MUSIC ENGINE v2: an arcade fighting-game "band" =====================
+// Songs are written in A (A minor / A dorian / ...), and transposed by `key` semitones.
+// Each song = sections played in `form` order, looping from `loop`. Lead tokens are 8th notes by default:
+//   note names (A4, C#5, Bb3), '_' = hold, '-' = rest.
+// Pattern strings are 16 steps (16th notes) per bar:
+//   bass:  R root, O octave, 5 fifth, 3 third, 7 seventh, x muted root, b approach (half-step below next root), '=' hold, '-' rest
+//   gtr:   x palm-muted chug, P power chord, '=' hold, '-' rest      brass: X chord stab, '=' hold, '-' rest
+//   drums: per voice 16 chars, x hit, g ghost, o open hat
+const SCALES={aeo:[0,2,3,5,7,8,10],dor:[0,2,3,5,7,9,10],phr:[0,1,3,5,7,8,10],hm:[0,2,3,5,7,8,11],ion:[0,2,4,5,7,9,11],mix:[0,2,4,5,7,9,10]};
+const NOTE_IX={C:-9,D:-7,E:-5,F:-4,G:-2,A:0,B:2};
+function noteSemi(tok){const m=/^([A-G])(#|b)?(\d)$/.exec(tok);if(!m)return null;return NOTE_IX[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0)+(+m[3]-4)*12}// semitones from A4
+const hz=semi=>440*Math.pow(2,semi/12);
+const DRUMSETS={
+  drive:{kick:'x..x..x...x..x..',snare:'....x.......x...',hat:'xgxgxgxgxgxgxgxg'},
+  rock:{kick:'x.......x.x.....',snare:'....x.......x...',hat:'x.x.x.x.x.x.x.x.'},
+  funk:{kick:'x..x......x..x..',snare:'....x..g.g..x..g',hat:'x.xox.x.x.xox.x.'},
+  disco:{kick:'x...x...x...x...',snare:'....x.......x...',hat:'..o...o...o...o.',clap:'....x.......x...'},
+  half:{kick:'x.....x.........',snare:'........x.......',hat:'x.x.x.x.x.x.x.x.'},
+  march:{kick:'x.......x.......',snare:'x..gx.g.x..gx.gx',hat:'..x...x...x...x.'},
+  polka:{kick:'x...x...x...x...',snare:'..x...x...x...x.',hat:''},
+  tribal:{taiko:'x..x..x.x..x..x.',tomL:'......x.......x.',wood:'..x...x...x.x...',hat:'x.x.x.x.x.x.x.x.',snare:'....x.......x...'},
+  boss:{kick:'x.xxx.xxx.xxx.xx',snare:'....x.......x...',hat:'x.x.x.x.x.x.x.x.',ride:'x...x...x...x...'},
+  chill:{kick:'x......x..x.....',snare:'....x.......x...',hat:'x.xgx.xgx.xgx.xg'},
+  intro:{kick:'x...............',snare:'',hat:''},
+  none:{}
 };
+const BASSP={drive8:'R=R=R=R=R=R=O=5=',gallop:'R=RRR=RRR=RRO=OO',drive16:'xxxxxxxxxxxxOxxx',slap:'R==xO=-xR=xO-5O-',funk:'R=-R--5-O=-7-5R-',polka:'R=-=5=-=R=-=5=-=',
+  bass8:'R=O=R=O=R=O=5=O=',walk:'R===3===5===O===',half:'R=======R=====5=',tribal:'R==R==R=R==5==O=',pump:'R=RxR=RxR=RxR=5b',hold:'R===============',sparse:'R=======--------',chill:'R==-R-5-O=-5-3--'};
+const GTRP={chug:'x-xxx-x-x-xxx-x-',power:'P=======P=====P=',gallop:'P=xxP=xxP=xxP=P=',metal:'xxxxxxxxP===xxxx',offbeat:'--P---P---P---P-',hold:'P===============',push:'P=====P=====P===',stab:'P-------P-------'};
+const BRASSP={stabs:'X-----X---X-----',hit:'X===============',push:'------X-------X-',funk:'--X--X----X-X---',hold2:'X=======X=======',accent:'X-----------X-X-',hits3:'X-X---X---------'};
+let mBus=null,mSend=null,mDelay=null,mCurve=null,gtrBus=null;
+function musicFx(){if(mBus&&mBus.context===AC)return;
+  const comp=AC.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=4;comp.attack.value=0.004;comp.release.value=0.18;comp.connect(musicGain);
+  mBus=AC.createGain();mBus.gain.value=0.9;mBus.connect(comp);
+  mDelay=AC.createDelay(1.5);const fb=AC.createGain();fb.gain.value=0.3;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;
+  mSend=AC.createGain();mSend.gain.value=0.25;mSend.connect(mDelay);mDelay.connect(lp);lp.connect(fb);fb.connect(mDelay);lp.connect(mBus);
+  const n=2049;mCurve=new Float32Array(n);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;mCurve[i]=Math.tanh(x*5)/Math.tanh(5)}
+  gtrBus=AC.createGain();gtrBus.gain.value=3.2;const ws=AC.createWaveShaper();ws.curve=mCurve;ws.oversample='none';const cab=AC.createBiquadFilter();cab.type='lowpass';cab.frequency.value=3200;cab.Q.value=0.7;const gout=AC.createGain();gout.gain.value=0.16;gtrBus.connect(ws).connect(cab).connect(gout).connect(mBus);
+  try{mDelay.delayTime.value=Math.min(1.2,60/trk.bpm*0.75)}catch(e){}
+  bakeKit()}
+// one synth voice: oscs [{type,mul,det,gain}], filter sweep, ADSR-ish, optional distortion / vibrato / glide / echo send
+function voice(t,f,dur,vol,o){
+  const g=AC.createGain(),flt=AC.createBiquadFilter();flt.type=o.ft||'lowpass';flt.Q.value=o.q||0.8;
+  const f0=o.f0||4000,f1=o.f1||f0;flt.frequency.setValueAtTime(f0,t);if(f1!==f0)flt.frequency.exponentialRampToValueAtTime(Math.max(60,f1),t+(o.ftime||dur));
+  flt.connect(g);g.connect(o.out||mBus);if(o.send&&!SET.lite)g.connect(mSend);let lg=null;
+  if(o.vib){const l=AC.createOscillator();lg=AC.createGain();l.frequency.value=o.vib[0];lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(f*o.vib[1],t+0.22);l.connect(lg);l.start(t);l.stop(t+Math.max(dur,0.02)+(o.r||0.06)+0.06)}
+  const a=o.a||0.005,r=o.r||0.06,end=t+Math.max(dur,a+0.01);
+  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol,t+a);if(o.dec){g.gain.exponentialRampToValueAtTime(Math.max(0.0001,vol*(o.sus??0.5)),t+a+o.dec)}g.gain.setValueAtTime(o.dec?Math.max(0.0001,vol*(o.sus??0.5)):vol,end);g.gain.exponentialRampToValueAtTime(0.0001,end+r);
+  for(const s of o.oscs){const os=AC.createOscillator();os.type=s.type;const fr=f*(s.mul||1);
+    if(o.glide){os.frequency.setValueAtTime(o.glide*(s.mul||1),t);os.frequency.exponentialRampToValueAtTime(fr,t+0.05)}else os.frequency.setValueAtTime(fr,t);
+    if(o.drop)os.frequency.exponentialRampToValueAtTime(Math.max(20,fr*o.drop),t+(o.dropT||0.08));
+    if(s.det)os.detune.value=s.det;
+    let og=os;if(s.gain!=null&&s.gain!==1){og=AC.createGain();og.gain.value=s.gain;os.connect(og)}og.connect(flt);
+    if(lg)lg.connect(os.frequency);
+    os.start(t);os.stop(end+r+0.05)}}
+function nz(t,dur,vol,fq,type,fq2,q){vol*=2;const s=AC.createBufferSource();s.buffer=NB;const f=AC.createBiquadFilter();f.type=type||'highpass';f.frequency.setValueAtTime(fq,t);if(fq2)f.frequency.exponentialRampToValueAtTime(fq2,t+dur);if(q)f.Q.value=q;
+  const g=AC.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);s.connect(f).connect(g).connect(mBus);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05)}
+function tone(t,f0,f1,dur,vol,type){vol*=2;const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(mBus);o.start(t);o.stop(t+dur+0.05)}
+const KIT={
+  kick:(t,v)=>tone(t,160,42,0.22,1.0*v),
+  snare:(t,v)=>{nz(t,0.17,0.62*v,1900,'bandpass',1400,0.6);tone(t,200,150,0.08,0.3*v,'triangle')},
+  clap:(t,v)=>{for(const d of[0,0.011,0.022])nz(t+d,0.06,0.3*v,1600,'bandpass',1200,1.2)},
+  hat:(t,v)=>nz(t,0.035,0.16*v,8000),
+  ohat:(t,v)=>nz(t,0.24,0.13*v,7500),
+  crash:(t,v)=>{nz(t,1.5,0.3*v,4500,'highpass',6000);nz(t,0.4,0.15*v,2500,'bandpass')},
+  ride:(t,v)=>{nz(t,0.3,0.07*v,9000,'bandpass');tone(t,3900,3800,0.25,0.03*v,'triangle')},
+  tomH:(t,v)=>tone(t,210,130,0.24,0.6*v),tomM:(t,v)=>tone(t,160,95,0.27,0.65*v),tomL:(t,v)=>tone(t,115,65,0.32,0.7*v),
+  taiko:(t,v)=>{tone(t,105,44,0.42,0.9*v);nz(t,0.08,0.2*v,320,'lowpass')},
+  wood:(t,v)=>tone(t,1250,900,0.05,0.22*v),
+  metal:(t,v)=>{tone(t,1650,1500,0.06,0.09*v,'square');nz(t,0.08,0.2*v,4200,'bandpass')},
+  gong:(t,v)=>{tone(t,180,170,2.2,0.3*v);tone(t,271,262,1.6,0.15*v);nz(t,0.4,0.08*v,700,'bandpass')},
+  orch:(t,v,ch)=>{for(const s of ch)voice(t,hz(s),0.35,0.07*v,{oscs:[{type:'sawtooth',det:-8},{type:'sawtooth',det:8},{type:'square',mul:0.5,gain:0.6}],f0:5000,f1:900,ftime:0.35,r:0.25});nz(t,0.3,0.35*v,1200,'bandpass');tone(t,110,50,0.4,0.6*v)},
+};
+const KITB={};let kitBaking=false;
+function bakeKit(){if(kitBaking||!AC||typeof OfflineAudioContext==='undefined')return;kitBaking=true;const sr=AC.sampleRate;
+  const lens={kick:0.3,snare:0.25,clap:0.15,hat:0.06,ohat:0.3,crash:1.6,ride:0.35,tomH:0.3,tomM:0.33,tomL:0.38,taiko:0.5,wood:0.08,metal:0.1,gong:2.3};
+  for(const k in lens){try{const oc=new OfflineAudioContext(1,Math.ceil(sr*lens[k]),sr);const sv={AC,mBus,NB};AC=oc;mBus=oc.createGain();mBus.connect(oc.destination);
+      NB=oc.createBuffer(1,sr,sr);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;KIT[k](0.001,1);AC=sv.AC;mBus=sv.mBus;NB=sv.NB;
+      oc.startRendering().then(b=>{KITB[k]=b}).catch(()=>{})}catch(e){}}}
+function hitDrum(k,t,v){const b=KITB[k];if(b&&mBus&&b.sampleRate===AC.sampleRate){const s=AC.createBufferSource(),g=AC.createGain();s.buffer=b;g.gain.value=v;s.connect(g).connect(mBus);s.start(t)}else(KIT[k]||KIT.hat)(t,v)}
+// instruments for pitched parts (semi = semitones from A4)
+const INST={
+  lead:(t,s,d,v,gl)=>voice(t,hz(s),d,0.213*v,{oscs:[{type:'sawtooth',det:-6},{type:'square',det:6,gain:0.5}],f0:5200,f1:2400,ftime:d,a:0.012,r:0.09,vib:[5.6,0.012],glide:gl,send:1}),
+  square:(t,s,d,v,gl)=>voice(t,hz(s),d,0.175*v,{oscs:[{type:'square'},{type:'square',det:9,gain:0.4}],f0:4200,a:0.006,r:0.06,vib:[6,0.008],glide:gl,send:1}),
+  brassLead:(t,s,d,v,gl)=>voice(t,hz(s),d,0.188*v,{oscs:[{type:'sawtooth',det:-9},{type:'sawtooth',det:9},{type:'sawtooth',mul:0.5,gain:0.4}],f0:700,f1:3000,ftime:0.07,a:0.03,r:0.12,vib:[5.2,0.01],glide:gl,send:1}),
+  erhu:(t,s,d,v,gl)=>voice(t,hz(s),d,0.2*v,{oscs:[{type:'sawtooth'},{type:'triangle',mul:2,gain:0.3}],ft:'bandpass',f0:1500,q:1.4,a:0.05,r:0.12,vib:[6.2,0.018],glide:gl||hz(s-1),send:1}),
+  flute:(t,s,d,v,gl)=>{voice(t,hz(s),d,0.225*v,{oscs:[{type:'triangle'},{type:'sine',mul:2,gain:0.2}],f0:5000,a:0.04,r:0.12,vib:[5,0.012],glide:gl,send:1});nz(t,Math.min(0.12,d),0.03*v,2500,'bandpass')},
+  koto:(t,s,d,v)=>{voice(t,hz(s),0.05,0.4*v,{oscs:[{type:'triangle'},{type:'square',mul:2,gain:0.25}],f0:6000,f1:1500,ftime:0.3,dec:0.25,sus:0.05,r:0.3,send:1})},
+  ep:(t,s,d,v)=>voice(t,hz(s),d,0.275*v,{oscs:[{type:'sine'},{type:'sine',mul:2,gain:0.25},{type:'sine',mul:4,gain:0.08}],f0:4000,a:0.004,dec:0.5,sus:0.35,r:0.2,send:1}),
+  bell:(t,s,d,v)=>voice(t,hz(s),0.05,0.3*v,{oscs:[{type:'sine'},{type:'sine',mul:2.76,gain:0.35}],f0:8000,dec:0.9,sus:0.05,r:0.6,send:1}),
+};
+function bassNote(t,s,d,v,kind){const f=hz(s);
+  if(kind==='slap')voice(t,f,d,0.095*v,{oscs:[{type:'square'},{type:'sawtooth',gain:0.6}],f0:3200,f1:380,ftime:0.09,a:0.003,r:0.05,drop:0.985,dropT:0.03});
+  else voice(t,f,d,0.095*v,{oscs:[{type:'sawtooth'},{type:'square',mul:0.5,gain:0.7}],f0:1100,f1:320,ftime:0.14,a:0.004,r:0.05})}
+function gtrChord(t,s,d,v,mute){voice(t,hz(s),d,(mute?0.3:0.26)*v,{oscs:[{type:'sawtooth',det:-6},{type:'sawtooth',mul:1.4983,det:5},{type:'sawtooth',mul:2,gain:0.7}],f0:mute?900:2600,f1:mute?450:1700,ftime:d,a:0.003,r:mute?0.03:0.12,out:gtrBus})}
+function brassChord(t,ch,d,v){voice(t,hz(ch[0]),d,0.12*v,{oscs:ch.map((s,i)=>({type:'sawtooth',mul:Math.pow(2,(s-ch[0])/12),det:i%2?8:-8})),f0:500,f1:2600,ftime:0.06,a:0.02,r:0.14})}
+function padChord(t,ch,d,v,kind){for(const s of ch){if(kind==='organ')voice(t,hz(s),d,0.05*v,{oscs:[{type:'sine'},{type:'sine',mul:2,gain:0.5},{type:'sine',mul:3,gain:0.3},{type:'sine',mul:4,gain:0.2}],f0:6000,a:0.04,r:0.3});
+  else if(kind==='choir')voice(t,hz(s),d,0.055*v,{oscs:[{type:'sawtooth',det:-12},{type:'sawtooth',det:12}],ft:'bandpass',f0:900,q:2,a:0.35,r:0.5,vib:[4.5,0.006]});
+  else voice(t,hz(s),d,0.05*v,{oscs:[{type:'sawtooth',det:(s%2?-10:10)}],f0:1600,a:0.3,r:0.4})}}
+// --- song state ---
+function songChord(T,deg){const sc=SCALES[T.scale||'aeo'],i=(deg-1+70)%7,oct=Math.floor((deg-1)/7);const st=k=>sc[(i+k)%7]+12*Math.floor((i+k)/7)+12*oct;return[st(0),st(2),st(4),st(6)]}// semis from A (root, 3rd, 5th, 7th)
+function compileSong(T){if(T._c)return T._c;const secs={};
+  for(const k in T.sec){const S=T.sec[k],bars=S.prog.length,res=S.res||2;const lead=[];if(S.lead){const toks=S.lead.replace(/\|/g,' ').trim().split(/\s+/);for(const tk of toks){lead.push(tk);for(let r=1;r<res;r++)lead.push('~')}}
+    secs[k]=Object.assign({bars,leadSteps:lead},S)}
+  return(T._c={secs,form:T.form,loop:T.loop??1})}
+let SS={fi:0,bar:0,step:0,lastLead:null,fillCrash:false};
+function songReset(){SS={fi:0,bar:0,step:0,lastLead:null,fillCrash:false}}
+function scheduleStep(T,t,spb){const C=compileSong(T),key=T.key||0,secName=C.form[SS.fi],S=C.secs[secName],s=SS.step,bar=SS.bar;
+  const deg=S.prog[bar],ch=songChord(T,deg),root=ch[0]+key;
+  const lastBar=bar===S.bars-1,fill=S.fill&&lastBar&&s>=8;
+  // drums
+  const D=DRUMSETS[S.drums||T.drums||'rock']||{};
+  if(s===0&&(SS.fillCrash||(bar===0&&S.crash!==false&&SS.fi>0)))hitDrum('crash',t,1);
+  if(fill){if(s===8||s===10)hitDrum('snare',t,0.9);if(s===9||s===11)hitDrum('tomH',t,1);if(s===12||s===13)hitDrum('tomM',t,1);if(s===14||s===15)hitDrum('tomL',t,1);if(s%2===0)hitDrum('kick',t,0.9)}
+  else for(const k in D){const p=D[k];if(!p)continue;const c=p[s];if(c==='x')hitDrum(KIT[k]?k:'hat',t,1);else if(c==='g')hitDrum(KIT[k]?k:'hat',t,0.4);else if(c==='o')hitDrum('ohat',t,1)}
+  // bass
+  const BP=BASSP[S.bass||T.bass||'drive8'];if(BP){const c=BP[s];if(c&&c!=='='&&c!=='-'){let n=1;while(s+n<16&&BP[s+n]==='=')n++;let semi=root-36;while(semi>-30)semi-=12;while(semi<-41)semi+=12;
+    const nextDeg=S.prog[(bar+1)%S.bars];let off=0,v=1;if(c==='O')off=12;else if(c==='5')off=7;else if(c==='3')off=ch[1]-ch[0];else if(c==='7')off=ch[3]-ch[0];else if(c==='x')v=0.55;else if(c==='b'){off=(songChord(T,nextDeg)[0]+key-36)-semi;while(off>12)off-=12;while(off<-12)off+=12;off-=1}
+    bassNote(t,semi+off,spb*n*(c==='x'?0.5:0.92),v,S.bassInst||T.bassInst)}}
+  // guitar
+  const LITE=SET.lite;
+  const GP=!LITE&&GTRP[S.gtr];if(GP){const c=GP[s];if(c==='x'||c==='P'){let n=1;while(s+n<16&&GP[s+n]==='=')n++;let semi=root-24;while(semi>-18)semi-=12;while(semi<-29)semi+=12;gtrChord(t,semi,c==='x'?spb*0.7:spb*n*0.95,1,c==='x')}}
+  // brass / orchestra hits
+  const BrP=BRASSP[S.brass];if(BrP){const c=BrP[s];if(c==='X'){let n=1;while(s+n<16&&BrP[s+n]==='=')n++;const tri=[ch[0],ch[1],ch[2]].map(x=>x+key-12);brassChord(t,tri,spb*n*(n>1?0.95:0.6),S.brassVol||1)}}
+  if(S.orch&&s===0&&bar%S.orch===0)KIT.orch(t,1,[ch[0]+key-12,ch[1]+key-12,ch[2]+key]);
+  if(S.gong&&s===0&&bar===0)hitDrum('gong',t,1);
+  // pads / organ / choir
+  if(S.pad&&s===0&&!LITE)padChord(t,[ch[0]+key-12,ch[1]+key-12,ch[2]+key-12,ch[0]+key],spb*16,1,S.pad);
+  // arpeggio
+  if(S.arp&&!LITE){const seq=[0,1,2,3,2,1];const tones=[ch[0],ch[1],ch[2],ch[0]+12];const n=tones[seq[s%seq.length]]+key;voice(t,hz(n),spb*0.8,0.035,{oscs:[{type:'square'}],f0:3000,a:0.003,r:0.04,send:1})}
+  // lead (+ diatonic harmony a third below)
+  if(S.leadSteps.length){const total=S.bars*16,idx=(bar*16+s)%S.leadSteps.length,tk=S.leadSteps[idx];
+    if(tk!=='~'&&tk!=='_'&&tk!=='-'){let n=1;while(idx+n<S.leadSteps.length&&(S.leadSteps[idx+n]==='~'||S.leadSteps[idx+n]==='_'))n++;const semi=noteSemi(tk);
+      if(semi!=null){const inst=INST[S.lead2||T.lead||'lead'];const sm=semi+key,leg=SS.lastLead!=null&&Math.abs(SS.lastLead-sm)<=5&&(T.legato!==false);inst(t,sm,spb*n*0.94,S.leadVol||1,leg?hz(SS.lastLead):0);SS.lastLead=sm;
+        if(S.harm&&!LITE){const sc=SCALES[T.scale||'aeo'];let pc=((semi%12)+12)%12,ix=sc.indexOf(pc);if(ix>=0){const low=sc[(ix+5)%7]-(ix<2?12:0);const hs=semi-pc+low;inst(t,hs+key,spb*n*0.94,0.6*(S.leadVol||1),0)}}}}
+    else if(tk==='-')SS.lastLead=null}
+  // advance
+  SS.fillCrash=false;SS.step++;if(SS.step>=16){SS.step=0;SS.bar++;if(SS.bar>=S.bars){SS.bar=0;if(S.fill)SS.fillCrash=true;SS.fi++;if(SS.fi>=C.form.length)SS.fi=Math.min(C.loop,C.form.length-1)}}}
+
+// ---------- the songs (all original). Written in A, transposed by `key`. ----------
+const TRACKS={
+  // MENU / CHARACTER SELECT: heroic hard rock
+  menu:{bpm:140,key:0,scale:'aeo',lead:'lead',form:['I','A','B','A','C'],loop:1,sec:{
+    I:{prog:[1,1],drums:'intro',bass:'hold',brass:'hits3',orch:1,fill:true},
+    A:{prog:[1,6,7,1],drums:'drive',bass:'drive8',gtr:'chug',brass:'stabs',
+       lead:'E5 _ A5 _ G5 E5 D5 E5 | - - C5 D5 E5 _ D5 C5 | A4 _ C5 _ F5 _ E5 C5 | D5 _ B4 G4 B4 D5 E5 _'},
+    B:{prog:[4,5,6,7],drums:'drive',bass:'gallop',gtr:'gallop',brass:'hold2',
+       lead:'F5 _ E5 D5 A5 _ F5 _ | G5 _ E5 B4 E5 _ G5 _ | A5 _ G5 F5 C6 _ A5 _ | B5 _ A5 G5 D6 _ B5 _'},
+    C:{prog:[6,7,1,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,orch:2,
+       lead:'C6 _ _ _ B5 _ A5 _ | D6 _ _ _ C6 _ B5 _ | E6 _ _ _ _ _ _ _ | E6 D6 C6 B5 A5 G5 E5 _'}}},
+  // SUNSET PIER: classic hero theme
+  s0:{bpm:152,key:5,scale:'aeo',lead:'lead',form:['I','A','A2','B','A2','C'],loop:1,sec:{
+    I:{prog:[1],drums:'intro',bass:'hold',brass:'hit',orch:1,fill:true},
+    A:{prog:[1,7,6,7],drums:'drive',bass:'gallop',gtr:'chug',brass:'push',
+       lead:'A4 _ _ C5 D5 _ E5 _ | G5 _ E5 D5 E5 _ _ _ | F5 _ E5 D5 C5 _ D5 _ | E5 _ _ _ D5 C5 B4 _'},
+    A2:{prog:[1,7,6,7],drums:'drive',bass:'gallop',gtr:'chug',brass:'push',
+       lead:'A4 _ _ C5 D5 _ E5 _ | G5 _ E5 D5 E5 _ A5 _ | C6 _ B5 A5 G5 _ F5 _ | E5 _ D5 _ E5 _ _ _'},
+    B:{prog:[4,4,6,5],drums:'rock',bass:'drive8',gtr:'power',brass:'stabs',
+       lead:'D5 _ F5 _ A5 _ G5 F5 | E5 _ D5 _ F5 _ _ _ | C5 _ E5 _ G5 _ F5 E5 | B4 _ D5 _ E5 _ _ _'},
+    C:{prog:[6,7,1,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
+       lead:'F5 _ _ _ E5 _ F5 _ | G5 _ _ _ A5 _ B5 _ | C6 _ B5 A5 E5 _ _ _ | A5 _ _ _ _ _ _ _'}}},
+  // NEON ALLEY: city funk with slap bass and brass
+  s1:{bpm:120,key:7,scale:'dor',lead:'lead',bassInst:'slap',form:['A','A','B','A','C'],loop:0,sec:{
+    A:{prog:[1,1,4,4],drums:'funk',bass:'slap',brass:'funk',
+       lead:'A4 - C5 - D5 E5 - G5 | - E5 D5 C5 A4 - - - | F#5 - E5 D5 - E5 F#5 A5 | - G5 E5 D5 E5 - - -'},
+    B:{prog:[7,7,1,1],drums:'funk',bass:'funk',gtr:'offbeat',brass:'accent',
+       lead:'B4 - D5 - G5 - F#5 G5 | - D5 B4 - A4 - G4 - | A4 C5 E5 A5 - G5 E5 C5 | D5 - E5 - - - - -'},
+    C:{prog:[3,4,7,1],drums:'disco',bass:'slap',brass:'stabs',harm:true,fill:true,
+       lead:'G5 _ E5 _ C5 _ E5 G5 | F#5 _ A5 _ F#5 _ D5 _ | B4 _ D5 _ G5 _ F#5 G5 | A5 _ _ _ _ _ _ _'}}},
+  // LOST TEMPLE: jungle drums, pan flute, brass
+  s2:{bpm:132,key:10,scale:'aeo',lead:'flute',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,1],drums:'tribal',bass:'tribal'},
+    A:{prog:[1,1,7,1],drums:'tribal',bass:'tribal',brass:'push',
+       lead:'A4 _ C5 D5 E5 _ D5 C5 | A4 _ G4 _ A4 _ _ _ | G4 _ A4 C5 D5 _ C5 A4 | E5 _ D5 _ A4 _ _ _'},
+    B:{prog:[6,7,1,1],drums:'rock',bass:'drive8',gtr:'power',brass:'hold2',lead2:'brassLead',fill:true,
+       lead:'C5 _ E5 _ G5 _ E5 _ | D5 _ G5 _ B5 _ A5 G5 | A5 _ _ _ G5 E5 D5 C5 | D5 _ E5 _ A4 _ _ _'}}},
+  // FROZEN CAVERN: icy arpeggios, harmonic minor drive
+  s3:{bpm:146,key:9,scale:'hm',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,6],drums:'intro',bass:'hold',arp:true,pad:'pad'},
+    A:{prog:[1,6,4,5],drums:'drive',bass:'drive8',arp:true,gtr:'chug',
+       lead:'E5 _ _ A5 G#5 _ E5 _ | F5 _ E5 C5 A4 _ _ _ | D5 _ F5 A5 G#5 _ F5 D5 | E5 _ _ _ B4 _ _ _'},
+    B:{prog:[6,4,5,5],drums:'drive',bass:'gallop',gtr:'power',brass:'hold2',pad:'pad',harm:true,fill:true,
+       lead:'C6 _ B5 A5 G#5 _ A5 _ | F5 _ A5 _ D6 _ C6 B5 | B5 _ G#5 _ E5 _ B5 _ | E6 _ _ _ D6 _ B5 _'}}},
+  // SAKURA SHRINE: koto over rock
+  s4:{bpm:140,key:7,scale:'aeo',lead:'koto',form:['I','A','B','A','C'],loop:1,sec:{
+    I:{prog:[1],drums:'intro',bass:'hold',gong:1},
+    A:{prog:[1,1,6,7],drums:'rock',bass:'drive8',gtr:'chug',
+       lead:'A4 B4 C5 _ E5 _ C5 B4 | A4 _ _ _ E4 _ F4 _ | A4 _ C5 _ F5 _ E5 C5 | B4 _ A4 _ B4 _ _ _'},
+    B:{prog:[4,4,1,1],drums:'drive',bass:'gallop',gtr:'power',brass:'stabs',lead2:'lead',
+       lead:'D5 _ F5 _ E5 _ C5 _ | D5 _ A5 _ _ _ F5 E5 | E5 _ C5 B4 A4 _ C5 _ | B4 _ _ _ A4 _ _ _'},
+    C:{prog:[6,7,1,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',lead2:'lead',harm:true,fill:true,
+       lead:'F5 _ E5 _ C5 _ B4 _ | G5 _ F5 _ E5 _ D5 _ | E5 _ _ _ A5 _ _ _ | A5 _ G5 E5 A4 _ _ _'}}},
+  // TRAINING ROOM: laid-back funk with electric piano
+  s5:{bpm:100,key:3,scale:'dor',lead:'ep',form:['A','B'],loop:0,sec:{
+    A:{prog:[1,1,4,4],drums:'chill',bass:'chill',pad:'pad',
+       lead:'- E5 G5 A5 - G5 E5 - | D5 - C5 - A4 - - - | - F#5 A5 B5 - A5 F#5 - | E5 - D5 - - - - -'},
+    B:{prog:[7,7,1,1],drums:'chill',bass:'chill',pad:'pad',
+       lead:'- D5 G5 B5 - A5 G5 - | F#5 - D5 - B4 - - - | - C5 E5 A5 - G5 E5 - | D5 - C5 - A4 - - -'}}},
+  // MARKET STREET: erhu over funky bass
+  s6:{bpm:128,key:5,scale:'ion',lead:'erhu',bassInst:'slap',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1],drums:'intro',bass:'hold',gong:1},
+    A:{prog:[1,1,4,5],drums:'funk',bass:'slap',brass:'funk',
+       lead:'E5 _ F#5 E5 C#5 _ B4 A4 | B4 _ C#5 E5 B4 _ _ _ | A4 _ B4 C#5 E5 _ F#5 E5 | C#5 _ B4 _ _ _ _ _'},
+    B:{prog:[6,6,4,5],drums:'drive',bass:'drive8',gtr:'offbeat',brass:'stabs',fill:true,
+       lead:'F#5 _ A5 _ F#5 E5 C#5 _ | E5 _ F#5 _ _ _ _ _ | A5 _ F#5 E5 C#5 _ B4 A4 | B4 _ C#5 _ E5 _ _ _'}}},
+  // MOSCOW WINTER: brass-led minor march
+  s7:{bpm:132,key:5,scale:'hm',lead:'brassLead',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,5],drums:'march',bass:'polka',brass:'hit'},
+    A:{prog:[1,1,5,1],drums:'march',bass:'polka',brass:'stabs',
+       lead:'A4 _ _ B4 C5 _ B4 A4 | E5 _ _ _ C5 _ A4 _ | G#4 _ A4 B4 E5 _ D5 C5 | B4 _ A4 _ _ _ _ _'},
+    B:{prog:[4,4,1,5],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
+       lead:'D5 _ _ E5 F5 _ E5 D5 | A5 _ _ _ F5 _ D5 _ | C5 _ D5 E5 A5 _ G#5 _ | B5 _ _ _ E5 _ _ _'}}},
+  // CARRIER DECK: fast military rock
+  s8:{bpm:154,key:2,scale:'aeo',lead:'lead',form:['I','A','A','B','C'],loop:1,sec:{
+    I:{prog:[1,1],drums:'march',bass:'drive16',gtr:'chug'},
+    A:{prog:[1,3,7,4],drums:'drive',bass:'drive16',gtr:'chug',brass:'stabs',
+       lead:'E5 _ E5 _ D5 E5 _ G5 | _ _ E5 _ C5 _ _ _ | D5 _ D5 _ C5 D5 _ F5 | _ _ D5 _ A4 _ _ _'},
+    B:{prog:[6,7,1,1],drums:'drive',bass:'gallop',gtr:'gallop',brass:'hold2',
+       lead:'C5 _ E5 _ F5 _ A5 _ | B5 _ A5 _ G5 _ D5 _ | E5 _ _ _ A5 _ _ _ | G5 F5 E5 D5 E5 _ _ _'},
+    C:{prog:[4,5,6,7],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,orch:2,
+       lead:'F5 _ A5 _ D6 _ C6 _ | B5 _ G5 _ E5 _ B5 _ | C6 _ A5 _ F5 _ C6 _ | D6 _ B5 _ G5 _ D6 _'}}},
+  // SHADOW SHRINE: dark, heavy, half-time into a double-time chorus
+  s9:{bpm:120,key:4,scale:'phr',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,2],drums:'intro',bass:'hold',pad:'choir',gong:1},
+    A:{prog:[1,2,1,7],drums:'half',bass:'half',gtr:'hold',pad:'choir',
+       lead:'A4 _ _ _ Bb4 _ A4 _ | E5 _ _ _ _ _ D5 _ | F5 _ E5 _ D5 _ Bb4 _ | A4 _ _ _ G4 _ _ _'},
+    B:{prog:[6,7,2,1],drums:'drive',bass:'drive16',gtr:'metal',brass:'hold2',pad:'choir',fill:true,
+       lead:'C5 _ D5 _ F5 _ E5 D5 | G5 _ F5 _ D5 _ Bb4 _ | Bb5 _ A5 _ F5 _ D5 _ | E5 _ _ _ A5 _ _ _'}}},
+  // MOUNTAIN DOJO: taiko + koto + guitars
+  s10:{bpm:132,key:10,scale:'aeo',lead:'koto',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,1],drums:'tribal',bass:'hold',gong:1},
+    A:{prog:[1,1,4,5],drums:'tribal',bass:'tribal',gtr:'stab',
+       lead:'A4 _ C5 D5 E5 _ G5 _ | E5 _ D5 C5 A4 _ _ _ | D5 _ E5 G5 A5 _ G5 E5 | E5 _ D5 _ _ _ _ _'},
+    B:{prog:[6,7,1,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',lead2:'lead',harm:true,fill:true,
+       lead:'C6 _ A5 _ G5 _ E5 _ | D5 _ E5 _ G5 _ _ _ | A5 _ G5 E5 D5 _ C5 D5 | A4 _ _ _ _ _ _ _'}}},
+  // BOXING ARENA: Vegas brass funk-rock
+  s11:{bpm:146,key:8,scale:'dor',lead:'lead',bassInst:'slap',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,1],drums:'intro',bass:'hold',brass:'hits3',orch:1,fill:true},
+    A:{prog:[1,1,4,4],drums:'drive',bass:'slap',gtr:'chug',brass:'funk',
+       lead:'A4 _ A4 C5 - A4 D5 - | E5 _ D5 C5 A4 _ _ _ | F#5 _ F#5 E5 - D5 E5 - | A5 _ G5 E5 D5 _ _ _'},
+    B:{prog:[3,4,7,1],drums:'drive',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
+       lead:'G5 _ E5 _ C5 _ E5 G5 | F#5 _ A5 _ F#5 _ D5 _ | B4 _ D5 _ G5 _ F#5 G5 | A5 _ _ _ _ _ _ _'}}},
+  // STEEL FOUNDRY: industrial metal
+  s12:{bpm:160,key:7,scale:'phr',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,1],drums:'boss',bass:'drive16',gtr:'metal'},
+    A:{prog:[1,1,2,1],drums:'boss',bass:'drive16',gtr:'metal',
+       lead:'A4 _ A4 _ Bb4 A4 G4 _ | A4 _ _ _ E5 _ _ _ | F5 _ E5 _ D5 _ Bb4 _ | A4 _ _ _ _ _ _ _'},
+    B:{prog:[6,7,1,1],drums:'boss',bass:'drive8',gtr:'power',brass:'hold2',harm:true,fill:true,
+       lead:'F5 _ G5 _ A5 _ C6 _ | Bb5 _ A5 _ G5 _ F5 _ | E5 _ F5 _ G5 _ Bb5 _ | A5 _ _ _ _ _ _ _'}}},
+  // TRAINING... no: CELESTIAL THRONE (final boss): organ, choir, double kick
+  s13:{bpm:124,key:5,scale:'hm',lead:'lead',form:['I','A','B','A','B'],loop:1,sec:{
+    I:{prog:[1,6],drums:'intro',bass:'hold',pad:'organ',gong:1,orch:1},
+    A:{prog:[1,6,4,5],drums:'boss',bass:'drive8',gtr:'power',pad:'organ',
+       lead:'A4 _ _ _ C5 _ E5 _ | F5 _ _ _ E5 _ C5 _ | D5 _ _ _ F5 _ A5 _ | G#5 _ _ _ B5 _ _ _'},
+    B:{prog:[4,1,5,5],drums:'boss',bass:'gallop',gtr:'gallop',brass:'hold2',pad:'choir',harm:true,fill:true,orch:2,
+       lead:'D6 _ C6 _ A5 _ F5 _ | E5 _ A5 _ C6 _ E6 _ | D6 _ C6 _ B5 _ G#5 _ | E5 _ F5 _ G#5 _ B5 _'}}},
+  // BONUS STAGE: bouncy, bright
+  bonus:{bpm:168,key:3,scale:'ion',lead:'square',form:['A','B'],loop:0,sec:{
+    A:{prog:[1,4,5,1],drums:'drive',bass:'bass8',brass:'stabs',
+       lead:'C#5 E5 A5 _ G#5 E5 C#5 _ | D5 F#5 A5 _ F#5 D5 B4 _ | B4 E5 G#5 _ F#5 E5 D5 _ | C#5 _ E5 _ A5 _ _ _'},
+    B:{prog:[6,4,2,5],drums:'disco',bass:'bass8',gtr:'offbeat',harm:true,fill:true,
+       lead:'F#5 _ E5 C#5 A4 _ C#5 E5 | D5 _ F#5 _ A5 _ _ _ | B4 _ D5 _ F#5 _ E5 D5 | E5 _ G#5 _ B5 _ _ _'}}},
+};
+
 const DRUM={
   kick:t=>osc('sine',160,40,0.13,0.55,0,musicGain,t),
   snare:t=>noise(0.12,0.3,1800,'highpass',0,0,musicGain,t),
@@ -194,16 +393,11 @@ function playLead(T,f,spb,t){const v=T.leadVol||0.05;
     case'koto':osc('triangle',f,0,0.3,v*2,0,musicGain,t);osc('square',f*2,0,0.04,v*0.5,0,musicGain,t);break;
     default:osc('square',f,0,spb*1.6,v,0,musicGain,t)}}
 let mStep=0,mNext=0,curTrack='menu',trk=TRACKS.menu;
-function setTrack(name){if(name===curTrack||!TRACKS[name])return;curTrack=name;trk=TRACKS[name];mStep=0;
+function setTrack(name){if(name===curTrack||!TRACKS[name])return;curTrack=name;trk=TRACKS[name];mStep=0;songReset();if(AC&&mDelay)mDelay.delayTime.setValueAtTime(Math.min(1.2,60/trk.bpm*0.75),AC.currentTime);
   if(AC){const now=AC.currentTime;mNext=now+0.5;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(musicGain.gain.value,now);
     musicGain.gain.linearRampToValueAtTime(0.0001,now+0.35);musicGain.gain.linearRampToValueAtTime(Math.max(0.0001,musicLevel()),now+1.1)}}
-function musicTick(){if(!AC||!musicOn||SET.music<=0)return;const T=trk,spb=60/T.bpm/4;if(mNext<AC.currentTime)mNext=AC.currentTime+0.05;
-  while(mNext<AC.currentTime+0.12){const s=mStep%16,bar=(mStep>>4)%T.roots.length,root=T.roots[bar],t=mNext;
-    const b=T.bass[s];if(b>=0)osc(T.bassWave,55*Math.pow(2,(root+b)/12),0,spb*(T.bassLen||0.9),T.bassVol||0.16,0,musicGain,t);
-    const ln=T.lead[mStep%T.lead.length];if(ln>=0&&(!T.leadAlt||((mStep>>5)%2===1)))playLead(T,220*Math.pow(2,(root+ln)/12),spb,t);
-    for(const k in T.drums)if(T.drums[k].includes(s))DRUM[k](t);
-    if(T.pad&&s===0)for(const iv of[12,15,19])osc('sine',110*Math.pow(2,(root+iv)/12),0,spb*16,0.035,0,musicGain,t);
-    mStep++;mNext+=spb}}
+function musicTick(){if(!AC||!musicOn||SET.music<=0)return;musicFx();const T=trk,spb=60/T.bpm/4;if(mNext<AC.currentTime)mNext=AC.currentTime+0.05;
+  while(mNext<AC.currentTime+0.15){scheduleStep(T,mNext,spb);mNext+=spb}}
 function setMusic(on){musicOn=on;if(musicGain){const now=AC.currentTime;musicGain.gain.cancelScheduledValues(now);musicGain.gain.setValueAtTime(Math.max(0.0001,musicLevel()),now)}}
 function vib(ms){if(G.resim||!SET.vib)return;if(NATIVE){try{const H=CP('Haptics');H&&H.impact({style:ms>=30?'HEAVY':ms>=15?'MEDIUM':'LIGHT'})}catch(e){}return}try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 // ===== Native app layer (App Store / Google Play builds only; the web version never shows ads) =====
@@ -2096,7 +2290,8 @@ function renderSettings(g){
   slider(50,'MUSIC','music',()=>{initAudio();applyVolumes()});
   slider(80,'SOUND FX','sfx',()=>{initAudio();applyVolumes()});
   txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
-  button(g,40,140,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
+  txt(g,'MUSIC STYLE',40,140,8,'#fff');button(g,140,136,110,16,SET.lite?'LITE':'FULL BAND',()=>{SET.lite=!SET.lite;saveSettings();SFX.sel()},{col:SET.lite?'#ff8a3a':'#9dffcf'});txt(g,SET.lite?'(FOR OLDER PHONES)':'',258,140,8,'#8a80b0');
+  button(g,40,162,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
   button(g,W/2-60,190,120,20,'BACK',()=>{const f=G.setFrom;if(f==='pause'){G.mode='fight'}else if(f==='bonus'){G.mode='bonus'}else go('title')},{def:true});
 }
 function renderPause(g){
