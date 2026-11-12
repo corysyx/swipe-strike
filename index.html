@@ -2755,7 +2755,7 @@ const NU={status:'',code:'',err:'',tip:''}; // lobby ui state
    {urls:['turn:HOST:3478?transport=udp','turn:HOST:3478?transport=tcp','turns:HOST:443?transport=tcp'],username:'USER',credential:'PASS'} */
 const NET_TURN=[];
 /* TURN_API: your Cloudflare Worker URL. It hands out short-lived relay passes so no secret ever ships in the game. */
-const TURN_API='';
+const TURN_API='https://swipe-strike-relay.syxofficial.workers.dev/';
 let TURN_CACHE=null;NU.tok=0;NU.relay='';
 async function fetchIce(){if(!TURN_API)return null;const now=Date.now();if(TURN_CACHE&&TURN_CACHE.exp>now)return TURN_CACHE.list;
   try{const ctl=typeof AbortController!=='undefined'?new AbortController():null;const tm=setTimeout(()=>ctl&&ctl.abort(),4000);
