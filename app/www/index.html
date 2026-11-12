@@ -183,6 +183,20 @@ const RECIPES={
   land:[0.45,(c,o)=>{L_body(c,o,1,110,38,0.28,5);oxNoise(c,o,{dur:0.3,vol:0.6,ft:'lowpass',f0:700,f1:90});oxNoise(c,o,{dur:0.12,vol:0.25,ft:'highpass',f0:3000,t:0.01})}],
   /* boxing-style round bell */
   bell:[1.6,(c,o)=>{[0,0.18].forEach(t=>{L_click(c,o,0.12,t);[1,2.76,5.4,8.93].forEach((p,i)=>oxTone(c,o,{t,type:'sine',f0:690*p,dur:1.4-i*0.28,vol:0.22/(1+i*1.4),a:0.001}))})}],
+  /* alternative round-start sounds */
+  rsGong:[3,(c,o)=>{/* big temple gong */L_sub(c,o,0.5,82,70,2.6,0.01);
+    [[98,2.8,0.3],[147,2.4,0.2],[219,2.2,0.16],[297,1.8,0.12],[412,1.5,0.09],[566,1.1,0.07],[783,0.8,0.05]].forEach(([f,d,v],i)=>{oxTone(c,o,{t:0.005,type:'sine',f0:f,f1:f*(i?0.985:1),dur:d,vol:v,a:0.03+i*0.01});oxTone(c,o,{t:0.005,type:'sine',f0:f*1.004,dur:d*0.8,vol:v*0.6,a:0.04})});
+    oxNoise(c,o,{dur:0.06,vol:0.5,ft:'lowpass',f0:1500});oxNoise(c,o,{t:0.05,dur:2.4,vol:0.1,ft:'bandpass',f0:3000,q:1.5,a:0.3})}],
+  rsTaiko:[2.2,(c,o)=>{/* three taiko drum hits + cymbal */
+    [[0,0.6],[0.2,0.7],[0.48,1]].forEach(([t,v])=>{L_sub(c,o,v,95,48,0.55,t);L_body(c,o,v*0.7,170,70,0.25,3,t);oxNoise(c,o,{t,dur:0.18,vol:0.45*v,ft:'lowpass',f0:900,f1:200});oxNoise(c,o,{t,dur:0.02,vol:0.3*v,ft:'highpass',f0:3000})});
+    oxNoise(c,o,{t:0.48,dur:1.6,vol:0.35,ft:'highpass',f0:5500,q:0.4,a:0.004})}],
+  rsChime:[1.6,(c,o)=>{/* arcade "ready" chime: rising arpeggio + sparkle */
+    [[0,659],[0.09,880],[0.18,1109],[0.27,1319]].forEach(([t,f],i)=>{oxTone(c,o,{t,type:'square',f0:f,dur:i===3?1:0.22,vol:0.08,lp:5000});oxTone(c,o,{t,type:'sine',f0:f*2,dur:i===3?1.1:0.25,vol:0.06})});
+    oxNoise(c,o,{t:0.27,dur:0.9,vol:0.12,ft:'bandpass',f0:8000,q:2,a:0.01});L_sub(c,o,0.4,110,80,0.5,0.27)}],
+  rsHorn:[2,(c,o)=>{/* brass fanfare hit */
+    [[0,0.12],[0.14,0.12],[0.28,1.3]].forEach(([t,d],k)=>[220,277,330,440].forEach((f,i)=>{const ff=k===2?f*1.335:f;oxTone(c,o,{t,type:'sawtooth',f0:ff,dur:d+0.1,vol:0.075,lp:900,lp1:k===2?2600:1800,a:0.02,det:i*4});oxTone(c,o,{t,type:'sawtooth',f0:ff,dur:d+0.1,vol:0.06,lp:900,lp1:k===2?2600:1800,a:0.02,det:-6})}));
+    L_sub(c,o,0.7,73,55,0.9,0.28);oxNoise(c,o,{t:0.28,dur:1.2,vol:0.25,ft:'highpass',f0:5000,q:0.4})}],
+  rsDing:[2,(c,o)=>{/* single clean boxing bell ding */L_click(c,o,0.1);[1,2.76,5.4,8.93].forEach((p,i)=>oxTone(c,o,{type:'sine',f0:690*p,dur:1.8-i*0.35,vol:0.22/(1+i*1.4),a:0.001}))}],
   /* FIGHT! stinger: orchestra hit + timpani + crash */
   fight:[1.6,(c,o)=>{L_sub(c,o,1,90,40,0.6);L_body(c,o,0.8,130,60,0.4,3);
     [110,220,330,440,554,659].forEach((f,i)=>{oxTone(c,o,{type:'sawtooth',f0:f,dur:0.75,vol:0.11,lp:5000,lp1:400,q:1,a:0.004,det:i*4});oxTone(c,o,{type:'square',f0:f,dur:0.5,vol:0.05,lp:4000,lp1:300,det:-6})});
@@ -229,7 +243,7 @@ const SFX={
   jump:()=>{if(!play('jump',0.5,{vary:0.1}))osc('square',260,520,0.07,0.06)},
   sel:()=>{if(!play('sel',0.8,{vary:0.02}))osc('square',660,990,0.06,0.12)},
   ok:()=>{if(!play('ok',0.8,{vary:0})){osc('square',523,523,0.08,0.13);osc('square',784,784,0.14,0.13,0.08)}},
-  bell:()=>{if(!play('bell',0.35,{verb:0.2,vary:0})){osc('triangle',880,880,0.6,0.25);osc('triangle',1320,1320,0.5,0.12,0.02)}},
+  bell:()=>{if(!play('rsGong',0.22,{verb:0.3,vary:0})){osc('triangle',880,880,0.6,0.25);osc('triangle',1320,1320,0.5,0.12,0.02)}},
   announce:()=>{duckMusic(0.4,0.5);play('fight',0.95,{verb:0.4,vary:0})},
   tele:()=>{if(!play('tele',0.6,{verb:0.25}))osc('sine',1800,200,0.18,0.18)},
 };
