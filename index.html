@@ -139,9 +139,12 @@ const RECIPES={
     oxTone(c,o,{type:'square',f0:620,dur:0.05,vol:0.08,lp:3000});L_body(c,o,0.55,210,120,0.06,2)}],
   blockH:[0.45,(c,o)=>{RECIPES.block[1](c,o);L_body(c,o,0.6,140,70,0.14,3);oxNoise(c,o,{dur:0.25,vol:0.3,ft:'highpass',f0:4000,q:0.5,t:0.01})}],
   /* parry: bright crystalline "shing" */
-  parry:[0.9,(c,o)=>{oxNoise(c,o,{dur:0.08,vol:0.6,ft:'highpass',f0:5000,q:0.5});oxTone(c,o,{type:'triangle',f0:1400,f1:2800,dur:0.09,vol:0.35});
-    [1760,2217,2637,3520,4186].forEach((f,i)=>oxTone(c,o,{t:0.005+i*0.012,type:'sine',f0:f,dur:0.75-i*0.08,vol:0.16,a:0.002,det:i%2?7:-7}));
-    oxNoise(c,o,{t:0.02,dur:0.5,vol:0.18,ft:'bandpass',f0:7000,q:3})}],
+  parry:[0.45,(c,o)=>{/* Alpha-style guard clash: hard crisp "TCHANG" - bright crunchy burst, short inharmonic metal ring, no long shimmer */
+    oxTone(c,o,{type:'square',f0:3200,f1:900,dur:0.018,vol:0.35});
+    oxNoise(c,o,{dur:0.045,vol:1,ft:'bandpass',f0:4200,q:1.4,drive:4});oxNoise(c,o,{dur:0.07,vol:0.6,ft:'highpass',f0:6500,q:0.5});
+    oxNoise(c,o,{dur:0.03,vol:0.5,ft:'bandpass',f0:1500,q:1.2});
+    [[1180,0.3,0.26],[1730,0.24,0.22],[2490,0.2,0.2],[3310,0.15,0.16],[4620,0.11,0.12]].forEach(([f,d,v],i)=>oxTone(c,o,{t:0.002,type:i<2?'triangle':'sine',f0:f*1.04,f1:f,dur:d,vol:v,a:0.001,sweep:0.03}));
+    oxTone(c,o,{type:'sine',f0:420,f1:260,dur:0.05,vol:0.3,drive:2})}],
   /* swings */
   whoosh:[0.16,(c,o)=>{oxNoise(c,o,{dur:0.14,vol:0.5,ft:'bandpass',f0:900,f1:4200,q:1.6,a:0.04})}],
   whooshH:[0.3,(c,o)=>{oxNoise(c,o,{dur:0.27,vol:0.6,ft:'bandpass',f0:380,f1:2400,q:1.3,a:0.07});oxNoise(c,o,{dur:0.22,vol:0.3,ft:'bandpass',f0:1800,f1:6000,q:2,a:0.06,t:0.02});
@@ -158,7 +161,7 @@ const RECIPES={
   /* knockdown: body slams the floor */
   land:[0.45,(c,o)=>{L_body(c,o,1,110,38,0.28,5);oxNoise(c,o,{dur:0.3,vol:0.6,ft:'lowpass',f0:700,f1:90});oxNoise(c,o,{dur:0.12,vol:0.25,ft:'highpass',f0:3000,t:0.01})}],
   /* boxing-style round bell */
-  bell:[2,(c,o)=>{[0,0.18].forEach(t=>{L_click(c,o,0.2,t);[1,2.76,5.4,8.93].forEach((p,i)=>oxTone(c,o,{t,type:'sine',f0:690*p,dur:1.7-i*0.3,vol:0.22/(1+i),a:0.001}))})}],
+  bell:[1.6,(c,o)=>{[0,0.18].forEach(t=>{L_click(c,o,0.12,t);[1,2.76,5.4,8.93].forEach((p,i)=>oxTone(c,o,{t,type:'sine',f0:690*p,dur:1.4-i*0.28,vol:0.22/(1+i*1.4),a:0.001}))})}],
   /* FIGHT! stinger: orchestra hit + timpani + crash */
   fight:[1.6,(c,o)=>{L_sub(c,o,1,90,40,0.6);L_body(c,o,0.8,130,60,0.4,3);
     [110,220,330,440,554,659].forEach((f,i)=>{oxTone(c,o,{type:'sawtooth',f0:f,dur:0.75,vol:0.11,lp:5000,lp1:400,q:1,a:0.004,det:i*4});oxTone(c,o,{type:'square',f0:f,dur:0.5,vol:0.05,lp:4000,lp1:300,det:-6})});
@@ -195,7 +198,7 @@ const SFX={
     if(!ok){noise(lv>=2?0.2:0.11,lv>=2?0.9:0.6,lv>=2?1600:3200);osc('square',lv>=2?130:200,40,lv>=2?0.2:0.1,lv>=2?0.45:0.3)}},
   block:(h,x)=>{if(!play(h?'blockH':'block',0.9,{pan:sfxPan(x),verb:0.08,vary:0.06})){noise(0.07,0.45,5000,'highpass');osc('square',1000,640,0.05,0.12)}},
   whoosh:h=>{if(!play(h?'whooshH':'whoosh',h?0.6:0.45,{vary:0.12})){noise(h?0.17:0.1,0.22,h?500:1100,'bandpass',0,h?2800:4200)}},
-  parry:()=>{duckMusic(0.5,0.1);if(!play('parry',0.9,{verb:0.35,vary:0.02})){osc('triangle',1500,3000,0.25,0.4);osc('sine',2200,4400,0.32,0.22,0.03)}},
+  parry:()=>{duckMusic(0.55,0.08);if(!play('parry',0.95,{verb:0.12,vary:0.03})){osc('triangle',1500,3000,0.25,0.4);osc('sine',2200,4400,0.32,0.22,0.03)}},
   special:()=>{if(!play('special',0.75,{verb:0.15,vary:0.05})){osc('sawtooth',220,880,0.25,0.15);noise(0.25,0.18,700,'bandpass',0,4200)}},
   super:()=>{duckMusic(0.3,0.6);if(!play('super',0.95,{verb:0.45,vary:0})){osc('sawtooth',110,1760,0.7,0.22);osc('square',55,440,0.7,0.14);noise(0.7,0.28,300,'bandpass',0,7000)}},
   ko:()=>{duckMusic(0.15,1.2);if(!play('ko',1.1,{verb:0.7,vary:0})){osc('square',440,50,1.3,0.32);noise(0.9,0.5,1400,'lowpass',0,90)}},
@@ -205,7 +208,7 @@ const SFX={
   jump:()=>{if(!play('jump',0.5,{vary:0.1}))osc('square',260,520,0.07,0.06)},
   sel:()=>{if(!play('sel',0.8,{vary:0.02}))osc('square',660,990,0.06,0.12)},
   ok:()=>{if(!play('ok',0.8,{vary:0})){osc('square',523,523,0.08,0.13);osc('square',784,784,0.14,0.13,0.08)}},
-  bell:()=>{if(!play('bell',0.8,{verb:0.3,vary:0})){osc('triangle',880,880,0.6,0.25);osc('triangle',1320,1320,0.5,0.12,0.02)}},
+  bell:()=>{if(!play('bell',0.35,{verb:0.2,vary:0})){osc('triangle',880,880,0.6,0.25);osc('triangle',1320,1320,0.5,0.12,0.02)}},
   announce:()=>{duckMusic(0.4,0.5);play('fight',0.95,{verb:0.4,vary:0})},
   tele:()=>{if(!play('tele',0.6,{verb:0.25}))osc('sine',1800,200,0.18,0.18)},
 };
