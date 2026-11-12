@@ -76,38 +76,53 @@ function resize(){
 const CRT={el:document.getElementById('crt'),gl:null,ok:false,tex:null,u:{},
   init(){if(this.gl||this.failed)return this.ok;try{const gl=this.el.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false});if(!gl)throw 0;this.gl=gl;
       const sh=(t,src)=>{const o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(o);return o};
-      const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 a;varying vec2 v;void main(){v=a*0.5+0.5;v.y=1.0-v.y;gl_Position=vec4(a,0.0,1.0);}'));
-      gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,`precision mediump float;
+      const VS='attribute vec2 a;varying vec2 v;void main(){v=a*0.5+0.5;v.y=1.0-v.y;gl_Position=vec4(a,0.0,1.0);}';
+      const prog=fs=>{const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw gl.getProgramInfoLog(pr);return pr};
+      // pass 1 (at game resolution): find 2-pixel dither alternation and resolve it to its true mixed colour; lines and edges are left sharp
+      this.p1=prog(`precision mediump float;uniform sampler2D T;uniform vec2 S;varying vec2 v;
+vec3 at(vec2 o){return pow(texture2D(T,(floor(v*S)+0.5+o)/S).rgb,vec3(2.2));}
+float df(vec3 a,vec3 b){vec3 d=abs(a-b);return max(d.r,max(d.g,d.b));}
+void main(){vec3 c=at(vec2(0.0)),l=at(vec2(-1.0,0.0)),r=at(vec2(1.0,0.0)),l2=at(vec2(-2.0,0.0)),r2=at(vec2(2.0,0.0));
+  vec3 u=at(vec2(0.0,-1.0)),d=at(vec2(0.0,1.0)),u2=at(vec2(0.0,-2.0)),d2=at(vec2(0.0,2.0));
+  float E=0.012;
+  bool hx=df(l,r)<E&&df(c,l)>E&&df(c,l2)<E&&df(c,r2)<E;
+  bool vy=df(u,d)<E&&df(c,u)>E&&df(c,u2)<E&&df(c,d2)<E;
+  vec3 o=c;if(hx&&vy)o=(4.0*c+l+r+u+d)/8.0;else if(hx)o=(2.0*c+l+r)/4.0;else if(vy)o=(2.0*c+u+d)/4.0;
+  else{float k=df(c,l);if(df(l,r)<E&&df(u,d)<E&&df(l,u)<E&&k>E&&k<0.22)o=(c+l+r+u+d)/5.0;
+    else if(df(l,r)<E&&k>E&&k<0.22&&df(c,u)<E&&df(c,d)<E)o=(c+l+r)/3.0;else if(df(u,d)<E&&df(c,u)>E&&df(c,u)<0.22&&df(c,l)<E&&df(c,r)<E)o=(c+u+d)/3.0;}
+  gl_FragColor=vec4(pow(o,vec3(1.0/2.2)),1.0);}`);
+      // pass 2 (at screen resolution): soft horizontal beam, scanlines, phosphor mask, faint glow, vignette
+      this.p2=prog(`precision mediump float;
 uniform sampler2D T;uniform vec2 S;uniform vec2 O;varying vec2 v;
-vec3 tx(vec2 p){return pow(texture2D(T,(p)/S).rgb,vec3(2.2));}
+vec3 tx(vec2 p){p=clamp(p,vec2(0.5),S-0.5);return pow(texture2D(T,vec2(p.x,S.y-p.y)/S).rgb,vec3(2.2));}
 vec3 row(float x,float y){float c=floor(x)+0.5;vec3 acc=vec3(0.0);float ws=0.0;
   for(int i=-2;i<=2;i++){float cx=c+float(i);float d=cx-x;float w=exp(-1.25*d*d);acc+=tx(vec2(cx,y))*w;ws+=w;}return acc/ws;}
-vec3 beam(float d,vec3 c){float l=dot(c,vec3(0.3,0.59,0.11));vec3 sg=mix(vec3(0.30),vec3(0.36),sqrt(c));return exp(-(d*d)/(2.0*sg*sg));}
-void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=y0+(fy<0.0?-1.0:1.0);
-  y1=clamp(y1,0.5,S.y-0.5);
+vec3 beam(float d,vec3 c){vec3 sg=mix(vec3(0.30),vec3(0.36),sqrt(c));return exp(-(d*d)/(2.0*sg*sg));}
+void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=clamp(y0+(fy<0.0?-1.0:1.0),0.5,S.y-0.5);
   vec3 a=row(p.x,y0),b=row(p.x,y1);
-  vec3 col=a*beam(abs(fy),a)+b*beam(1.0-abs(fy),b);
-  col*=1.42;
-  vec3 gl2=(tx(p+vec2(1.5,0.0))+tx(p-vec2(1.5,0.0))+tx(p+vec2(0.0,1.5))+tx(p-vec2(0.0,1.5)))*0.25;col+=gl2*0.015;
+  vec3 col=(a*beam(abs(fy),a)+b*beam(1.0-abs(fy),b))*1.42;
+  col+=(tx(p+vec2(1.5,0.0))+tx(p-vec2(1.5,0.0))+tx(p+vec2(0.0,1.5))+tx(p-vec2(0.0,1.5)))*0.25*0.015;
   float sc=O.y/S.y;if(sc>=2.6){float m=mod(gl_FragCoord.x,3.0);vec3 mk=m<1.0?vec3(1.0,0.82,0.82):m<2.0?vec3(0.82,1.0,0.82):vec3(0.82,0.82,1.0);col*=mix(vec3(1.0),mk,0.55)*1.06;}
-  vec2 q=v*(1.0-v.yx);float vg=pow(q.x*q.y*16.0,0.10);col*=vg;
-  gl_FragColor=vec4(pow(clamp(col,0.0,1.0),vec3(1.0/2.2)),1.0);}`));
-      gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw gl.getProgramInfoLog(pr);gl.useProgram(pr);
+  vec2 q=v*(1.0-v.yx);col*=pow(q.x*q.y*16.0,0.10);
+  gl_FragColor=vec4(pow(clamp(col,0.0,1.0),vec3(1.0/2.2)),1.0);}`);
       const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-      const al=gl.getAttribLocation(pr,'a');gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
-      this.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.tex);
-      for(const [k,vv] of [[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,vv);
-      this.u={S:gl.getUniformLocation(pr,'S'),O:gl.getUniformLocation(pr,'O')};gl.uniform2f(this.u.S,W,H);
+      const mkTex=()=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);for(const [k,vv] of [[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,vv);return t};
+      this.tex=mkTex();this.rt=mkTex();gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,W,H,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      this.fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,this.rt,0);
+      if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw 'fbo';gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+      this.u={S1:gl.getUniformLocation(this.p1,'S'),S2:gl.getUniformLocation(this.p2,'S'),O:gl.getUniformLocation(this.p2,'O'),a1:gl.getAttribLocation(this.p1,'a'),a2:gl.getAttribLocation(this.p2,'a')};
+      gl.useProgram(this.p1);gl.uniform2f(this.u.S1,W,H);gl.useProgram(this.p2);gl.uniform2f(this.u.S2,W,H);
       this.el.addEventListener('webglcontextlost',e=>{e.preventDefault();this.ok=false;this.apply()});
       this.el.addEventListener('webglcontextrestored',()=>{this.gl=null;this.init();this.apply()});
-      this.ok=true}catch(e){this.failed=true;this.ok=false}return this.ok},
+      this.ok=true}catch(e){this.failed=true;this.ok=false;this.err=String(e)}return this.ok},
   on(){return SET.crt&&this.init()},
   resize(){const r=Math.min(DPR,Math.max(1,(H*4)/Math.max(1,view.h)));// cap at ~4 device pixels per game row: plenty for scanlines, light on the GPU
-    this.el.width=Math.round(view.w*r);this.el.height=Math.round(view.h*r);Object.assign(this.el.style,{width:view.w+'px',height:view.h+'px',left:view.x+'px',top:view.y+'px'});
-    if(this.gl){this.gl.viewport(0,0,this.el.width,this.el.height)}this.apply()},
-  apply(){const on=this.on();this.el.style.display=on?'block':'none';cv.style.opacity=on?'0':'1';
-    if(on&&this.gl){this.gl.viewport(0,0,this.el.width,this.el.height);this.gl.uniform2f(this.u.O,this.el.width,this.el.height)}},
-  draw(){if(!SET.crt||!this.ok)return;const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cv);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}};
+    this.el.width=Math.round(view.w*r);this.el.height=Math.round(view.h*r);Object.assign(this.el.style,{width:view.w+'px',height:view.h+'px',left:view.x+'px',top:view.y+'px'});this.apply()},
+  apply(){const on=this.on();this.el.style.display=on?'block':'none';cv.style.opacity=on?'0':'1'},
+  draw(){if(!SET.crt||!this.ok)return;const gl=this.gl,U=this.u,quad=a=>{gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)};
+    gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cv);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.viewport(0,0,W,H);gl.useProgram(this.p1);quad(U.a1);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,this.el.width,this.el.height);gl.useProgram(this.p2);gl.uniform2f(U.O,this.el.width,this.el.height);gl.bindTexture(gl.TEXTURE_2D,this.rt);quad(U.a2)}};
 addEventListener('resize',resize);rotEl.addEventListener('pointerdown',e=>{rotDismissed=true;resize();e.stopPropagation()});
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
   if(f<0){r*=1+f;g*=1+f;b*=1+f}else{r+=(255-r)*f;g+=(255-g)*f;b+=(255-b)*f}
