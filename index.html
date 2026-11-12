@@ -78,7 +78,7 @@ function initAudio(){
   try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=0.45;master.connect(AC.destination);
     musicGain=AC.createGain();musicGain.gain.value=Math.max(0.0001,musicLevel());musicGain.connect(master);sfxGain=AC.createGain();sfxGain.gain.value=Math.max(0.0001,sfxLevel());sfxGain.connect(master);
     NB=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-    setInterval(musicTick,25);
+    setInterval(musicTick,25);sfxFx();
   }catch(e){AC=null}
 }
 function env(g,t,a,d,v){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
@@ -88,20 +88,128 @@ function osc(type,f0,f1,dur,vol,delay=0,out,at){if(!AC||G.resim)return;const t=a
 function noise(dur,vol,fq,type='lowpass',delay=0,fq2,out,at){if(!AC||G.resim)return;const t=at??AC.currentTime+delay;const s=AC.createBufferSource();s.buffer=NB;
   const f=AC.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(fq,t);if(fq2)f.frequency.exponentialRampToValueAtTime(fq2,t+dur);
   const g=AC.createGain();env(g,t,0.003,dur,vol);s.connect(f).connect(g).connect(out||sfxGain||master);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05)}
-const SFX={
-  hit:h=>{noise(h?0.2:0.11,h?0.9:0.6,h?1600:3200);osc('square',h?130:200,40,h?0.2:0.1,h?0.45:0.3)},
-  block:()=>{noise(0.07,0.45,5000,'highpass');osc('square',1000,640,0.05,0.12)},
-  whoosh:h=>noise(h?0.17:0.1,0.22,h?500:1100,'bandpass',0,h?2800:4200),
-  parry:()=>{osc('triangle',1500,3000,0.25,0.4);osc('sine',2200,4400,0.32,0.22,0.03)},
-  special:()=>{osc('sawtooth',220,880,0.25,0.15);noise(0.25,0.18,700,'bandpass',0,4200)},
-  super:()=>{osc('sawtooth',110,1760,0.7,0.22);osc('square',55,440,0.7,0.14);noise(0.7,0.28,300,'bandpass',0,7000)},
-  ko:()=>{osc('square',440,50,1.3,0.32);noise(0.9,0.5,1400,'lowpass',0,90)},
-  jump:()=>osc('square',260,520,0.07,0.06),
-  sel:()=>osc('square',660,990,0.06,0.12),
-  ok:()=>{osc('square',523,523,0.08,0.13);osc('square',784,784,0.14,0.13,0.08)},
-  bell:()=>{osc('triangle',880,880,0.6,0.25);osc('triangle',1320,1320,0.5,0.12,0.02)},
-  tele:()=>osc('sine',1800,200,0.18,0.18),
+/* ===================== SFX v2: layered, pre-rendered impact sounds =====================
+   Every sound is built once from layers (transient crack + body thump + sub + noise tail + metallic ring ...)
+   in an OfflineAudioContext, then played as a buffer with small random pitch changes, stereo position and
+   an optional room-echo send. Heavy hits also briefly duck the music so they cut through. */
+const SFXB={};let sfxBus=null,sfxVerb=null,sfxBaked=false;
+function makeIR(sec,decay){const sr=AC.sampleRate,n=Math.floor(sr*sec),b=AC.createBuffer(2,n,sr);
+  for(let c=0;c<2;c++){const d=b.getChannelData(c);let y=0;for(let i=0;i<n;i++){const k=0.55*Math.pow(1-i/n,1.5)+0.03;y+=k*((Math.random()*2-1)-y);d[i]=y*2.2*Math.pow(1-i/n,decay)*(i<sr*0.006?i/(sr*0.006):1)}}return b}/* darker as it decays, like a real room */
+function sfxFx(){if(sfxBus||!AC)return;
+  sfxBus=AC.createGain();sfxBus.gain.value=1;
+  const comp=AC.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=5;comp.attack.value=0.002;comp.release.value=0.14;
+  const make=AC.createGain();make.gain.value=1.25;sfxBus.connect(comp).connect(make).connect(sfxGain);
+  sfxVerb=AC.createConvolver();sfxVerb.buffer=makeIR(1.4,3);const vg=AC.createGain();vg.gain.value=0.38;sfxVerb.connect(vg).connect(comp);
+  bakeSfx()}
+function duckMusic(amt,hold){if(!AC||!musicGain||!musicOn)return;const L=Math.max(0.0001,musicLevel()),g=musicGain.gain,now=AC.currentTime;
+  g.cancelScheduledValues(now);g.setValueAtTime(Math.max(0.0001,g.value),now);g.linearRampToValueAtTime(Math.max(0.0001,L*amt),now+0.012);
+  g.setValueAtTime(Math.max(0.0001,L*amt),now+hold);g.linearRampToValueAtTime(L,now+hold+0.35)}
+
+/* ---- offline layer helpers ---- */
+function oxTone(c,out,o){const t=o.t||0,dur=o.dur,s=c.createOscillator(),g=c.createGain();s.type=o.type||'sine';
+  s.frequency.setValueAtTime(o.f0,t);if(o.f1)s.frequency.exponentialRampToValueAtTime(o.f1,t+(o.sweep||dur));if(o.det)s.detune.value=o.det;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(o.vol,t+(o.a||0.002));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  let n=s;if(o.drive){const w=c.createWaveShaper();w.curve=driveCurve(o.drive);n.connect(w);n=w}
+  if(o.lp){const f=c.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(o.lp,t);if(o.lp1)f.frequency.exponentialRampToValueAtTime(o.lp1,t+dur);f.Q.value=o.q||0.7;n.connect(f);n=f}
+  n.connect(g).connect(out);s.start(t);s.stop(t+dur+0.02)}
+function oxNoise(c,out,o){const t=o.t||0,dur=o.dur,s=c.createBufferSource();s.buffer=o.buf||OX_NB;const f=c.createBiquadFilter();f.type=o.ft||'bandpass';
+  f.frequency.setValueAtTime(o.f0,t);if(o.f1)f.frequency.exponentialRampToValueAtTime(o.f1,t+(o.sweep||dur));f.Q.value=o.q||0.8;
+  const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(o.vol,t+(o.a||0.002));
+  if(o.hold)g.gain.setValueAtTime(o.vol,t+o.hold);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  let n=s.connect(f);if(o.drive){const w=c.createWaveShaper();w.curve=driveCurve(o.drive);n.connect(w);n=w}
+  n.connect(g).connect(out);s.start(t,Math.random()*0.4);s.stop(t+dur+0.02)}
+const DRIVE_C={};function driveCurve(k){if(DRIVE_C[k])return DRIVE_C[k];const n=1025,a=new Float32Array(n),nm=Math.tanh(k);for(let i=0;i<n;i++){const x=i/(n-1)*2-1;a[i]=Math.tanh(k*x)/nm}return DRIVE_C[k]=a}
+let OX_NB=null;
+/* layered building blocks */
+const L_crack=(c,o,v,f=2600,d=0.05,t=0)=>{oxNoise(c,o,{t,dur:d,vol:v,ft:'highpass',f0:f,q:0.6});oxNoise(c,o,{t,dur:d*1.4,vol:v*0.7,ft:'bandpass',f0:f*0.55,q:1.1})};
+const L_click=(c,o,v,t=0)=>oxTone(c,o,{t,type:'square',f0:2400,f1:300,dur:0.014,vol:v});
+const L_body=(c,o,v,f0,f1,d,drive=3,t=0)=>oxTone(c,o,{t,type:'sine',f0,f1,dur:d,vol:v,drive,sweep:d*0.6});
+const L_sub=(c,o,v,f0,f1,d,t=0)=>oxTone(c,o,{t,type:'sine',f0,f1,dur:d,vol:v,a:0.004});
+const L_ring=(c,o,v,f,d,t=0,parts=[1,1.414,2.12,2.76,3.93])=>parts.forEach((p,i)=>oxTone(c,o,{t,type:'sine',f0:f*p,dur:d*(1-i*0.12),vol:v/(1+i*0.6),a:0.001}));
+const RECIPES={
+  /* hits: light / medium / heavy / extra (counter, super finisher) */
+  hitL:[0.2,(c,o)=>{L_click(c,o,0.25);L_crack(c,o,0.75,3200,0.045);L_body(c,o,0.85,260,95,0.085,2.5);oxNoise(c,o,{dur:0.07,vol:0.25,ft:'lowpass',f0:1200,f1:300})}],
+  hitM:[0.34,(c,o)=>{L_click(c,o,0.3);L_crack(c,o,0.95,2400,0.065);L_body(c,o,1,190,62,0.17,4);L_sub(c,o,0.5,95,45,0.2);oxNoise(c,o,{dur:0.16,vol:0.45,ft:'bandpass',f0:900,f1:220,q:0.9})}],
+  hitH:[0.7,(c,o)=>{L_click(c,o,0.35);L_crack(c,o,1,2000,0.09);L_body(c,o,1.1,150,42,0.3,6);L_sub(c,o,0.95,72,30,0.5);
+    oxTone(c,o,{type:'square',f0:340,f1:70,dur:0.09,vol:0.22,lp:2200});oxNoise(c,o,{dur:0.34,vol:0.6,ft:'lowpass',f0:1400,f1:120,drive:3})}],
+  hitX:[1.3,(c,o)=>{RECIPES.hitH[1](c,o);L_crack(c,o,0.8,4200,0.06,0.004);oxNoise(c,o,{dur:1.0,vol:0.75,ft:'lowpass',f0:900,f1:50,drive:4,a:0.006});
+    L_sub(c,o,0.9,58,24,0.9,0.01);L_ring(c,o,0.13,1960,0.55,0.005)}],
+  /* guard: hard "thock" plus a short metal clank */
+  block:[0.3,(c,o)=>{oxNoise(c,o,{dur:0.05,vol:0.75,ft:'bandpass',f0:2600,q:2.2});oxTone(c,o,{type:'triangle',f0:1240,dur:0.11,vol:0.2});oxTone(c,o,{type:'triangle',f0:1870,dur:0.16,vol:0.14});
+    oxTone(c,o,{type:'square',f0:620,dur:0.05,vol:0.08,lp:3000});L_body(c,o,0.55,210,120,0.06,2)}],
+  blockH:[0.45,(c,o)=>{RECIPES.block[1](c,o);L_body(c,o,0.6,140,70,0.14,3);oxNoise(c,o,{dur:0.25,vol:0.3,ft:'highpass',f0:4000,q:0.5,t:0.01})}],
+  /* parry: bright crystalline "shing" */
+  parry:[0.9,(c,o)=>{oxNoise(c,o,{dur:0.08,vol:0.6,ft:'highpass',f0:5000,q:0.5});oxTone(c,o,{type:'triangle',f0:1400,f1:2800,dur:0.09,vol:0.35});
+    [1760,2217,2637,3520,4186].forEach((f,i)=>oxTone(c,o,{t:0.005+i*0.012,type:'sine',f0:f,dur:0.75-i*0.08,vol:0.16,a:0.002,det:i%2?7:-7}));
+    oxNoise(c,o,{t:0.02,dur:0.5,vol:0.18,ft:'bandpass',f0:7000,q:3})}],
+  /* swings */
+  whoosh:[0.16,(c,o)=>{oxNoise(c,o,{dur:0.14,vol:0.5,ft:'bandpass',f0:900,f1:4200,q:1.6,a:0.04})}],
+  whooshH:[0.3,(c,o)=>{oxNoise(c,o,{dur:0.27,vol:0.6,ft:'bandpass',f0:380,f1:2400,q:1.3,a:0.07});oxNoise(c,o,{dur:0.22,vol:0.3,ft:'bandpass',f0:1800,f1:6000,q:2,a:0.06,t:0.02});
+    oxTone(c,o,{type:'sine',f0:130,f1:70,dur:0.2,vol:0.25,a:0.05})}],
+  /* special move: energy rush */
+  special:[0.55,(c,o)=>{oxTone(c,o,{type:'sawtooth',f0:160,f1:680,dur:0.32,vol:0.22,lp:900,lp1:5000,q:4,a:0.02});oxTone(c,o,{type:'sawtooth',f0:162,f1:690,dur:0.32,vol:0.18,lp:900,lp1:5000,det:12,a:0.02});
+    oxNoise(c,o,{dur:0.42,vol:0.45,ft:'bandpass',f0:500,f1:5200,q:1.4,a:0.05});oxTone(c,o,{type:'sine',f0:110,f1:55,dur:0.3,vol:0.35,a:0.01})}],
+  /* super activation: "BWAAM" stinger with a shimmering riser */
+  super:[1.6,(c,o)=>{L_sub(c,o,1,60,40,1.1);[110,165,220,277,330].forEach((f,i)=>{oxTone(c,o,{type:'sawtooth',f0:f,dur:1.1,vol:0.12,lp:300,lp1:5200,q:2,sweep:0.2,a:0.01,det:i*5});oxTone(c,o,{type:'sawtooth',f0:f,dur:1.1,vol:0.09,lp:300,lp1:5200,q:2,sweep:0.2,a:0.01,det:-9})});
+    oxNoise(c,o,{dur:1.3,vol:0.4,ft:'bandpass',f0:300,f1:9000,q:1.2,a:0.3,sweep:0.9});L_ring(c,o,0.1,2637,1.2,0.05);L_crack(c,o,0.7,3000,0.08)}],
+  /* K.O.: the biggest boom in the game, long tail */
+  ko:[3,(c,o)=>{RECIPES.hitX[1](c,o);L_sub(c,o,1,80,22,2.2,0.02);oxNoise(c,o,{dur:2.6,vol:0.7,ft:'lowpass',f0:700,f1:35,drive:5,a:0.01,t:0.02});
+    oxTone(c,o,{type:'sawtooth',f0:440,f1:55,dur:2,vol:0.12,lp:1600,lp1:200,t:0.05});oxTone(c,o,{type:'sawtooth',f0:443,f1:56,dur:2,vol:0.1,lp:1600,lp1:200,t:0.05})}],
+  /* knockdown: body slams the floor */
+  land:[0.45,(c,o)=>{L_body(c,o,1,110,38,0.28,5);oxNoise(c,o,{dur:0.3,vol:0.6,ft:'lowpass',f0:700,f1:90});oxNoise(c,o,{dur:0.12,vol:0.25,ft:'highpass',f0:3000,t:0.01})}],
+  /* boxing-style round bell */
+  bell:[2,(c,o)=>{[0,0.18].forEach(t=>{L_click(c,o,0.2,t);[1,2.76,5.4,8.93].forEach((p,i)=>oxTone(c,o,{t,type:'sine',f0:690*p,dur:1.7-i*0.3,vol:0.22/(1+i),a:0.001}))})}],
+  /* FIGHT! stinger: orchestra hit + timpani + crash */
+  fight:[1.6,(c,o)=>{L_sub(c,o,1,90,40,0.6);L_body(c,o,0.8,130,60,0.4,3);
+    [110,220,330,440,554,659].forEach((f,i)=>{oxTone(c,o,{type:'sawtooth',f0:f,dur:0.75,vol:0.11,lp:5000,lp1:400,q:1,a:0.004,det:i*4});oxTone(c,o,{type:'square',f0:f,dur:0.5,vol:0.05,lp:4000,lp1:300,det:-6})});
+    oxNoise(c,o,{dur:1.4,vol:0.5,ft:'highpass',f0:5000,q:0.4,a:0.004});L_crack(c,o,0.8,2500,0.07)}],
+  jump:[0.12,(c,o)=>{oxNoise(c,o,{dur:0.09,vol:0.3,ft:'bandpass',f0:1500,f1:3500,q:1.2,a:0.01});oxTone(c,o,{type:'sine',f0:180,f1:110,dur:0.06,vol:0.25})}],
+  tele:[0.5,(c,o)=>{oxTone(c,o,{type:'sine',f0:2400,f1:300,dur:0.3,vol:0.25});oxTone(c,o,{type:'sine',f0:2420,f1:310,dur:0.3,vol:0.2,det:20});oxNoise(c,o,{dur:0.35,vol:0.3,ft:'bandpass',f0:6000,f1:600,q:2})}],
+  /* element flavours layered onto a hit */
+  freeze:[0.9,(c,o)=>{for(let i=0;i<14;i++)oxTone(c,o,{t:i*0.025+Math.random()*0.02,type:'sine',f0:2600+Math.random()*4200,dur:0.12+Math.random()*0.3,vol:0.09,a:0.001});
+    oxNoise(c,o,{dur:0.5,vol:0.35,ft:'highpass',f0:6000,q:0.7,a:0.005})}],
+  zap:[0.5,(c,o)=>{oxTone(c,o,{type:'sawtooth',f0:95,dur:0.38,vol:0.22,drive:6,lp:3200});oxTone(c,o,{type:'square',f0:143,dur:0.3,vol:0.12,drive:4});
+    for(let i=0;i<7;i++)oxNoise(c,o,{t:i*0.045+Math.random()*0.02,dur:0.03,vol:0.5,ft:'highpass',f0:3500,q:0.6})}],
+  sel:[0.09,(c,o)=>{oxTone(c,o,{type:'square',f0:880,f1:1320,dur:0.06,vol:0.14,lp:4000,sweep:0.02});oxTone(c,o,{type:'sine',f0:1760,dur:0.05,vol:0.08})}],
+  ok:[0.35,(c,o)=>{oxTone(c,o,{type:'square',f0:523,dur:0.09,vol:0.13,lp:4000});oxTone(c,o,{t:0.07,type:'square',f0:784,dur:0.22,vol:0.13,lp:4000});oxTone(c,o,{t:0.07,type:'sine',f0:1568,dur:0.25,vol:0.06});L_crack(c,o,0.15,4000,0.03)}],
 };
+async function bakeSfx(){if(sfxBaked||!AC||typeof OfflineAudioContext==='undefined')return;sfxBaked=true;const sr=AC.sampleRate;
+  for(const k in RECIPES){const [len,fn]=RECIPES[k];try{const c=new OfflineAudioContext(1,Math.ceil(sr*len),sr);
+      if(!OX_NB||OX_NB.sampleRate!==sr){OX_NB=c.createBuffer(1,sr,sr);const d=OX_NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}
+      const out=c.createGain();out.gain.value=0.9;out.connect(c.destination);fn(c,out);const buf=await c.startRendering(),d=buf.getChannelData(0);let pk=0;for(let i=0;i<d.length;i++){const v=d[i]<0?-d[i]:d[i];if(v>pk)pk=v}
+      const tgt=Math.min(pk,SFX_PEAK[k]||1);if(pk>0&&tgt<pk){const m=tgt/pk;for(let i=0;i<d.length;i++)d[i]*=m}SFXB[k]=buf}catch(e){}}}
+const SFX_PEAK={hitL:0.72,hitM:0.86,hitH:1,hitX:1,ko:1,super:0.9,fight:0.9,land:0.8,blockH:0.8};
+function sfxPan(x){return x==null?0:clamp((x-(G.camX+W/2))/(W/2),-1,1)*0.55}
+function play(name,vol=1,o={}){if(!AC||G.resim)return false;if(!sfxBus)sfxFx();const b=SFXB[name];if(!b)return false;
+  const s=AC.createBufferSource();s.buffer=b;s.playbackRate.value=(o.rate||1)*(1+(Math.random()*2-1)*(o.vary??0.035));
+  const g=AC.createGain();g.gain.value=vol;s.connect(g);let n=g;
+  if(o.pan&&AC.createStereoPanner){const p=AC.createStereoPanner();p.pan.value=o.pan;g.connect(p);n=p}
+  n.connect(sfxBus);if(o.verb&&sfxVerb){const v=AC.createGain();v.gain.value=o.verb;n.connect(v);v.connect(sfxVerb)}
+  s.start(AC.currentTime+(o.delay||0));return true}
+/* public API (old synth kept as a fallback for the first moments before baking finishes) */
+const SFX={
+  /* lv: 0 light, 1 medium, 2 heavy, 3 extra (counter / super finisher / KO blow). true/false map to heavy/medium */
+  hit:(lv,x)=>{lv=lv===true?2:lv===false?1:(lv|0);const pan=sfxPan(x);
+    const ok=play(['hitL','hitM','hitH','hitX'][Math.min(3,lv)],[0.8,0.9,1,1.05][Math.min(3,lv)],{pan,verb:[0.06,0.12,0.22,0.38][Math.min(3,lv)],vary:lv>=2?0.05:0.07});
+    if(lv>=2)duckMusic(lv>=3?0.35:0.6,lv>=3?0.18:0.07);
+    if(!ok){noise(lv>=2?0.2:0.11,lv>=2?0.9:0.6,lv>=2?1600:3200);osc('square',lv>=2?130:200,40,lv>=2?0.2:0.1,lv>=2?0.45:0.3)}},
+  block:(h,x)=>{if(!play(h?'blockH':'block',0.9,{pan:sfxPan(x),verb:0.08,vary:0.06})){noise(0.07,0.45,5000,'highpass');osc('square',1000,640,0.05,0.12)}},
+  whoosh:h=>{if(!play(h?'whooshH':'whoosh',h?0.6:0.45,{vary:0.12})){noise(h?0.17:0.1,0.22,h?500:1100,'bandpass',0,h?2800:4200)}},
+  parry:()=>{duckMusic(0.5,0.1);if(!play('parry',0.9,{verb:0.35,vary:0.02})){osc('triangle',1500,3000,0.25,0.4);osc('sine',2200,4400,0.32,0.22,0.03)}},
+  special:()=>{if(!play('special',0.75,{verb:0.15,vary:0.05})){osc('sawtooth',220,880,0.25,0.15);noise(0.25,0.18,700,'bandpass',0,4200)}},
+  super:()=>{duckMusic(0.3,0.6);if(!play('super',0.95,{verb:0.45,vary:0})){osc('sawtooth',110,1760,0.7,0.22);osc('square',55,440,0.7,0.14);noise(0.7,0.28,300,'bandpass',0,7000)}},
+  ko:()=>{duckMusic(0.15,1.2);if(!play('ko',1.1,{verb:0.7,vary:0})){osc('square',440,50,1.3,0.32);noise(0.9,0.5,1400,'lowpass',0,90)}},
+  land:(v,x)=>{play('land',clamp(0.45+v*0.08,0.45,0.95),{pan:sfxPan(x),verb:0.15,vary:0.08})},
+  freeze:x=>play('freeze',0.7,{pan:sfxPan(x),verb:0.3}),
+  zap:x=>play('zap',0.65,{pan:sfxPan(x),verb:0.1}),
+  jump:()=>{if(!play('jump',0.5,{vary:0.1}))osc('square',260,520,0.07,0.06)},
+  sel:()=>{if(!play('sel',0.8,{vary:0.02}))osc('square',660,990,0.06,0.12)},
+  ok:()=>{if(!play('ok',0.8,{vary:0})){osc('square',523,523,0.08,0.13);osc('square',784,784,0.14,0.13,0.08)}},
+  bell:()=>{if(!play('bell',0.8,{verb:0.3,vary:0})){osc('triangle',880,880,0.6,0.25);osc('triangle',1320,1320,0.5,0.12,0.02)}},
+  announce:()=>{duckMusic(0.4,0.5);play('fight',0.95,{verb:0.4,vary:0})},
+  tele:()=>{if(!play('tele',0.6,{verb:0.25}))osc('sine',1800,200,0.18,0.18)},
+};
+
 // tiny chiptune sequencer (A minor: Am F G Em)
 // ---------- music: one theme for menus, one per stage (16th-note step sequencer)
 // numbers are semitones above A (bass at A1=55Hz, lead at A3=220Hz); -1 = rest
@@ -1044,11 +1152,11 @@ class Fighter{
     if(this.rushT%R.every!==0)return;
     const px=(this.x+op.x)/2,py=op.y-46*op.S;
     if(this.rushN<R.hits){const d=Math.max(1,Math.round(R.dmg/R.hits*dmgScale(op,!!m.super,op.combo-this.rushN)));this.rushN++;op.hp=Math.max(1,op.hp-d);addComboDmg(op,d);op.combo++;op.redT=60;op.flash=2;op.flashCol='#ffffff';
-      this.meter=Math.min(100,this.meter);addFx('spark',px+rnd(-6,6),py+rnd(-14,14),1,null,null,this.facing);SFX.hit(this.rushN%3===0);G.hitstop=Math.max(G.hitstop,2);G.shake=Math.max(G.shake,2);comboShow(this,op);return}
+      this.meter=Math.min(100,this.meter);addFx('spark',px+rnd(-6,6),py+rnd(-14,14),1,null,null,this.facing);SFX.hit(this.rushN%3===0?2:1,px);G.hitstop=Math.max(G.hitstop,2);G.shake=Math.max(G.shake,2);comboShow(this,op);return}
     // finisher
     {const d=Math.round(R.fin*dmgScale(op,!!m.super,op.combo-R.hits));op.hp=Math.max(0,op.hp-d);addComboDmg(op,d)}op.combo++;comboShow(this,op);this.rushT=0;this.t=m.s+m.a+1;this.vx=0;
     Object.assign(op,{state:'hit',juggle:true,vy:-4.6,vx:this.facing*7,y:FLOOR-1,t:0});op.juggleN++;op.redT=60;
-    G.hitstop=16;G.impact=4;G.zoomKick=0.22;G.shake=6;G.excite=1;addFx('spark',px,py,2,null,null,this.facing);addFx('quake',op.x,FLOOR,2);addFx('text',this.x,this.y-96*this.S,0,((this.ch.specials&&this.ch.specials.SU)||'SUPER')+'!',this.col.accent);SFX.hit(1);
+    G.hitstop=16;G.impact=4;G.zoomKick=0.22;G.shake=6;G.excite=1;addFx('spark',px,py,2,null,null,this.facing);addFx('quake',op.x,FLOOR,2);addFx('text',this.x,this.y-96*this.S,0,((this.ch.specials&&this.ch.specials.SU)||'SUPER')+'!',this.col.accent);SFX.hit(3,px);
     if(op.hp<=0){op.hp=1;op.hp=0;KO(op,this,this.facing)}}
   updMove(op){
     if(this.rushT>0){this.updRush(op);return}
@@ -1103,7 +1211,7 @@ class Fighter{
   }
   onLand(v){
     if(this.state==='jump'){this.chase=false;this.sj=false;this.bounceN=0;this.aparryUsed=false;this.aparryT=0;this.sq=1;this.state='land';this.t=0;this.landT=3;this.vx=0;addFx('dust',this.x,FLOOR);this.flip=false;this.pose.rot=0}
-    else if(this.state==='hit'&&this.juggle){this.juggle=false;this.juggleN=0;this.juggleInv=false;this.launchN=0;this.state=this.ko?'ko':'down';this.t=0;this.vx*=0.3;this.sq=0.8;if(v>4)addFx('quake',this.x,FLOOR,1);
+    else if(this.state==='hit'&&this.juggle){this.juggle=false;this.juggleN=0;this.juggleInv=false;this.launchN=0;this.state=this.ko?'ko':'down';this.t=0;this.vx*=0.3;this.sq=0.8;SFX.land(v,this.x);if(v>4)addFx('quake',this.x,FLOOR,1);
       addFx('dust',this.x,FLOOR);addFx('dust',this.x+12,FLOOR);G.shake=Math.max(G.shake,3);SFX.hit(1)}
     else if(this.state==='attack'){const m=this.move;this.move=null;this.bounceN=0;if(m.landQuake){addFx('quake',this.x+this.facing*10,FLOOR,2);G.shake=Math.max(G.shake,6)}this.state='land';this.t=0;this.landT=m.landRec||3;this.vx=0;this.sq=1;addFx('dust',this.x,FLOOR)}
     else if(this.state==='ko'){}
@@ -1226,13 +1334,13 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     G.cine={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing};G.impact=3;G.excite=1;SFX.super();return'hit'}
   if(m.airGrab){if(!B.air)return'none';
     const dmg=Math.round(m.dmg*dmgScale(B,!!m.super,B.combo));B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;A.grabbed=true;Object.assign(B,{state:'hit',juggle:true,t:0,vy:7.5,vx:0,move:null});B.x=A.x+A.facing*8;B.y=Math.max(B.y,A.y);
-    A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(1);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
+    A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(2,px);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   if(m.grab){
     if(B.air||B.state==='hit'||B.state==='block'||B.state==='getup')return'none';
     const dmg=Math.round(m.dmg*dmgScale(B,!!m.super,B.combo));B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;A.grabbed=true;
     Object.assign(B,{state:'hit',juggle:true,t:0,vy:-6.6,vx:-A.facing*2.7,y:FLOOR-24,move:null});B.x=A.x+A.facing*4;
     A.meter=Math.min(100,A.meter+(m.super?0:dmg*0.1));G.hitstop=14;G.shake=8;B.flash=4;addFx('spark',px,py-10,2);addFx('ring',A.x,A.y-50);
-    addFx('text',A.x,A.y-100,0,m.super?'BUSTER!!':'SUPLEX!','#ffd23f');if(m.super||B.hp<=0){G.impact=4;G.zoomKick=0.25}addFx('quake',A.x,FLOOR,m.super?2:1);SFX.hit(1);if(!G.demo)vib(40);G.excite=1;comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
+    addFx('text',A.x,A.y-100,0,m.super?'BUSTER!!':'SUPLEX!','#ffd23f');if(m.super||B.hp<=0){G.impact=4;G.zoomKick=0.25}addFx('quake',A.x,FLOOR,m.super?2:1);SFX.hit(m.super?3:2,px);if(!G.demo)vib(40);G.excite=1;comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   // block
   const away=Math.sign(B.x-((isProj&&Math.abs(src.vx)<1)?src.owner.x:srcX))||-B.facing,low=B.inp.down;// a stationary trap is blocked facing its owner
   const blocking=B.canBlock()&&(B.inp.guard||B.inp.h===away);
@@ -1240,7 +1348,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     B.state='block';B.t=0;B.stun=m.bs||12;B.crouchBlk=low;B.vx=dir*((m.kb||2)*0.7+1);
     if(m.special)B.hp=Math.max(1,B.hp-Math.round(per*(m.super?0.25:0.15)));
     A.meter=Math.min(100,A.meter+per*0.05);B.meter=Math.min(100,B.meter+per*0.08);A.canCancel=true;
-    G.hitstop=Math.max(G.hitstop,6);addFx('block',px,py,0,null,null,dir);SFX.block();cornerPush(A,B,dir,m,isProj);return'block'}
+    G.hitstop=Math.max(G.hitstop,6);addFx('block',px,py,0,null,null,dir);SFX.block(per>=70||!!m.super,px);cornerPush(A,B,dir,m,isProj);return'block'}
   // armor
   if(B.state==='attack'&&B.move.armor&&!B.armorUsed&&B.t<=B.move.s+B.move.a){
     B.armorUsed=true;B.hp-=Math.round(per*0.7);B.flash=6;B.flashCol='#ff6060';G.hitstop=10;addFx('spark',px,py,1);addFx('text',B.x,B.y-90*B.S,0,'ARMOR','#ff8080');SFX.block();
@@ -1272,9 +1380,9 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   const big=per>=70||finisher;
   if((m.super&&finisher)||(m.super&&hits===1)||B.hp<=0){G.impact=4;G.zoomKick=0.22;addFx('quake',B.x,FLOOR,2);G.excite=1}else if(big){G.zoomKick=Math.max(G.zoomKick||0,0.06)}
   G.hitstop=Math.max(G.hitstop,m.super?(finisher?16:5):(big?11:7));G.shake=Math.max(G.shake,big?4:2);B.flash=3;B.flashCol='#ffffff';
-  addFx('spark',px,py,big?2:1,null,null,dir);SFX.hit(big);if(B.vx&&!B.air&&Math.abs(B.vx)>=3)addFx('dust',B.x,FLOOR);if(!G.demo&&(A===G.p1||B===G.p1))vib(big?30:12);G.excite=Math.min(1,G.excite+(big?0.5:0.2));
-  if(m.freeze){B.flash=26;B.flashCol='#a8e4ff';if(!G.resim){addFx('ring',B.x,B.y-40*B.S);addFx('text',B.x,B.y-96*B.S,0,'FROZEN!','#a8e4ff')}}
-  if(m.zap){B.flash=8;B.flashCol=A.col.accent;if(!G.resim)addFx('spark',px,py,2)}
+  addFx('spark',px,py,big?2:1,null,null,dir);SFX.hit((B.hp<=0||(m.super&&finisher)||counterHit)?3:big?2:per<40?0:1,px);if(B.vx&&!B.air&&Math.abs(B.vx)>=3)addFx('dust',B.x,FLOOR);if(!G.demo&&(A===G.p1||B===G.p1))vib(big?30:12);G.excite=Math.min(1,G.excite+(big?0.5:0.2));
+  if(m.freeze){B.flash=26;B.flashCol='#a8e4ff';if(!G.resim){SFX.freeze(px);addFx('ring',B.x,B.y-40*B.S);addFx('text',B.x,B.y-96*B.S,0,'FROZEN!','#a8e4ff')}}
+  if(m.zap){B.flash=8;B.flashCol=A.col.accent;if(!G.resim)SFX.zap(px);if(!G.resim)addFx('spark',px,py,2)}
   cornerPush(A,B,dir,m,isProj);comboShow(A,B);
   if(m.bounce&&!isProj&&A.air&&(A.bounceN||0)<2&&B.hp>0){A.bounceN=(A.bounceN||0)+1;A.move=null;A.state='jump';A.t=0;A.vy=-m.bounce;A.vx=-A.facing*0.9;A.airAtk=false;A.airL=0;A.airSp=false;A.flip=false;addFx('dust',A.x,A.y)}
   if(B.hp<=0)KO(B,A,dir);
@@ -1917,7 +2025,7 @@ function stepCine(){const c=G.cine,F=[G.p1,G.p2],A=F[c.a],B=F[c.b];c.t++;const N
     if(!G.resim){SFX.hit(((c.t-14)/5)%3===0);G.shake=3;vib(10)}}
   if(c.t===100){G.cine=null;A.state='taunt';A.t=0;B.combo=0;B.comboDmg=0;B.y=FLOOR;
     addFx('sigil',A.x,A.y-48*A.S);
-    if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,c.dir)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8;addFx('quake',B.x,FLOOR,2)}}
+    if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,c.dir)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8;SFX.land(8,B.x);addFx('quake',B.x,FLOOR,2)}}
   if(!G.resim)updFx()}
 function stepFight(netIn){
   const p1=G.p1,p2=G.p2;
