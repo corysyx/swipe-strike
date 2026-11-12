@@ -93,13 +93,18 @@ void main(){vec3 c=at(vec2(0.0)),l=at(vec2(-1.0,0.0)),r=at(vec2(1.0,0.0)),l2=at(
   gl_FragColor=vec4(pow(o,vec3(1.0/2.2)),1.0);}`);
       // pass 1 alt: composite-video signal. Split into brightness (Y) and colour (IQ), band-limit them horizontally like an
       // analogue signal (brightness lightly, colour heavily), comb-blend colour between lines, then recombine. Dither melts away.
-      this.pc=prog(`precision mediump float;uniform sampler2D T;uniform vec2 S;varying vec2 v;
+      this.pc=prog(`precision mediump float;uniform sampler2D T;uniform vec2 S;uniform float F;uniform float RB;varying vec2 v;
 const mat3 toY=mat3(0.299,0.596,0.211, 0.587,-0.274,-0.523, 0.114,-0.322,0.312);
 const mat3 toR=mat3(1.0,1.0,1.0, 0.956,-0.272,-1.106, 0.621,-0.647,1.703);
 vec3 at(vec2 o){return toY*texture2D(T,(floor(v*S)+0.5+o)/S).rgb;}
-void main(){vec3 rows[3];
+void main(){vec3 rows[3];vec2 base=floor(v*S);
   for(int j=0;j<3;j++){float dy=float(j-1);float ys=0.0,yw=0.0;vec2 cs=vec2(0.0);float cw=0.0;
-    for(int i=-5;i<=5;i++){float x=float(i);vec3 q=at(vec2(x,dy));float wy=exp(-x*x/(2.0*0.72*0.72));float wc=exp(-x*x/(2.0*2.0*2.0));ys+=q.x*wy;yw+=wy;cs+=q.yz*wc;cw+=wc;}
+    float Y0=0.0,Ym1=at(vec2(-6.0,dy)).x,Yc=at(vec2(-5.0,dy)).x;
+    for(int i=-5;i<=5;i++){float x=float(i);vec3 q=at(vec2(x,dy));float Yn=at(vec2(x+1.0,dy)).x;
+      float wy=exp(-x*x/(2.0*0.72*0.72));float wc=exp(-x*x/(2.0*2.0*2.0));ys+=q.x*wy;yw+=wy;
+      vec2 ch=q.yz;
+      if(RB>0.5){float det=q.x-0.5*(Ym1+Yn);float ph=1.5708*(base.x+x)+1.5708*(base.y+dy)+F*0.35;ch+=vec2(cos(ph),sin(ph))*clamp(det*3.2,-0.32,0.32);}
+      cs+=ch*wc;cw+=wc;Ym1=q.x;}
     rows[j]=vec3(ys/yw,cs/cw);}
   float Y=rows[0].x*0.14+rows[1].x*0.72+rows[2].x*0.14;
   vec2 C=rows[0].yz*0.25+rows[1].yz*0.5+rows[2].yz*0.25;
@@ -123,7 +128,7 @@ void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=clamp(y0
       this.tex=mkTex();this.rt=mkTex();gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,W,H,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
       this.fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,this.rt,0);
       if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw 'fbo';gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-      this.u={S1:gl.getUniformLocation(this.p1,'S'),Sc:gl.getUniformLocation(this.pc,'S'),S2:gl.getUniformLocation(this.p2,'S'),O:gl.getUniformLocation(this.p2,'O'),K:gl.getUniformLocation(this.p2,'K'),a1:gl.getAttribLocation(this.p1,'a'),ac:gl.getAttribLocation(this.pc,'a'),a2:gl.getAttribLocation(this.p2,'a')};
+      this.u={S1:gl.getUniformLocation(this.p1,'S'),Sc:gl.getUniformLocation(this.pc,'S'),F:gl.getUniformLocation(this.pc,'F'),RB:gl.getUniformLocation(this.pc,'RB'),S2:gl.getUniformLocation(this.p2,'S'),O:gl.getUniformLocation(this.p2,'O'),K:gl.getUniformLocation(this.p2,'K'),a1:gl.getAttribLocation(this.p1,'a'),ac:gl.getAttribLocation(this.pc,'a'),a2:gl.getAttribLocation(this.p2,'a')};
       gl.useProgram(this.p1);gl.uniform2f(this.u.S1,W,H);gl.useProgram(this.pc);gl.uniform2f(this.u.Sc,W,H);gl.useProgram(this.p2);gl.uniform2f(this.u.S2,W,H);
       this.el.addEventListener('webglcontextlost',e=>{e.preventDefault();this.ok=false;this.apply()});
       this.el.addEventListener('webglcontextrestored',()=>{this.gl=null;this.init();this.apply()});
@@ -134,7 +139,7 @@ void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=clamp(y0
   apply(){const on=this.on();this.el.style.display=on?'block':'none';cv.style.opacity=on?'0':'1'},
   draw(){if(!SET.crt||!this.ok)return;const gl=this.gl,U=this.u,quad=a=>{gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)};
     gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cv);
-    const comp=SET.crtMode!=='rgb';gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.viewport(0,0,W,H);if(comp){gl.useProgram(this.pc);quad(U.ac)}else{gl.useProgram(this.p1);quad(U.a1)}
+    const comp=SET.crtMode!=='rgb';gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.viewport(0,0,W,H);if(comp){gl.useProgram(this.pc);this.fr=((this.fr||0)+1)%100000;gl.uniform1f(U.F,this.fr);gl.uniform1f(U.RB,SET.crtMode==='rainbow'?1:0);quad(U.ac)}else{gl.useProgram(this.p1);quad(U.a1)}
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,this.el.width,this.el.height);gl.useProgram(this.p2);gl.uniform2f(U.O,this.el.width,this.el.height);gl.uniform1f(U.K,comp?3.2:1.4);gl.bindTexture(gl.TEXTURE_2D,this.rt);quad(U.a2)}};
 addEventListener('resize',resize);rotEl.addEventListener('pointerdown',e=>{rotDismissed=true;resize();e.stopPropagation()});
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
@@ -2654,7 +2659,7 @@ function renderSettings(g){
   slider(50,'MUSIC','music',()=>{initAudio();applyVolumes()});
   slider(80,'SOUND FX','sfx',()=>{initAudio();applyVolumes()});
   txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
-  txt(g,'CRT',272,114,8,'#fff');button(g,306,110,74,16,CRT.failed?'N/A':!SET.crt?'OFF':SET.crtMode==='rgb'?'SHARP':'BLENDED',()=>{if(CRT.failed)return;if(!SET.crt){SET.crt=true;SET.crtMode='comp'}else if(SET.crtMode!=='rgb')SET.crtMode='rgb';else SET.crt=false;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
+  txt(g,'CRT',272,114,8,'#fff');button(g,306,110,74,16,CRT.failed?'N/A':!SET.crt?'OFF':SET.crtMode==='rgb'?'SHARP':SET.crtMode==='rainbow'?'RAINBOW':'BLENDED',()=>{if(CRT.failed)return;if(!SET.crt){SET.crt=true;SET.crtMode='comp'}else if(SET.crtMode==='comp')SET.crtMode='rainbow';else if(SET.crtMode==='rainbow')SET.crtMode='rgb';else SET.crt=false;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
   txt(g,'MUSIC STYLE',40,140,8,'#fff');button(g,140,136,110,16,SET.lite?'LITE':'FULL BAND',()=>{SET.lite=!SET.lite;saveSettings();SFX.sel()},{col:SET.lite?'#ff8a3a':'#9dffcf'});txt(g,SET.lite?'(FOR OLDER PHONES)':'',258,140,8,'#8a80b0');
   button(g,40,162,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
   button(g,196,162,140,18,dbgAny()?'DEBUG MENU (ON)':'DEBUG MENU',()=>{G.mode='debug';SFX.sel()},{col:dbgAny()?'#ff8aff':'#b48cff'});
