@@ -1521,6 +1521,10 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   if(m.kdCap&&!isProj){if(G.phaseT-(B.akLast??-999)>150||G.phaseT<(B.akLast??0))B.akN=0;B.akN=(B.akN||0)+1;B.akLast=G.phaseT;if(B.akN>=m.kdCap){capKd=true;B.akN=0}}
   const isLaunch=!!m.launch&&!capKd&&(nth>=hits||!m.lastKd);let limited=false;
   if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.6;B.vx=dir*4.6;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true}}/* over the limit: pushed away, out of the combo */
+  /* relaunch push: every launch after the first in a combo shoves the opponent further away, so the juggle only continues if you dash in.
+     Against the wall the attacker is pushed back instead, so corner juggles need a dash too. */
+  if(isLaunch&&!limited&&B.launchN>=2){const push=3.0+0.8*(B.launchN-2),walled=dir>0?B.x>STAGE_W-60:B.x<60;
+    if(walled)A.ext=(A.ext||0)-dir*push;else B.ext=(B.ext||0)+dir*push}
   if(limited){}
   else if(capKd){B.juggle=true;B.vy=-3.4;B.vx=dir*3.2;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true;B.capN=0;addFx('text',B.x,B.y-70,0,'KNOCKDOWN!','#ff4a4a');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
