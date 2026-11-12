@@ -82,13 +82,13 @@ uniform sampler2D T;uniform vec2 S;uniform vec2 O;varying vec2 v;
 vec3 tx(vec2 p){return pow(texture2D(T,(p)/S).rgb,vec3(2.2));}
 vec3 row(float x,float y){float c=floor(x)+0.5;vec3 acc=vec3(0.0);float ws=0.0;
   for(int i=-2;i<=2;i++){float cx=c+float(i);float d=cx-x;float w=exp(-1.25*d*d);acc+=tx(vec2(cx,y))*w;ws+=w;}return acc/ws;}
-vec3 beam(float d,vec3 c){float l=dot(c,vec3(0.3,0.59,0.11));vec3 sg=mix(vec3(0.30),vec3(0.52),sqrt(c));return exp(-(d*d)/(2.0*sg*sg));}
+vec3 beam(float d,vec3 c){float l=dot(c,vec3(0.3,0.59,0.11));vec3 sg=mix(vec3(0.30),vec3(0.45),sqrt(c));return exp(-(d*d)/(2.0*sg*sg));}
 void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=y0+(fy<0.0?-1.0:1.0);
   y1=clamp(y1,0.5,S.y-0.5);
   vec3 a=row(p.x,y0),b=row(p.x,y1);
   vec3 col=a*beam(abs(fy),a)+b*beam(1.0-abs(fy),b);
-  col*=1.32;
-  vec3 gl2=(tx(p+vec2(1.5,0.0))+tx(p-vec2(1.5,0.0))+tx(p+vec2(0.0,1.5))+tx(p-vec2(0.0,1.5)))*0.25;col+=gl2*0.10;
+  col*=1.36;
+  vec3 gl2=(tx(p+vec2(1.5,0.0))+tx(p-vec2(1.5,0.0))+tx(p+vec2(0.0,1.5))+tx(p-vec2(0.0,1.5)))*0.25;col+=gl2*0.03;
   float sc=O.y/S.y;if(sc>=2.6){float m=mod(gl_FragCoord.x,3.0);vec3 mk=m<1.0?vec3(1.0,0.82,0.82):m<2.0?vec3(0.82,1.0,0.82):vec3(0.82,0.82,1.0);col*=mix(vec3(1.0),mk,0.55)*1.06;}
   vec2 q=v*(1.0-v.yx);float vg=pow(q.x*q.y*16.0,0.10);col*=vg;
   gl_FragColor=vec4(pow(clamp(col,0.0,1.0),vec3(1.0/2.2)),1.0);}`));
