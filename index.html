@@ -87,12 +87,26 @@ void main(){vec3 c=at(vec2(0.0)),l=at(vec2(-1.0,0.0)),r=at(vec2(1.0,0.0)),l2=at(
   else{float k=df(c,l);if(df(l,r)<E&&df(u,d)<E&&df(l,u)<E&&k>E&&k<0.22)o=(c+l+r+u+d)/5.0;
     else if(df(l,r)<E&&k>E&&k<0.22&&df(c,u)<E&&df(c,d)<E)o=(c+l+r)/3.0;else if(df(u,d)<E&&df(c,u)>E&&df(c,u)<0.22&&df(c,l)<E&&df(c,r)<E)o=(c+u+d)/3.0;}
   gl_FragColor=vec4(pow(o,vec3(1.0/2.2)),1.0);}`);
+      // pass 1 alt: composite-video signal. Split into brightness (Y) and colour (IQ), band-limit them horizontally like an
+      // analogue signal (brightness lightly, colour heavily), comb-blend colour between lines, then recombine. Dither melts away.
+      this.pc=prog(`precision mediump float;uniform sampler2D T;uniform vec2 S;varying vec2 v;
+const mat3 toY=mat3(0.299,0.596,0.211, 0.587,-0.274,-0.523, 0.114,-0.322,0.312);
+const mat3 toR=mat3(1.0,1.0,1.0, 0.956,-0.272,-1.106, 0.621,-0.647,1.703);
+vec3 at(vec2 o){return toY*texture2D(T,(floor(v*S)+0.5+o)/S).rgb;}
+void main(){vec3 rows[3];
+  for(int j=0;j<3;j++){float dy=float(j-1);float ys=0.0,yw=0.0;vec2 cs=vec2(0.0);float cw=0.0;
+    for(int i=-5;i<=5;i++){float x=float(i);vec3 q=at(vec2(x,dy));float wy=exp(-x*x/(2.0*0.82*0.82));float wc=exp(-x*x/(2.0*2.4*2.4));ys+=q.x*wy;yw+=wy;cs+=q.yz*wc;cw+=wc;}
+    rows[j]=vec3(ys/yw,cs/cw);}
+  float Y=rows[0].x*0.14+rows[1].x*0.72+rows[2].x*0.14;
+  vec2 C=rows[0].yz*0.25+rows[1].yz*0.5+rows[2].yz*0.25;
+  vec3 rgb=toR*vec3(Y,C*1.08);
+  gl_FragColor=vec4(clamp(rgb,0.0,1.0),1.0);}`);
       // pass 2 (at screen resolution): soft horizontal beam, scanlines, phosphor mask, faint glow, vignette
       this.p2=prog(`precision mediump float;
-uniform sampler2D T;uniform vec2 S;uniform vec2 O;varying vec2 v;
+uniform sampler2D T;uniform vec2 S;uniform vec2 O;uniform float K;varying vec2 v;
 vec3 tx(vec2 p){p=clamp(p,vec2(0.5),S-0.5);return pow(texture2D(T,vec2(p.x,S.y-p.y)/S).rgb,vec3(2.2));}
 vec3 row(float x,float y){float c=floor(x)+0.5;vec3 acc=vec3(0.0);float ws=0.0;
-  for(int i=-2;i<=2;i++){float cx=c+float(i);float d=cx-x;float w=exp(-1.25*d*d);acc+=tx(vec2(cx,y))*w;ws+=w;}return acc/ws;}
+  for(int i=-2;i<=2;i++){float cx=c+float(i);float d=cx-x;float w=exp(-K*d*d);acc+=tx(vec2(cx,y))*w;ws+=w;}return acc/ws;}
 vec3 beam(float d,vec3 c){vec3 sg=mix(vec3(0.30),vec3(0.36),sqrt(c));return exp(-(d*d)/(2.0*sg*sg));}
 void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=clamp(y0+(fy<0.0?-1.0:1.0),0.5,S.y-0.5);
   vec3 a=row(p.x,y0),b=row(p.x,y1);
@@ -106,8 +120,8 @@ void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=clamp(y0
       this.tex=mkTex();this.rt=mkTex();gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,W,H,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
       this.fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,this.rt,0);
       if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw 'fbo';gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-      this.u={S1:gl.getUniformLocation(this.p1,'S'),S2:gl.getUniformLocation(this.p2,'S'),O:gl.getUniformLocation(this.p2,'O'),a1:gl.getAttribLocation(this.p1,'a'),a2:gl.getAttribLocation(this.p2,'a')};
-      gl.useProgram(this.p1);gl.uniform2f(this.u.S1,W,H);gl.useProgram(this.p2);gl.uniform2f(this.u.S2,W,H);
+      this.u={S1:gl.getUniformLocation(this.p1,'S'),Sc:gl.getUniformLocation(this.pc,'S'),S2:gl.getUniformLocation(this.p2,'S'),O:gl.getUniformLocation(this.p2,'O'),K:gl.getUniformLocation(this.p2,'K'),a1:gl.getAttribLocation(this.p1,'a'),ac:gl.getAttribLocation(this.pc,'a'),a2:gl.getAttribLocation(this.p2,'a')};
+      gl.useProgram(this.p1);gl.uniform2f(this.u.S1,W,H);gl.useProgram(this.pc);gl.uniform2f(this.u.Sc,W,H);gl.useProgram(this.p2);gl.uniform2f(this.u.S2,W,H);
       this.el.addEventListener('webglcontextlost',e=>{e.preventDefault();this.ok=false;this.apply()});
       this.el.addEventListener('webglcontextrestored',()=>{this.gl=null;this.init();this.apply()});
       this.ok=true}catch(e){this.failed=true;this.ok=false;this.err=String(e)}return this.ok},
@@ -117,8 +131,8 @@ void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=clamp(y0
   apply(){const on=this.on();this.el.style.display=on?'block':'none';cv.style.opacity=on?'0':'1'},
   draw(){if(!SET.crt||!this.ok)return;const gl=this.gl,U=this.u,quad=a=>{gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)};
     gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cv);
-    gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.viewport(0,0,W,H);gl.useProgram(this.p1);quad(U.a1);
-    gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,this.el.width,this.el.height);gl.useProgram(this.p2);gl.uniform2f(U.O,this.el.width,this.el.height);gl.bindTexture(gl.TEXTURE_2D,this.rt);quad(U.a2)}};
+    const comp=SET.crtMode!=='rgb';gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.viewport(0,0,W,H);if(comp){gl.useProgram(this.pc);quad(U.ac)}else{gl.useProgram(this.p1);quad(U.a1)}
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,this.el.width,this.el.height);gl.useProgram(this.p2);gl.uniform2f(U.O,this.el.width,this.el.height);gl.uniform1f(U.K,comp?2.8:1.25);gl.bindTexture(gl.TEXTURE_2D,this.rt);quad(U.a2)}};
 addEventListener('resize',resize);rotEl.addEventListener('pointerdown',e=>{rotDismissed=true;resize();e.stopPropagation()});
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
   if(f<0){r*=1+f;g*=1+f;b*=1+f}else{r+=(255-r)*f;g+=(255-g)*f;b+=(255-b)*f}
@@ -128,7 +142,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 
 /* ============================ SOUND ============================ */
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
-const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
+const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'comp'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 /* debug options (offline only - never applied to online matches or the attract demo) */
 const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',boxes:false,info:false,speed:1};
 const DBG=(()=>{let o=JSON.parse(JSON.stringify(DBG_DEF));try{const v=JSON.parse(localStorage.getItem('ss_debug')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
@@ -2637,7 +2651,7 @@ function renderSettings(g){
   slider(50,'MUSIC','music',()=>{initAudio();applyVolumes()});
   slider(80,'SOUND FX','sfx',()=>{initAudio();applyVolumes()});
   txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
-  txt(g,'CRT FILTER',222,114,8,'#fff');button(g,306,110,56,16,CRT.failed?'N/A':SET.crt?'ON':'OFF',()=>{if(CRT.failed)return;SET.crt=!SET.crt;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
+  txt(g,'CRT',272,114,8,'#fff');button(g,306,110,74,16,CRT.failed?'N/A':!SET.crt?'OFF':SET.crtMode==='rgb'?'SHARP':'BLENDED',()=>{if(CRT.failed)return;if(!SET.crt){SET.crt=true;SET.crtMode='comp'}else if(SET.crtMode!=='rgb')SET.crtMode='rgb';else SET.crt=false;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
   txt(g,'MUSIC STYLE',40,140,8,'#fff');button(g,140,136,110,16,SET.lite?'LITE':'FULL BAND',()=>{SET.lite=!SET.lite;saveSettings();SFX.sel()},{col:SET.lite?'#ff8a3a':'#9dffcf'});txt(g,SET.lite?'(FOR OLDER PHONES)':'',258,140,8,'#8a80b0');
   button(g,40,162,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
   button(g,196,162,140,18,dbgAny()?'DEBUG MENU (ON)':'DEBUG MENU',()=>{G.mode='debug';SFX.sel()},{col:dbgAny()?'#ff8aff':'#b48cff'});
