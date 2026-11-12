@@ -1148,7 +1148,7 @@ function aiExec(ai,inp,dir,dist,me){
 /* ============================ FX ============================ */
 function addFx(type,x,y,s=1,str,col,dir){
   if(G.resim)return;
-  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80}[type]||16};
+  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
   if(type==='quake'){f.parts=Array.from({length:6+s*6},()=>({x:rnd(-14,14),vx:rnd(-2.2,2.2),vy:rnd(-4.5,-1.5)*s*0.8,c:pick(['#6a4a3a','#8a6a50','#c8b090','#4a3428'])}))}
   if(type==='spark'){f.parts=Array.from({length:6+s*4},()=>({a:rnd(0,Math.PI*2),v:rnd(1.5,3.5)*s,l:rnd(3,7)*s}))}
   if(type==='dust'||type==='smoke'||type==='csmoke'){f.parts=Array.from({length:type==='dust'?4:8},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='dust'?1:4),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
@@ -1177,6 +1177,9 @@ function drawFx(g,ox){
       case'ring':{g.strokeStyle=`rgba(255,240,160,${1-k})`;g.lineWidth=2;g.beginPath();g.ellipse(x,y,6+f.t*3,(6+f.t*3)*0.6,0,0,7);g.stroke();break}
       case'dust':case'smoke':case'csmoke':{for(const p of f.parts){const px=x+p.x+p.vx*f.t*2,py=y+p.y+p.vy*f.t*2,r=p.r*(1+k*1.5);
           g.fillStyle=f.type==='csmoke'?`rgba(46,42,46,${0.75*(1-k)})`:f.type==='smoke'?`rgba(150,110,220,${0.7*(1-k)})`:`rgba(200,170,140,${0.55*(1-k)})`;g.beginPath();g.arc(px,py,r,0,7);g.fill()}break}
+      case'wisp':{const a=1-k,rx=x+Math.sin(f.t*0.25+f.seed)*3,ry=y-f.t*0.7,r=2.4*(1-k*0.7);g.globalAlpha=a*0.45;g.fillStyle=f.col||'#9dffcf';g.beginPath();g.arc(rx,ry,r*2.2,0,7);g.fill();g.globalAlpha=a;g.fillStyle='#ffffff';g.fillRect(Math.round(rx)-1,Math.round(ry)-1,2,2);g.globalAlpha=1;break}
+      case'ripple':{const rx=5+f.t*1.6;g.strokeStyle=f.col||'#9dffcf';g.globalAlpha=(1-k)*0.7;g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,rx,rx*0.18,0,0,7);g.stroke();g.globalAlpha=1;break}
+      case'spray':{const vx=(f.dir||1)*(0.8+Math.sin(f.seed)*0.6),vy=-1.8-Math.cos(f.seed)*0.8,px=x+vx*f.t,py=y+vy*f.t+0.16*f.t*f.t;if(py<FLOOR){g.fillStyle=k<0.4?'#ffffff':(f.col||'#9dffcf');g.fillRect(Math.round(px),Math.round(py),2,1)}break}
       case'ember':{g.fillStyle=k<0.5?'#ffe070':'#ff6a20';g.fillRect(x+Math.sin(f.t)*2,y-f.t*0.6,2,2);break}
       case'text':{const yy=y-f.t*0.5;g.globalAlpha=k>0.7?(1-k)/0.3:1;txt(g,f.str,x,yy,8,f.col,'center');g.globalAlpha=1;break}
     }}
@@ -1238,9 +1241,23 @@ function drawProj(g,p,ox){
       g.fillStyle='rgba(200,107,255,0.35)';g.fillRect(x-14,FLOOR-hh-4,28,hh+4);g.fillStyle='#b070ff';g.fillRect(x-9,FLOOR-hh,18,hh);
       g.fillStyle='#ffffff';g.fillRect(x-4,FLOOR-hh,8,hh);for(let i=0;i<5;i++){g.fillStyle='#e8c8ff';g.fillRect(x-10+((i*7+G.tick*3)%20),FLOOR-((i*19+G.tick*4)%Math.max(1,hh)),2,4)}
       g.globalAlpha=1;break}
-    case'wave':{const d=Math.sign(p.vx);g.fillStyle='rgba(157,255,207,0.35)';g.beginPath();g.ellipse(x,y+2,16,7,0,0,7);g.fill();
-      g.strokeStyle='#9dffcf';g.lineWidth=2;for(let i=0;i<3;i++){g.beginPath();g.arc(x-d*i*6,y+4,6+i*3,Math.PI*(d>0?1.5:1),Math.PI*(d>0?0.5:0.5)+Math.PI*(d>0?0:1)*0,false);g.stroke()}
-      g.fillStyle='#fff';g.fillRect(x-1,y-2+Math.sin(G.tick)*1,3,3);break}
+    case'wave':{const d=Math.sign(p.vx)||1,T=G.tick,b=FLOOR,cc=c||'#9dffcf',sw=Math.sin(T*0.35)*2;
+      // floor glow
+      const gl=g.createRadialGradient(x,b,2,x,b,34);gl.addColorStop(0,'rgba(200,255,230,0.55)');gl.addColorStop(1,'rgba(157,255,207,0)');g.fillStyle=gl;g.beginPath();g.ellipse(x-d*6,b,34,7,0,0,7);g.fill();
+      // trailing echo waves
+      for(let e=3;e>=1;e--){const ex=x-d*e*9,h=14-e*3+Math.sin(T*0.3+e)*1.5;g.globalAlpha=0.16*(4-e);g.fillStyle=cc;g.beginPath();g.moveTo(ex-d*14,b);g.quadraticCurveTo(ex-d*4,b-h*1.1,ex+d*3,b-h);g.quadraticCurveTo(ex+d*8,b-h*0.6,ex+d*7,b);g.closePath();g.fill()}g.globalAlpha=1;
+      // main curling wave
+      const ch=24+sw,tipx=x+d*(13+Math.sin(T*0.5)*1.5),tipy=b-ch*0.62;
+      const body=(scale,col)=>{g.fillStyle=col;g.beginPath();g.moveTo(x-d*26*scale,b);g.quadraticCurveTo(x-d*10*scale,b-ch*0.4*scale,x-d*2*scale,b-ch*scale);g.quadraticCurveTo(x+d*8*scale,b-ch*1.08*scale,tipx-d*(1-scale)*6,tipy+(1-scale)*4);g.quadraticCurveTo(x+d*5*scale,b-ch*0.5*scale,x+d*13*scale,b);g.closePath();g.fill()};
+      g.globalAlpha=0.55;body(1.08,shade(cc,-0.35));g.globalAlpha=0.9;body(1,cc);g.globalAlpha=1;body(0.68,shade(cc,0.45));g.globalAlpha=0.9;body(0.38,'#ffffff');g.globalAlpha=1;
+      // foam along the crest
+      g.strokeStyle='#ffffff';g.lineWidth=2;g.beginPath();g.moveTo(x-d*6,b-ch*0.82);g.quadraticCurveTo(x+d*4,b-ch*1.12,tipx,tipy);g.stroke();
+      for(let i=0;i<6;i++){const t2=((T*0.15+i/6)%1),fx2=x-d*8+d*t2*20,fy2=b-ch*(0.75+Math.sin(t2*Math.PI)*0.35)+Math.sin(T*0.6+i)*1.2;g.fillStyle=i%2?'#ffffff':shade(cc,0.6);g.fillRect(Math.round(fx2),Math.round(fy2),2,2)}
+      // inner swirl lines
+      g.strokeStyle='rgba(255,255,255,0.55)';g.lineWidth=1;for(let i=0;i<2;i++){const ph=T*0.25+i*2;g.beginPath();g.arc(x-d*4,b-7-i*3,4+i*2,ph,ph+2.2);g.stroke()}
+      // particles: wisps, spray off the crest, ripples on the floor (visual only)
+      if(!G.resim){if(T%2===0)addFx('wisp',p.x-d*rnd(4,22),b-rnd(2,14),0,null,cc);if(T%3===0)addFx('spray',p.x+d*rnd(4,10),b-ch*rnd(0.7,1),0,null,cc,d);if(T%7===0)addFx('ripple',p.x-d*10,b,0,null,cc)}
+      break}
     case'kunai':{const d=Math.sign(p.vx);g.fillStyle='rgba(255,255,255,0.5)';g.fillRect(x-d*16,y-0.5,d*10,1);g.fillRect(x-d*12,y+2,d*7,1);
       g.fillStyle='#120a16';g.beginPath();g.moveTo(x+d*8,y);g.lineTo(x-d*2,y-3.5);g.lineTo(x-d*6,y);g.lineTo(x-d*2,y+3.5);g.closePath();g.fill();
       g.fillStyle='#c8c8d8';g.beginPath();g.moveTo(x+d*7,y);g.lineTo(x-d*1,y-2.2);g.lineTo(x-d*3,y);g.closePath();g.fill();g.fillStyle='#e0263f';g.fillRect(x-d*8-1,y-1,3,2);break}
