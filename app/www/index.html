@@ -11,6 +11,7 @@
 html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;overscroll-behavior:none;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #game{position:absolute;image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+#crt{position:absolute;pointer-events:none;display:none}
 #ov{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 #rot{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
   background:#0b0820;color:#ffd24a;font:12px/1.8 "Press Start 2P",monospace;text-align:center;padding:24px;z-index:5}
@@ -37,6 +38,7 @@ html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none
 //# sourceMappingURL=peerjs.min.js.map
 </script>
 <canvas id="game"></canvas>
+<canvas id="crt"></canvas>
 <canvas id="ov"></canvas>
 <div id="rot"><div class="ph"></div><div>ROTATE YOUR PHONE<br>TO LANDSCAPE</div><small>tap to play anyway</small></div>
 <script>
@@ -63,7 +65,49 @@ function resize(){
   Object.assign(cv.style,{width:view.w+'px',height:view.h+'px',left:view.x+'px',top:view.y+'px'});
   DPR=Math.min(2,window.devicePixelRatio||1);ov.width=w*DPR;ov.height=h*DPR;
   rotEl.style.display=(h>w*1.05&&!rotDismissed)?'flex':'none';
+  if(typeof CRT!=='undefined')CRT.resize();
 }
+/* ============================ CRT FILTER (WebGL post-process) ============================
+   The 384x224 game canvas is uploaded as a texture each frame and redrawn through a CRT shader:
+   - a soft horizontal beam (gaussian over neighbouring texels) that melts 1-pixel dithering into smooth colour,
+   - scanlines whose beam widens on bright pixels, blending rows the way a real tube does,
+   - a faint aperture-grille phosphor mask, a little glow and a gentle vignette.
+   No screen curvature, so taps land exactly where they appear. Falls back to the plain canvas without WebGL. */
+const CRT={el:document.getElementById('crt'),gl:null,ok:false,tex:null,u:{},
+  init(){if(this.gl||this.failed)return this.ok;try{const gl=this.el.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false});if(!gl)throw 0;this.gl=gl;
+      const sh=(t,src)=>{const o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(o);return o};
+      const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec2 a;varying vec2 v;void main(){v=a*0.5+0.5;v.y=1.0-v.y;gl_Position=vec4(a,0.0,1.0);}'));
+      gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,`precision mediump float;
+uniform sampler2D T;uniform vec2 S;uniform vec2 O;varying vec2 v;
+vec3 tx(vec2 p){return pow(texture2D(T,(p)/S).rgb,vec3(2.2));}
+vec3 row(float x,float y){float c=floor(x)+0.5;vec3 acc=vec3(0.0);float ws=0.0;
+  for(int i=-2;i<=2;i++){float cx=c+float(i);float d=cx-x;float w=exp(-1.25*d*d);acc+=tx(vec2(cx,y))*w;ws+=w;}return acc/ws;}
+vec3 beam(float d,vec3 c){float l=dot(c,vec3(0.3,0.59,0.11));vec3 sg=mix(vec3(0.30),vec3(0.52),sqrt(c));return exp(-(d*d)/(2.0*sg*sg));}
+void main(){vec2 p=v*S;float y0=floor(p.y)+0.5;float fy=p.y-y0;float y1=y0+(fy<0.0?-1.0:1.0);
+  y1=clamp(y1,0.5,S.y-0.5);
+  vec3 a=row(p.x,y0),b=row(p.x,y1);
+  vec3 col=a*beam(abs(fy),a)+b*beam(1.0-abs(fy),b);
+  col*=1.32;
+  vec3 gl2=(tx(p+vec2(1.5,0.0))+tx(p-vec2(1.5,0.0))+tx(p+vec2(0.0,1.5))+tx(p-vec2(0.0,1.5)))*0.25;col+=gl2*0.10;
+  float sc=O.y/S.y;if(sc>=2.6){float m=mod(gl_FragCoord.x,3.0);vec3 mk=m<1.0?vec3(1.0,0.82,0.82):m<2.0?vec3(0.82,1.0,0.82):vec3(0.82,0.82,1.0);col*=mix(vec3(1.0),mk,0.55)*1.06;}
+  vec2 q=v*(1.0-v.yx);float vg=pow(q.x*q.y*16.0,0.10);col*=vg;
+  gl_FragColor=vec4(pow(clamp(col,0.0,1.0),vec3(1.0/2.2)),1.0);}`));
+      gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw gl.getProgramInfoLog(pr);gl.useProgram(pr);
+      const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+      const al=gl.getAttribLocation(pr,'a');gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
+      this.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.tex);
+      for(const [k,vv] of [[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,vv);
+      this.u={S:gl.getUniformLocation(pr,'S'),O:gl.getUniformLocation(pr,'O')};gl.uniform2f(this.u.S,W,H);
+      this.el.addEventListener('webglcontextlost',e=>{e.preventDefault();this.ok=false;this.apply()});
+      this.el.addEventListener('webglcontextrestored',()=>{this.gl=null;this.init();this.apply()});
+      this.ok=true}catch(e){this.failed=true;this.ok=false}return this.ok},
+  on(){return SET.crt&&this.init()},
+  resize(){const r=Math.min(DPR,Math.max(1,(H*4)/Math.max(1,view.h)));// cap at ~4 device pixels per game row: plenty for scanlines, light on the GPU
+    this.el.width=Math.round(view.w*r);this.el.height=Math.round(view.h*r);Object.assign(this.el.style,{width:view.w+'px',height:view.h+'px',left:view.x+'px',top:view.y+'px'});
+    if(this.gl){this.gl.viewport(0,0,this.el.width,this.el.height)}this.apply()},
+  apply(){const on=this.on();this.el.style.display=on?'block':'none';cv.style.opacity=on?'0':'1';
+    if(on&&this.gl){this.gl.viewport(0,0,this.el.width,this.el.height);this.gl.uniform2f(this.u.O,this.el.width,this.el.height)}},
+  draw(){if(!SET.crt||!this.ok)return;const gl=this.gl;gl.bindTexture(gl.TEXTURE_2D,this.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,cv);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}};
 addEventListener('resize',resize);rotEl.addEventListener('pointerdown',e=>{rotDismissed=true;resize();e.stopPropagation()});
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
   if(f<0){r*=1+f;g*=1+f;b*=1+f}else{r+=(255-r)*f;g+=(255-g)*f;b+=(255-b)*f}
@@ -73,7 +117,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 
 /* ============================ SOUND ============================ */
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
-const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
+const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 /* debug options (offline only - never applied to online matches or the attract demo) */
 const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',boxes:false,info:false,speed:1};
 const DBG=(()=>{let o=JSON.parse(JSON.stringify(DBG_DEF));try{const v=JSON.parse(localStorage.getItem('ss_debug')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
@@ -2582,6 +2626,7 @@ function renderSettings(g){
   slider(50,'MUSIC','music',()=>{initAudio();applyVolumes()});
   slider(80,'SOUND FX','sfx',()=>{initAudio();applyVolumes()});
   txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
+  txt(g,'CRT FILTER',222,114,8,'#fff');button(g,306,110,56,16,CRT.failed?'N/A':SET.crt?'ON':'OFF',()=>{if(CRT.failed)return;SET.crt=!SET.crt;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
   txt(g,'MUSIC STYLE',40,140,8,'#fff');button(g,140,136,110,16,SET.lite?'LITE':'FULL BAND',()=>{SET.lite=!SET.lite;saveSettings();SFX.sel()},{col:SET.lite?'#ff8a3a':'#9dffcf'});txt(g,SET.lite?'(FOR OLDER PHONES)':'',258,140,8,'#8a80b0');
   button(g,40,162,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
   button(g,196,162,140,18,dbgAny()?'DEBUG MENU (ON)':'DEBUG MENU',()=>{G.mode='debug';SFX.sel()},{col:dbgAny()?'#ff8aff':'#b48cff'});
@@ -3096,8 +3141,8 @@ function renderNetSel(g){const N=G.net;
 
 let last=performance.now(),acc=0;
 let dbgSlowN=0;function dbgStepOK(){if(DBG.speed<=1||!dbgLive()||(G.mode!=='fight'&&G.mode!=='bonus')||G.paused)return true;return(++dbgSlowN%DBG.speed)===0}
-function frame(now){G.fpsAvg=lerp(G.fpsAvg||16.7,Math.min(100,now-last),0.05);acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(!window.__freeze&&dbgStepOK())step();acc-=1000/60;n++}if(n>=4)acc=0;render();requestAnimationFrame(frame)}
-function boot(){ADS.init();resize();STAGES=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(buildStage);try{document.fonts&&document.fonts.ready.then(()=>{STAGES[TRAIN_STAGE]=buildStage(TRAIN_STAGE)})}catch(e){}newDemo();requestAnimationFrame(frame)}
+function frame(now){if(SET.crt&&CRT.ok)CRT.__pending=true;G.fpsAvg=lerp(G.fpsAvg||16.7,Math.min(100,now-last),0.05);acc+=Math.min(100,now-last);last=now;let n=0;while(acc>=1000/60&&n<4){if(!window.__freeze&&dbgStepOK())step();acc-=1000/60;n++}if(n>=4)acc=0;render();CRT.draw();requestAnimationFrame(frame)}
+function boot(){ADS.init();resize();CRT.resize();STAGES=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(buildStage);try{document.fonts&&document.fonts.ready.then(()=>{STAGES[TRAIN_STAGE]=buildStage(TRAIN_STAGE)})}catch(e){}newDemo();requestAnimationFrame(frame)}
 if(document.fonts&&document.fonts.load){Promise.race([document.fonts.load('8px "Press Start 2P"'),new Promise(r=>setTimeout(r,1500))]).then(boot,boot)}else boot();
 window.__G=G;
 </script>
