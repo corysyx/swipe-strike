@@ -792,7 +792,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S1',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:12,a:1,r:24,pose:'palm',proj:{type:'ki',vx:3.6,dmg:60,hs:20,bs:14,w:16,h:14,y:-50*S,kb:2.5,life:220}},
-   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-90,24,70],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.4,vx:1.6,pose:'upper',landRec:14},
+   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-90,24,70],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.4,vx:1.6,pose:'upper',landRec:6,fastFall:FF_MUL*1.25},
    S3:{s:6,a:26,r:14,dmg:96,hits:3,multi:8,hs:16,bs:12,hb:B([-24,-62,48,20],1),kb:2.5,vx:2.4,pose:'kick',spin:true,lastKd:true},
    S4:{s:15,a:4,r:11,dmg:85,hs:30,bs:14,hb:B([6,-72,30,66]),lvl:'high',kb:0.9,pose:'axe',kdCap:3},
    AS2:{s:5,a:22,r:10,dmg:110,hits:3,multi:7,hs:16,bs:12,hb:B([-26,-62,52,30],1),kb:1.2,hover:27,vx:1.6,pose:'kick',spin:true,ender:true,air:true},
