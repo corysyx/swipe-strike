@@ -875,11 +875,11 @@ const CHARS=[
   alts:[{top:'#d8488e',pants:'#d8488e',belt:'#fff0f8',band:'#ffffff',hair:'#ffd0e8',glove:'#3a1428',shoe:'#3a1428',accent:'#ff8ac8'},{top:'#b81e2c',pants:'#b81e2c',belt:'#1a1a1e',band:'#ffd23f',hair:'#1a1014',glove:'#1e0a0e',shoe:'#1e0a0e',accent:'#ff5a5a'},{top:'#b49ae8',pants:'#b49ae8',belt:'#5a2c94',band:'#ffffff',hair:'#f4f0ff',glove:'#3a2a5c',shoe:'#3a2a5c',accent:'#e0d0ff'}],
   style:{hair:'mask',sleeve:'full',tail:'hair',longTail:true,boots:true,beltTail:true,catEars:true,lashes:true},stats:[2,4,3],hPose:'kick',
   desc:'Mix-up. Teleports behind you and throws a low kunai you must crouch-block.',
-  specials:{S1:'LOW KUNAI',S2:'SHADOW STEP',S3:'CROSS DIVE',S4:'SHADOW SLIDE',AS:'IZUNA DROP',AS2:'KUNAI RAIN',SU:'THOUSAND SHADOWS'},quote:'You never saw me coming.',
-  ai:{aa:'U',ender:'S1',zone:'S1',tele:'S2'},rushPoses:['heavy','kick'],
+  specials:{S1:'LOW KUNAI',S2:'SHADOW STEP',S3:'GALE CUTTER',S4:'SHADOW SLIDE',AS:'IZUNA DROP',AS2:'KUNAI RAIN',SU:'THOUSAND SHADOWS'},quote:'You never saw me coming.',
+  ai:{aa:'S3',ender:'S1',zone:'S1',tele:'S2'},rushPoses:['heavy','kick'],
   moves:(B,S)=>({
    S2:{s:9,a:0,r:10,tele:8,vanish:[3,8],inv:[0,10],streak:true,pose:'crouch'},
-   S3:{s:12,a:30,r:10,dmg:75,hs:20,bs:14,hb:B([0,-34,30,34],1),lvl:'high',kb:2,hop:[5.4,1.2],dive:11,pose:'airheavy',landRec:6},
+   S3:{s:4,a:15,r:20,dmg:110,hits:2,multi:6,hs:22,bs:14,hb:B([-4,-100,46,98],1),kb:0.8,launch:7.4,lastKd:true,tumble:true,inv:[0,6],vy:6.4,vx:2.2,pose:'upkick',flipSpin:true,landRec:14},
    S4:{s:6,a:14,r:16,dmg:65,hs:20,bs:14,hb:B([4,-14,34,14]),lvl:'low',kd:true,vx:6,inv:[0,10],pose:'sweep',crouch:true},
    AS:{s:4,a:5,r:20,grab:true,airGrab:true,izuna:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
    AS2:{s:7,a:1,r:14,hover:16,pose:'jab',air:true,projs:[{type:'kunai',vx:3.7,vy:4.1,dmg:40,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:3.0,vy:4.6,dmg:40,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true}]},
@@ -1413,7 +1413,7 @@ class Fighter{
         return this.vy<0?POSES.jumpUp:POSES.jump}
       case 'dash':return this.dashDir===this.facing?POSES.dash:POSES.bdash;
       case 'block':return this.pbCD>26?POSES.pushb:(this.crouchBlk?POSES.cblock:POSES.block);
-      case 'hit':return this.juggle?POSES.airhit:(this.wasCrouch?POSES.chit:POSES.hit);
+      case 'hit':if(this.juggle&&this.tumble){const b=Object.assign({},POSES.airhit);b.rot=-40-this.t*14;return b}return this.juggle?POSES.airhit:(this.wasCrouch?POSES.chit:POSES.hit);
       case 'down':case 'ko':return POSES.down;
       case 'getup':return t<8?POSES.crouch:POSES.idle;
       case 'parry':return POSES.parry;
@@ -1424,6 +1424,7 @@ class Fighter{
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
         if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
+        if(m.tumble&&m.flipSpin&&t>m.s){const b=Object.assign({},t<=m.s+6?POSES.upkick:POSES.jump);b.rot=-Math.min(360,(t-m.s)*16);return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
         if(pn==='arrow'||pn==='drillv'||pn==='drillup'||pn==='drillsuper'||pn==='drillhoriz'){if(t>m.s)pn={arrow:'drillD',drillv:'drillV',drillup:'drillU',drillsuper:'drillH',drillhoriz:'drillH'}[pn]+(1+Math.floor(t/2)%4)}
@@ -1553,7 +1554,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   // clean hit
   const counterHit=B.state==='attack'&&B.t<=B.move.s+B.move.a&&!B.move.counter;
   const sc=m.super?dmgScale(B,true,B.combo-(nth-1)):dmgScale(B,false,B.combo);const dmg=Math.max(1,Math.round(per*sc*(counterHit?1.25:1)));
-  B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;B.wasCrouch=B.inp.down&&!B.air;
+  B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;B.wasCrouch=B.inp.down&&!B.air;B.tumble=!!(m.tumble&&nth>=hits);
   Object.assign(B,{move:null,state:'hit',t:0,stun:m.hs+(counterHit?4:0)+(!isProj&&m.key==='L'&&A.gL>=5?10:0)});const gEnder=!isProj&&m.key==='H'&&A.enderH;B.vx=dir*((m.key==='L'&&A.gL>1)?0.5:(m.kb||2));
   /* light limit: a combo can hold at most 5 ground lights; the 6th pushes them out and gives a moment of safety (stops tap-spam infinites) */
   if(!isProj&&!A.air&&!B.air&&(m.key==='L'||m.key==='cL')){B.lHits=(B.lHits||0)+1;if(B.lHits>MAX_LIGHTS){B.stun=8;B.vx=dir*4.4;B.inv=Math.max(B.inv,18);B.lHits=0;addFx('text',B.x,B.y-80*B.S,0,'PUSHED','#7fd8ff')}}
@@ -1585,7 +1586,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   }
   /* latch: a multi-hit dive slows down while it grinds into them, so every hit connects */
   if(m.latch&&!isProj&&nth<hits&&A.air){A.vx=clamp((B.x-A.x)*0.15+A.facing*0.6,-m.latch[0],m.latch[0]);A.vy=A.y>FLOOR-24?-1.8:Math.min(A.vy,m.latch[1])}
-  if(!isProj&&A.air&&!m.ender&&!m.airGrab&&B.air){A.vy=B.vy+0.2;A.y=lerp(A.y,B.y+4,0.5)}// keep air combos level
+  if(m.tumble&&nth>=hits&&!isProj){B.vx=dir*2.4;B.vy=Math.min(B.vy,-7.4)}
+  else if(!isProj&&A.air&&!m.ender&&!m.airGrab&&B.air){A.vy=B.vy+0.2;A.y=lerp(A.y,B.y+4,0.5)}// keep air combos level
   /* pull: a pillar drags them into its centre and holds them up so every hit lands */
   if(isProj&&src&&src.pull&&nth<hits){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=-2.6;B.vx=clamp((src.x-B.x)*0.12,-2.5,2.5)}
   if(m.carry&&!finisher&&!isProj){B.juggle=true;B.y=Math.min(B.y,A.y-2);B.vy=Math.min(A.vy,-1.5);B.vx=0;B.x=A.x+A.facing*22*A.S}
