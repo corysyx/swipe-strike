@@ -1603,7 +1603,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);A.canCancel=true;
   const big=per>=70||finisher;
   if((m.super&&finisher)||(m.super&&hits===1)||B.hp<=0){if(!m.noImpact)G.impact=4;G.zoomKick=0.22;addFx('quake',B.x,FLOOR,2);G.excite=1}else if(big){G.zoomKick=Math.max(G.zoomKick||0,0.06)}
-  G.hitstop=Math.max(G.hitstop,m.super?(finisher?16:5):(big?11:7));G.shake=Math.max(G.shake,big?4:2);if(G.tick-(B.wfT??-99)>=12||finisher||B.hp<=0){B.flash=3;B.flashCol='#ffffff';B.wfT=G.tick}
+  G.hitstop=Math.max(G.hitstop,m.super?(finisher?16:5):(big?11:7));G.shake=Math.max(G.shake,big?4:2);if(G.tick-(B.wfT??-99)>=11||finisher||B.hp<=0){B.flash=3;B.flashCol='#ffffff';B.wfT=G.tick}
   addFx('spark',px,py,big?2:1,null,null,dir);SFX.hit((B.hp<=0||(m.super&&finisher)||counterHit)?3:big?2:per<40?0:1,px);if(B.vx&&!B.air&&Math.abs(B.vx)>=3)addFx('dust',B.x,FLOOR);if(!G.demo&&(A===G.p1||B===G.p1))vib(big?30:12);G.excite=Math.min(1,G.excite+(big?0.5:0.2));
   if(m.freeze){B.flash=26;B.flashCol='#a8e4ff';if(!G.resim){SFX.freeze(px);addFx('ring',B.x,B.y-40*B.S);addFx('text',B.x,B.y-96*B.S,0,'FROZEN!','#a8e4ff')}}
   if(m.zap){B.flash=8;B.flashCol=A.col.accent;if(!G.resim)SFX.zap(px);if(!G.resim)addFx('spark',px,py,2)}
@@ -2708,7 +2708,7 @@ function renderWorld(g){
   for(const p of G.projs)if(!p.beam)drawProj(g,p,camX);
   if(G.mode==='bonus')drawBonusFront(g,camX);
   drawFx(g,camX);
-  if(G.impact>0&&!IMPG.on){if(G.tick-IMPG.last<45)G.impact=0;else{IMPG.on=true;IMPG.last=G.tick}}if(G.impact<=0)IMPG.on=false;
+  if(G.impact>0&&!IMPG.on){if(G.tick-IMPG.last<20)G.impact=0;else{IMPG.on=true;IMPG.last=G.tick}}if(G.impact<=0)IMPG.on=false;
   if(G.impact>0){const inv=G.impact%2===0;g.fillStyle=inv?'#ffffff':'#000000';g.fillRect(-W,-H,W*3,H*3);const fp=flatPal(inv?'#000000':'#ffffff');
     for(const f of[p1,p2])if(!f.hidden)drawChar(g,f.ch,f.dpose,f.x-camX,f.y,f.facing,f,{pal:fp,air:f.air,flat:true,noTail:true,sq:f.sq});
     g.fillStyle=inv?'#000':'#fff';const t=p1.state==='hit'?p1:p2;starPath(g,t.x-camX,t.y-45*t.S,46,10,10,G.tick*0.3);g.fill();G.impact--}
