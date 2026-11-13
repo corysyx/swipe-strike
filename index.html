@@ -2410,7 +2410,7 @@ function stepBuster(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],t=++c.t,S=A.
     if(t>110&&t<=118){pz(A,'tbSlam');pz(B,'down');B.x=cl(A.x+A.facing*20*k);B.y=FLOOR}
     else if(r<=seg.lift){const u=r/seg.lift;A.y=FLOOR;pz(A,'tbLift');pz(B,'tbHeld',{rot:180*u});B.x=cl(A.x+A.facing*(20-6*u)*k);B.y=FLOOR-24*S*u;if(r===1)c.sx=A.x}
     else if(r<=seg.lift+seg.air){const u=(r-seg.lift)/seg.air;if(r===seg.lift+1&&!G.resim){SFX.jump();addFx('dust',A.x,FLOOR)}
-      A.x=cl(c.sx+d*seg.dx*u);A.y=FLOOR-H(u,seg.h);A.facing=(Math.floor(r/seg.spin)%2?-1:1)*d;pz(A,'tbAir');pz(B,'tbHeld');B.facing=-A.facing;B.x=cl(A.x+A.facing*8*k);B.y=A.y-24*S}
+      A.x=cl(c.sx+d*seg.dx*u);A.y=FLOOR-H(u,seg.h);A.facing=(Math.floor(r/seg.spin)%2?-1:1)*d;pz(A,'tbAir');pz(B,'tbHeld');B.facing=-A.facing;B.x=cl(A.x+A.facing*8*k);B.y=A.y-16*S}
     else if(seg.n===3&&t<=110){pz(A,'tbSlam');A.y=FLOOR;A.facing=d;pz(B,'tbHeld',{rot:200});B.x=cl(A.x+d*14*k);B.y=FLOOR-4;if(c.n<3)hit(3)}
     else if(seg.n===4){A.y=FLOOR;A.facing=d;pz(A,'tbSlam');if(c.n<4){hit(4,true);B.x=cl(A.x+d*14*k)}
       // launch them away across the screen and finish
