@@ -2463,14 +2463,17 @@ function stepBuster(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],t=++c.t,S=A.
     if(G.thr&&t>10&&t%3===0){A.ghosts.push({x:A.x,y:A.y,pose:Object.assign({},A.dpose),f:A.facing,t:12,col:'#3a5cff'});B.ghosts.push({x:B.x,y:B.y,pose:Object.assign({},B.dpose),f:B.facing,t:12,col:'#7a9cff'})}}
   const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   if(!G.resim)updFx()}
+function headToKnees(A,B,dy){const QA=rigPts(A.ch,A.dpose,A.air),kx=(QA.knF.x+QA.knB.x)/2,ky=(QA.knF.y+QA.knB.y)/2+(dy||0);
+  const QB=rigPts(B.ch,B.dpose,true);B.x=clamp(A.x+kx*A.facing-QB.head.x*B.facing,24,STAGE_W-24);B.y=A.y+ky-QB.head.y}
 function stepIzuna(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u),k=S/1.15;
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};const y0=Math.min(c.y0,FLOOR-40);
   if(t<=6){const u=t/6;A.y=y0-4*u;pz(A,'grab');pz(B,'airhit');B.x=cl(c.bx0+(A.x+d*18*k-c.bx0)*u);B.y=c.by0+(A.y-c.by0)*u}
-  else if(t<=14){const u=(t-6)/8;A.y=y0-4-10*u;A.x=cl(c.x0+d*8*u);pz(A,'jump');pz(B,'airhit',{rot:-40-140*u});B.x=cl(A.x+d*(18-10*u)*k);B.y=A.y+18*S*u}
+  else if(t<=14){const u=(t-6)/8;A.y=y0-4-10*u;A.x=cl(c.x0+d*8*u);pz(A,u<0.5?'jump':'crouch');pz(B,'airhit',{rot:-40-140*u});if(u<0.5){B.x=cl(A.x+d*(18-10*u)*k);B.y=A.y+18*S*u}else headToKnees(A,B,3)}
   else if(t<=34){const u=(t-14)/20,ys=y0-14;A.y=ys+(FLOOR-24*S-ys)*u*u;A.x=cl(c.x0+d*(8+14*u));
-    const sp=Math.floor((t-14)/3)%2?-1:1;A.facing=d*sp;B.facing=-A.facing;pz(A,'crouch');pz(B,'airhit',{rot:-180});B.x=cl(A.x+A.facing*4*k);B.y=A.y+24*S;
+    const sp=Math.floor((t-14)/3)%2?-1:1;A.facing=d*sp;B.facing=-A.facing;pz(A,'crouch');pz(B,'airhit',{rot:-180});headToKnees(A,B,3);
     if(t%3===0&&!G.resim){A.ghosts.push({x:A.x,y:A.y,pose:Object.assign({},A.dpose),f:A.facing,t:8,col:A.col.accent});B.ghosts.push({x:B.x,y:B.y,pose:Object.assign({},B.dpose),f:B.facing,t:8,col:A.col.accent});addMote(B.x+rnd(-8,8),B.y-rnd(0,30),rnd(-1,1),-rnd(0.5,1.5),A.col.accent,1,14)}}
-  else if(t<=44){A.facing=d;B.facing=-d;pz(B,'down');B.x=cl(c.lx+d*6*k);B.y=FLOOR;pz(A,'crouch');A.x=c.lx;A.y=FLOOR-14*S;
+  else if(t<=44){A.facing=d;B.facing=-d;A.x=c.lx;pz(A,'crouch');
+    if(t<=39){pz(B,'airhit',{rot:-180});const QA=rigPts(A.ch,A.dpose,true),ky=(QA.knF.y+QA.knB.y)/2;A.y=FLOOR-ky-6;headToKnees(A,B,3)}else{pz(B,'down');B.x=cl(c.lx+d*6*k);B.y=FLOOR;A.y=FLOOR-14*S}
     if(t===35){const dmg=Math.round(c.dmg*dmgScale(B,false,B.combo));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=40;B.combo++;A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);comboShow(A,B);
       G.shake=8;G.impact=3;G.zoomKick=0.22;G.excite=1;B.flash=4;B.flashCol='#ffffff';
       if(!G.resim){SFX.hit(3,B.x);SFX.land(9,B.x);addFx('quake',B.x,FLOOR,2);addFx('spark',B.x,FLOOR-10,2);addFx('ring',B.x,FLOOR-8);kiBurst(B.x,FLOOR-10,A.col.accent,22,2.6);addFx('text',A.x,FLOOR-110,0,'IZUNA DROP!',A.col.accent);if(!G.demo)vib(45)}}}
