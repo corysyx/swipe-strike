@@ -859,15 +859,15 @@ const CHARS=[
   col:{skin:'#d79a6a',top:'#d79a6a',pants:'#b8202a',belt:'#ffd23f',hair:'#3a2014',band:'#ffd23f',glove:'#f2f2f2',shoe:'#b8202a',accent:'#ffd23f'},
   style:{hair:'mohawk',shirtless:true,boots:true,stache:true},stats:[5,1,2],
   desc:'Grappler. Huge health, armored heavy punch and a brutal command grab.',
-  specials:{S1:'TITAN SUPLEX',S2:'IRON LARIAT',S3:'BUFFALO CHARGE',S4:'GROUND POUND',AS:'BODY PRESS',AS2:'AIR SUPLEX',SU:'EARTHQUAKE BUSTER'},quote:'HAHAHA! Get back in the ring!',
-  ai:{aa:'U',ender:'S2',grab:'S1'},
+  specials:{S1:'BUFFALO CHARGE',S2:'IRON LARIAT',S3:'TITAN SUPLEX',S4:'GROUND POUND',AS:'BODY PRESS',AS2:'AIR SUPLEX',SU:'EARTHQUAKE BUSTER'},quote:'HAHAHA! Get back in the ring!',
+  ai:{aa:'U',ender:'S2',grab:'S3'},
   moves:(B,S)=>({
    H:{armor:true},
-   S1:{s:5,a:3,r:30,grab:true,bomb:true,dmg:190,hb:B([0,-70,30,70],1),pose:'grab'},
-   S3:{s:10,a:16,r:18,dmg:100,hs:22,bs:16,hb:B([6,-62,26,50]),kb:7,kd:true,vx:5.2,armor:true,pose:'elbow'},
+   S3:{s:5,a:3,r:30,grab:true,bomb:true,dmg:190,hb:B([0,-70,30,70],1),pose:'grab'},
+   S1:{s:10,a:16,r:18,dmg:100,hs:22,bs:16,hb:B([6,-62,26,50]),kb:7,kd:true,vx:5.2,armor:true,pose:'elbow'},
    S4:{s:16,a:4,r:22,dmg:95,hs:24,bs:16,hb:B([-56,-12,112,12],1),lvl:'low',kd:true,launch:3.5,kb:1,pose:'pound',quake:true},
    AS:{s:8,a:44,r:8,dmg:120,hs:24,bs:16,hb:B([-14,-46,48,46],1),kb:2,hover:7,dive:7,diveV:[2.4,7],pose:'press',ender:true,air:true,landRec:12,landQuake:true},
-   AS2:{s:4,a:5,r:22,grab:true,airGrab:true,dmg:190,hb:B([-4,-78,42,82],1),hover:9,pose:'grab',air:true,grabText:'AIR SUPLEX!'},
+   AS2:{s:4,a:5,r:22,grab:true,airGrab:true,bomb:true,dmg:190,hb:B([-4,-78,42,82],1),hover:9,pose:'grab',air:true,grabText:'AIR SUPLEX!'},
    S2:{s:8,a:26,r:20,dmg:120,hits:3,multi:9,hs:18,bs:12,hb:B([-30,-62,60,22],1),armor:true,vx:1.6,pose:'lariat',spin:true,kb:3,lastKd:true},
    SU:{s:6,a:4,r:34,grab:true,buster:true,dmg:520,hb:B([0,-74,50,74],1),pose:'grab'}})},
  {id:'nyx',name:'NYX',arch:'MIX-UP',archCol:'#b48cff',hp:880,walk:1.9,dash:5,jumpV:6.8,jumpX:2.6,scale:1.15,reach:1,sw:7.6,hw:7.2,flips:true,
@@ -1520,6 +1520,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     A.move=null;A.state='cine';A.t=0;A.vx=0;B.move=null;B.state='cine';B.t=0;B.vx=0;B.x=A.x+A.facing*26;B.facing=-A.facing;
     G.cine={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing};G.impact=3;G.excite=1;SFX.super();return'hit'}
   if(m.airGrab){if(!B.air)return'none';
+    if(m.bomb&&G.mode!=='bonus'){A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
+      G.thr={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x,y0:A.y,by0:B.y,text:m.grabText||'AIR SUPLEX!'};G.zoomKick=0.12;SFX.hit(1,px);addFx('spark',px,py,1);return'hit'}
     const dmg=Math.round(m.dmg*dmgScale(B,!!m.super,B.combo));B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;A.grabbed=true;Object.assign(B,{state:'hit',juggle:true,t:0,vy:7.5,vx:0,move:null});B.x=A.x+A.facing*8;B.y=Math.max(B.y,A.y);
     A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(2,px);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   if(m.grab){
@@ -2425,14 +2427,15 @@ function stepBuster(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],t=++c.t,S=A.
   if(!G.resim)updFx()}
 function stepThrow(){if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
-  if(t<=6){const u=t/6;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=FLOOR}
-  else if(t<=16){const u=(t-6)/10;pz(A,u<0.4?'grab':'tbLift');pz(B,'tbHeld',{rot:180*u});B.x=cl(c.x0+d*(22-12*u)*S/1.3);B.y=FLOOR-24*S*u}
-  else if(t<=40){const u=(t-16)/24;if(t===17&&!G.resim){SFX.jump();addFx('dust',A.x,FLOOR);addFx('dust',A.x-d*10,FLOOR)}
-    A.x=cl(c.x0+d*72*u);A.y=FLOOR-H(u,38);c.lx=A.x;pz(A,u<0.12||u>0.88?'tbLift':'tbAir');pz(B,'tbHeld');B.x=cl(A.x+d*15*S/1.3);B.y=A.y-24*S}
+  const y0=c.y0??FLOOR;
+  if(t<=6){const u=t/6;A.y=y0;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=c.by0!=null?c.by0+(y0-c.by0)*u:FLOOR}
+  else if(t<=16){const u=(t-6)/10;A.y=y0;pz(A,u<0.4?'grab':'tbLift');pz(B,'tbHeld',{rot:180*u});B.x=cl(c.x0+d*(22-12*u)*S/1.3);B.y=y0-24*S*u}
+  else if(t<=40){const u=(t-16)/24;if(t===17&&!G.resim&&c.y0==null){SFX.jump();addFx('dust',A.x,FLOOR);addFx('dust',A.x-d*10,FLOOR)}
+    A.x=cl(c.x0+d*(c.y0==null?72:40)*u);A.y=y0+(FLOOR-y0)*u-H(u,c.y0==null?38:22);c.lx=A.x;pz(A,u<0.12||u>0.88?'tbLift':'tbAir');pz(B,'tbHeld');B.x=cl(A.x+d*15*S/1.3);B.y=A.y-24*S}
   else if(t<=52){A.y=FLOOR;A.x=c.lx;pz(A,'tbSlam');pz(B,'down');B.x=cl(A.x+d*20*S/1.3);B.y=FLOOR;
     if(t===41){const dmg=Math.round(c.dmg*dmgScale(B,false,B.combo));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=40;B.combo++;A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);comboShow(A,B);
       G.shake=9;G.impact=4;G.zoomKick=0.25;G.excite=1;B.flash=4;B.flashCol='#ffffff';
-      if(!G.resim){SFX.hit(3,B.x);SFX.land(10,B.x);addFx('quake',B.x,FLOOR,2);addFx('spark',B.x,FLOOR-14,2);addFx('ring',B.x,FLOOR-10);for(let i=0;i<4;i++)addFx('dust',B.x+rnd(-24,24),FLOOR);addFx('text',A.x,A.y-100,0,'TITAN SUPLEX!','#ffd23f');if(!G.demo)vib(50)}}}
+      if(!G.resim){SFX.hit(3,B.x);SFX.land(10,B.x);addFx('quake',B.x,FLOOR,2);addFx('spark',B.x,FLOOR-14,2);addFx('ring',B.x,FLOOR-10);for(let i=0;i<4;i++)addFx('dust',B.x+rnd(-24,24),FLOOR);addFx('text',A.x,A.y-100,0,c.text||'TITAN SUPLEX!','#ffd23f');if(!G.demo)vib(50)}}}
   else if(t<=70){const u=(t-52)/18;A.x=cl(c.lx-d*46*u);A.y=FLOOR-H(u,34);pz(A,u>0.85?'crouch':'tbFlex');pz(B,'down');const v=clamp((t-52)/10,0,1);B.y=FLOOR-H(v,10)}
   if(t>=70){G.thr=null;A.y=FLOOR;A.state='land';A.t=0;A.landT=6;A.grabbed=false;B.y=FLOOR;B.combo=0;B.comboDmg=0;
     if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,d)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8}}
