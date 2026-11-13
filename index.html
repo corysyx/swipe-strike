@@ -744,6 +744,11 @@ Object.assign(POSES,{
   drillU3:P({lean:0,head:-6,fl1:-3,fl2:0,bl1:5,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-135}),
   drillU4:P({lean:0,head:2,fl1:1,fl2:0,bl1:-1,bl2:0,fa1:58,fa2:122,ba1:48,ba2:128,rot:-135}),
   drillup_w:P({lean:24,head:-6,fl1:60,fl2:-100,bl1:-20,bl2:-60,fa1:40,fa2:120,ba1:20,ba2:130,dy:6}),
+  drillH1:P({lean:0,head:6,fl1:4,fl2:0,bl1:-4,bl2:0,fa1:28,fa2:142,ba1:-12,ba2:156,rot:-90,dy:-42}),
+  drillH2:P({lean:0,head:0,fl1:0,fl2:0,bl1:0,bl2:0,fa1:8,fa2:152,ba1:8,ba2:152,rot:-90,dy:-42}),
+  drillH3:P({lean:0,head:-6,fl1:-3,fl2:0,bl1:5,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-90,dy:-42}),
+  drillH4:P({lean:0,head:2,fl1:1,fl2:0,bl1:-1,bl2:0,fa1:58,fa2:122,ba1:48,ba2:128,rot:-90,dy:-42}),
+  drillsuper_w:P({lean:30,head:-10,fl1:80,fl2:-120,bl1:-40,bl2:-70,fa1:50,fa2:120,ba1:30,ba2:130,dy:10}),
   drillv_w:P({lean:4,head:-8,fl1:80,fl2:-120,bl1:70,bl2:-115,fa1:150,fa2:30,ba1:140,ba2:40,rot:0}),
   airdkick:P({lean:14,fl1:38,fl2:2,bl1:-6,bl2:-110,fa1:30,fa2:70,ba1:-30,ba2:60}),
   palm_w:P({lean:-8,fa1:35,fa2:70,ba1:25,ba2:80,dx:-3}),
@@ -828,7 +833,7 @@ const CHARS=[
    S4:{s:5,a:16,r:16,dmg:70,hs:20,bs:14,hb:B([6,-14,36,14]),lvl:'low',kd:true,vx:5,pose:'sweep',crouch:true},
    AS:{s:6,a:40,r:6,dmg:95,hs:20,bs:14,hb:B([-14,-40,28,48],1),lvl:'high',kb:2,hover:7,dive:7,diveV:[0,6.6],pose:'drillv',drill:true,ender:true,air:true,landRec:8,landQuake:true},
    AS2:{s:5,a:38,r:8,dmg:90,hits:3,multi:4,hs:14,bs:10,hb:B([0,-44,42,46],1),kb:1.2,hover:5,dive:5,diveV:[4.2,4.4],pose:'arrow',drill:true,ender:true,air:true,landRec:10,landQuake:true},
-   SU:{s:6,a:42,r:22,dmg:430,multi:5,hits:8,hs:16,bs:8,hb:B([0,-62,32,44]),kb:0.8,vx:3,pose:'rush',finPose:'upper',lastKd:true}})},
+   SU:{s:8,a:46,r:22,dmg:450,multi:5,hits:9,hs:16,bs:8,hb:B([-6,-66,52,48]),kb:0.3,vx:3.2,pose:'drillsuper',drill:true,lastKd:true,launch:6}})},
  {id:'sol',name:'SOL',arch:'ZONER',archCol:'#c86bff',hp:950,walk:1.1,dash:3.6,jumpV:6.0,jumpX:1.8,scale:1.2,reach:1.45,armK:1.32,legK:1.08,torsoK:1.05,sw:10,hw:9,
   col:{skin:'#c98a5e',top:'#f08a24',pants:'#f08a24',belt:'#8a2a1a',hair:'#c98a5e',band:'#5a2a1a',glove:'#c98a5e',shoe:'#c98a5e',accent:'#c86bff'},
   style:{hair:'bald',robe:true,sleeve:'none',beads:true,sash:true,beltTail:true},stats:[3,1,5],
@@ -1414,7 +1419,7 @@ class Fighter{
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
-        if(pn==='arrow'||pn==='drillv'||pn==='drillup'){if(t>m.s)pn={arrow:'drillD',drillv:'drillV',drillup:'drillU'}[pn]+(1+Math.floor(t/2)%4)}
+        if(pn==='arrow'||pn==='drillv'||pn==='drillup'||pn==='drillsuper'){if(t>m.s)pn={arrow:'drillD',drillv:'drillV',drillup:'drillU',drillsuper:'drillH'}[pn]+(1+Math.floor(t/2)%4)}
         if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor((this.rushT+1)/(m.rush.every||3))%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.ch.punchOnly&&PUNCH_SUB[pn])pn=PUNCH_SUB[pn];
         if(this.grabbed)pn='slam';this.pn=pn;
@@ -2449,7 +2454,7 @@ function drawFighterWorld(g,f,camX,opt={}){
   for(const gh of f.ghosts){g.globalAlpha=gh.t/18;drawChar(g,f.ch,gh.pose,gh.x-camX,gh.y,gh.f,f,{pal:flatPal(f.col.accent),air:gh.y<FLOOR-0.1,ghost:true,noTail:true,flat:true})}g.globalAlpha=1;
   const Q=rigPts(f.ch,pose,air);
   // smear frames: streak behind the striking limb
-  const m=f.state==='attack'?f.move:null,limb=m&&(m.hb||m.grab)?(SMEAR_LIMB[f.pn]!==undefined?SMEAR_LIMB[f.pn]:'haF'):null;
+  const m=f.state==='attack'?f.move:null,limb=m&&!m.drill&&(m.hb||m.grab)?(SMEAR_LIMB[f.pn]!==undefined?SMEAR_LIMB[f.pn]:'haF'):null;
   if(limb&&f.t>=m.s-1&&f.t<=m.s+m.a+2){const p=Q[limb],sc=1+0.14*f.sq,w={x:f.x+p.x*fc*sc,y:f.y+p.y*(1-0.14*f.sq)};const l=f.smear[f.smear.length-1];
     if(!l||Math.hypot(l.x-w.x,l.y-w.y)>1.5)f.smear.push({x:w.x,y:w.y,tk:G.tick});}
   f.smear=f.smear.filter(p=>G.tick-p.tk<6);if(!limb)f.smear.length=0;
