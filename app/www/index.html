@@ -733,6 +733,7 @@ Object.assign(POSES,{
   cjab:P({lean:26,head:-6,fl1:85,fl2:-135,bl1:12,bl2:-125,fa1:96,fa2:0,ba1:40,ba2:100}),
   airkick:P({lean:6,fl1:78,fl2:0,bl1:20,bl2:-105,fa1:60,fa2:85,ba1:40}),
   airheavy:P({lean:22,fl1:58,fl2:-4,bl1:32,bl2:-112,fa1:125,fa2:30,ba1:-40,ba2:40}),
+  airupper:P({lean:-10,head:-12,fa1:172,fa2:6,ba1:30,ba2:95,fl1:62,fl2:-70,bl1:12,bl2:-100}),
   airdkick:P({lean:14,fl1:38,fl2:2,bl1:-6,bl2:-110,fa1:30,fa2:70,ba1:-30,ba2:60}),
   palm_w:P({lean:-8,fa1:35,fa2:70,ba1:25,ba2:80,dx:-3}),
   palm:P({lean:20,fa1:90,fa2:-4,ba1:86,ba2:6,fl1:46,fl2:-10,bl1:-38,bl2:0,dx:5}),
@@ -1030,6 +1031,7 @@ function buildMoves(c){
    D:{s:7+f,a:4,r:20,dmg:60,hs:20,bs:14,hb:B([6,-12,40,12]),lvl:'low',kb:2,kd:true,pose:'sweep',crouch:true},
    jL:{s:3,a:8,r:4,dmg:40,hs:14,bs:10,hb:B([2,-30,24,20]),lvl:'high',kb:1.5,pose:'airkick',air:true},
    jH:{s:6,a:6,r:8,dmg:70,hs:18,bs:14,hb:B([4,-26,32,24]),lvl:'high',kb:2.5,pose:'airheavy',air:true,ender:true},
+   jU:{s:4,a:5,r:8,dmg:55,hs:20,bs:12,hb:B([0,-74,26,40]),lvl:'high',kb:0.6,pose:'airupper',air:true,airPop:2.8,kdNth:2},
    jD:{s:5,a:7,r:9,dmg:65,hs:18,bs:14,hb:B([2,-20,28,26]),lvl:'high',kb:1.8,pose:'airdkick',air:true,kdAfterAir:true},
   };
   const cm=c.moves(B,S);
@@ -1240,7 +1242,7 @@ class Fighter{
   pick(a){const M=this.moves;
     const ck=k=>(this.stance&&M['c'+k])?M['c'+k]:M[k];
     if(a==='SU')return(this.meter>=100&&!this.air)?ck('SU'):null;
-    if(this.air){if(/^S[1-4]$/.test(a)){const k=a==='S1'?'AS':a==='S3'?'AS2':null;return(!k||this.airSp||!M[k])?null:M[k]}if(this.airAtk||this.state!=='jump')return null;return a==='L'?M.jL:a==='D'?(M.jD||M.jH):(a==='H'||a==='U')?M.jH:null}
+    if(this.air){if(/^S[1-4]$/.test(a)){const k=a==='S1'?'AS':a==='S3'?'AS2':null;return(!k||this.airSp||!M[k])?null:M[k]}if(this.airAtk||this.state!=='jump')return null;return a==='L'?M.jL:a==='D'?(M.jD||M.jH):a==='U'?(M.jU||M.jH):a==='H'?M.jH:null}
     if(a==='L')return this.inp.down?M.cL:M.L;
     if(a==='S1'||a==='S2'||a==='S3'||a==='S4'){const m=ck(a);if(m.proj&&G.projs.some(p=>p.owner===this&&p.type===m.proj.type))return null;return m}
     return M[a]||null}
@@ -1291,7 +1293,7 @@ class Fighter{
     this.faceOpp(op);
     if(this.buf&&this.tryAct(this.buf)){this.buf=null;this.bufT=0;return}
     if(inp.jump){const sj=!!inp.sj;this.sj=sj;this.vy=-(sj?SJUMP_V:this.ch.jumpV);this.vx=inp.h*this.ch.jumpX*(sj?1.25:1);if(sj)addFx('text',this.x,this.y-90*this.S,0,'SUPER JUMP','#7fd8ff');this.airSp=false;this.y=FLOOR-0.5;this.state='jump';this.t=0;this.airAtk=false;
-      this.flip=inp.h!==0&&!!this.ch.flips;this.jumpId++;this.airL=0;this.airHits=0;this.sq=-0.9;SFX.jump();addFx('dust',this.x,FLOOR);return}
+      this.flip=inp.h!==0&&!!this.ch.flips;this.jumpId++;this.airL=0;this.airHits=0;this.airUn=0;this.sq=-0.9;SFX.jump();addFx('dust',this.x,FLOOR);return}
     if(inp.dash){this.state='dash';this.dashDir=inp.dash;this.t=0;SFX.whoosh(0);return}
     const prev=this.state;
     if(inp.down){this.state='crouch';this.vx=0}
@@ -1331,12 +1333,12 @@ class Fighter{
     if(m.quake&&t===a0+1){addFx('quake',this.x+this.facing*20,FLOOR,2);G.shake=Math.max(G.shake,5)}
     // launcher -> chase jump (swipe up again or push the stick up)
     if(m.key==='U'&&this.canCancel&&t>a0&&(this.buf==='U'||this.inp.jump)&&!this.air){this.buf=null;this.bufT=0;
-      this.move=null;this.state='jump';this.t=0;this.vy=-SJUMP_V;this.y=FLOOR-0.5;this.vx=clamp((op.x-this.x)/18,-3.2,3.2);this.airAtk=false;this.airL=0;this.airHits=0;this.flip=false;this.jumpId++;this.chase=true;this.sj=true;this.airSp=false;
+      this.move=null;this.state='jump';this.t=0;this.vy=-SJUMP_V;this.y=FLOOR-0.5;this.vx=clamp((op.x-this.x)/18,-3.2,3.2);this.airAtk=false;this.airL=0;this.airHits=0;this.airUn=0;this.flip=false;this.jumpId++;this.chase=true;this.sj=true;this.airSp=false;
       SFX.jump();addFx('dust',this.x,FLOOR);this.sq=-0.9;return}
     // air combo chain: light -> light -> light -> heavy
     if(this.air&&m.air&&this.canCancel&&this.buf&&t>a0){const b=this.buf;let nm=null;
       if(/^S[1-4]$/.test(b)&&m.key!=='AS'&&m.key!=='AS2'){nm=this.pick(b)}
-      else if(m.key==='jL'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='D')nm=this.moves.jD||this.moves.jH;else if(b==='H'||b==='U')nm=this.moves.jH}
+      else if(m.key==='jL'||m.key==='jU'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='D')nm=this.moves.jD||this.moves.jH;else if(b==='U')nm=this.moves.jU||this.moves.jH;else if(b==='H')nm=this.moves.jH}
       if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
     if(m.super&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
     if(m.projInv&&t<=m.s+m.a&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
@@ -1520,6 +1522,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   /* juggleCap: this move can only juggle so many times per combo; the last allowed hit is a knockdown */
   /* air kick (air swipe down): after at least one air hit in this jump it ends the air combo with a knockdown */
   const airKd=!!m.kdAfterAir&&!isProj&&A.air&&(A.airHits||0)>=2;
+  /* air punch (air swipe up): pops them up so air lights can follow; the Nth air punch in one jump knocks down */
+  let airUKd=false;if(m.kdNth&&!isProj&&A.air){A.airUn=(A.airUn||0)+1;if(A.airUn>=m.kdNth){airUKd=true;A.airUn=0}}
   let capKd=false;if(m.juggleCap&&!isProj){B.capN=(B.capN||0)+1;if(B.capN>=m.juggleCap)capKd=true}
   /* kdCap: a ground move that links into lights; if it keeps landing in a loop (Nth hit within 150 frames of the last), that hit knocks down */
   if(m.kdCap&&!isProj){if(G.phaseT-(B.akLast??-999)>150||G.phaseT<(B.akLast??0))B.akN=0;B.akN=(B.akN||0)+1;B.akLast=G.phaseT;if(B.akN>=m.kdCap){capKd=true;B.akN=0}}
@@ -1530,6 +1534,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   if(isLaunch&&!limited&&B.launchN>=2){const push=3.0+0.8*(B.launchN-2),walled=dir>0?B.x>STAGE_W-60:B.x<60;
     if(walled)A.ext=(A.ext||0)-dir*push;else B.ext=(B.ext||0)+dir*push}
   if(limited){}
+  else if(airUKd){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=-3.4;B.vx=dir*3.6;B.juggleInv=true;addFx('text',B.x,B.y-70,0,'KNOCKDOWN!','#ff4a4a');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
+  else if(m.airPop&&B.air){B.juggle=true;B.vy=-m.airPop;B.y=Math.min(B.y,FLOOR-1);B.juggleN++}
   else if(airKd){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);if(B.air){B.vy=5.5;B.vx=dir*2.6;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f')}else{B.vy=-3.4;B.vx=dir*3.2;addFx('text',B.x,B.y-70,0,'KNOCKDOWN!','#ff4a4a')}B.juggleInv=true;G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(capKd){B.juggle=true;B.vy=-3.4;B.vx=dir*3.2;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true;B.capN=0;addFx('text',B.x,B.y-70,0,'KNOCKDOWN!','#ff4a4a');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
   else if(m.ender&&finisher&&B.air){B.juggle=true;B.vy=6;B.vx=dir*3;B.juggleN++;addFx('text',B.x,B.y-60,0,'SPIKE!','#ffd23f');G.zoomKick=Math.max(G.zoomKick||0,0.12)}
@@ -2325,7 +2331,7 @@ function separate(a,b){
 const IN={left:null,right:new Map(),h:0,down:false,jump:false,dash:0,guard:false,q:[],trails:[],pops:[],lastHD:0,lastHT:0,prevH:0,touch:false,lastRightStart:0};
 const KB={l:false,r:false,u:false,d:false,g:false,lastL:0,lastR:0,dash:0};
 function toGame(x,y){return{x:(x-view.x)/view.s,y:(y-view.y)/view.s}}
-const GLABEL={L:'LIGHT',H:'HEAVY',U:'LAUNCHER',D:'SWEEP',P:'PARRY'};const GLABEL_AIR={D:'AIR KICK',H:'AIR HEAVY',U:'AIR HEAVY',P:'AIR PARRY'};
+const GLABEL={L:'LIGHT',H:'HEAVY',U:'LAUNCHER',D:'SWEEP',P:'PARRY'};const GLABEL_AIR={D:'AIR KICK',H:'AIR HEAVY',U:'AIR PUNCH',P:'AIR PARRY'};
 function pushAct(a,x,y){IN.q.push(a);if(IN.q.length>2)IN.q.shift();
   const sp=(G.me||G.p1)&&(G.me||G.p1).ch.specials;const meF=G.me||G.p1,inAir=meF&&meF.air;const stc=meF&&meF.stance&&sp&&sp['c'+a]?sp['c'+a]:null;const label=sp&&inAir&&(a==='S1'||a==='S3')?sp[a==='S1'?'AS':'AS2']:(stc||(/^S[1-4U]$/.test(a)&&sp?sp[a]:((inAir&&GLABEL_AIR[a])||GLABEL[a])));
   if(x!=null)IN.pops.push({x,y,text:label,t:performance.now(),col:a==='SU'?'#ffd23f':/^S[1-4]$/.test(a)?'#7fd8ff':a==='P'?'#8fe0ff':'#ffffff'})}
@@ -2588,7 +2594,7 @@ function renderHowto(g){
   const L=[['stickH','WALK'],['back','HOLD BACK','=BLOCK'],['up','JUMP'],['down','CROUCH'],['flick2','FLICK x2','=DASH'],['downup','DOWN>UP','=SUPER JUMP'],['fwd','BLOCK+FWD','=PUSHBLOCK']];
   L.forEach((r,i)=>{const y=44+i*22;gestIcon(g,r[0],22,y+4);txt(g,r[1],38,y,8,'#fff');if(r[2])txt(g,r[2],38,y+10,8,'#9a8fc8')});
   txt(g,'RIGHT THUMB (ATTACK)',254,22,8,'#ff4fa3','center');
-  const R=[['tap','TAP','LIGHT'],['fwd','SWIPE FWD','HEAVY'],['up','SWIPE UP','ANTI-AIR'],['down','SWIPE DOWN','SWEEP +AIR KICK'],['back','SWIPE BACK','PARRY +AIR'],
+  const R=[['tap','TAP','LIGHT'],['fwd','SWIPE FWD','HEAVY'],['up','SWIPE UP','LAUNCH +AIR PUNCH'],['down','SWIPE DOWN','SWEEP +AIR KICK'],['back','SWIPE BACK','PARRY +AIR'],
     ['hold','HOLD STILL','BLOCK'],['arcF','ARC > FWD','SPECIAL 1'],['arcU','ARC > UP','SPECIAL 2'],['arcB','ARC > BACK','SPECIAL 3'],['arcD','ARC > DOWN','SPECIAL 4'],['arcF','AIR ARC F/B','AIR SPECIAL'],['two','2 FINGERS','SUPER']];
   g.font='8px '+FONT;
   R.forEach((r,i)=>{const y=33+i*14;gestIcon(g,r[0],146,y+4);txt(g,r[1],160,y,8,'#fff');
