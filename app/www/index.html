@@ -885,7 +885,7 @@ const CHARS=[
    S2:{s:9,a:0,r:10,tele:8,vanish:[3,8],inv:[0,10],streak:true,pose:'crouch'},
    S3:{s:12,a:30,r:10,dmg:75,hs:20,bs:14,hb:B([0,-34,30,34],1),lvl:'high',kb:2,hop:[5.4,1.2],dive:11,pose:'airheavy',landRec:6},
    S4:{s:6,a:14,r:16,dmg:65,hs:20,bs:14,hb:B([4,-14,34,14]),lvl:'low',kd:true,vx:6,inv:[0,10],pose:'sweep',crouch:true},
-   AS:{s:4,a:5,r:20,grab:true,airGrab:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
+   AS:{s:4,a:5,r:20,grab:true,airGrab:true,izuna:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
    AS2:{s:7,a:1,r:14,hover:16,pose:'jab',air:true,projs:[{type:'kunai',vx:4.6,vy:2.2,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:3.8,vy:3.4,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:5.4,vy:1.2,dmg:30,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true}]},
    S1:{s:8,a:1,r:17,pose:'kthrow',crouch:true,proj:{type:'kunai',big:true,vx:6,dmg:48,hs:14,bs:10,w:18,h:8,y:-16*S,lvl:'low',kb:2,life:120}},
    SU:{s:10,a:36,r:20,tele:8,dmg:430,hits:6,multi:6,hs:16,bs:10,hb:B([-20,-70,60,70],1),kb:0.4,vx:1.6,pose:'rush',finPose:'upkick',lastKd:true}})},
@@ -1524,6 +1524,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     A.move=null;A.state='cine';A.t=0;A.vx=0;B.move=null;B.state='cine';B.t=0;B.vx=0;B.x=A.x+A.facing*26;B.facing=-A.facing;
     G.cine={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing};G.impact=3;G.excite=1;SFX.super();return'hit'}
   if(m.airGrab){if(!B.air)return'none';
+    if(m.izuna&&G.mode!=='bonus'){A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
+      G.thr={kind:'izuna',t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x,y0:A.y,by0:B.y};G.zoomKick=0.14;SFX.hit(1,px);if(!G.resim){addFx('spark',px,py,2);kiBurst(px,py,A.col.accent,18,2.2)}return'hit'}
     if(m.bomb&&G.mode!=='bonus'){A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
       G.thr={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x,y0:A.y,by0:B.y,text:m.grabText||'AIR SUPLEX!'};G.zoomKick=0.12;SFX.hit(1,px);addFx('spark',px,py,1);return'hit'}
     const dmg=Math.round(m.dmg*dmgScale(B,!!m.super,B.combo));B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;A.grabbed=true;Object.assign(B,{state:'hit',juggle:true,t:0,vy:7.5,vx:0,move:null});B.x=A.x+A.facing*8;B.y=Math.max(B.y,A.y);
@@ -2461,7 +2463,25 @@ function stepBuster(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],t=++c.t,S=A.
     if(G.thr&&t>10&&t%3===0){A.ghosts.push({x:A.x,y:A.y,pose:Object.assign({},A.dpose),f:A.facing,t:12,col:'#3a5cff'});B.ghosts.push({x:B.x,y:B.y,pose:Object.assign({},B.dpose),f:B.facing,t:12,col:'#7a9cff'})}}
   const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   if(!G.resim)updFx()}
-function stepThrow(){if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
+function stepIzuna(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u),k=S/1.15;
+  const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};const y0=Math.min(c.y0,FLOOR-40);
+  if(t<=6){const u=t/6;A.y=y0-4*u;pz(A,'grab');pz(B,'airhit');B.x=cl(c.bx0+(A.x+d*18*k-c.bx0)*u);B.y=c.by0+(A.y-c.by0)*u}
+  else if(t<=14){const u=(t-6)/8;A.y=y0-4-10*u;A.x=cl(c.x0+d*8*u);pz(A,'jump');pz(B,'airhit',{rot:-40-140*u});B.x=cl(A.x+d*(18-10*u)*k);B.y=A.y+18*S*u}
+  else if(t<=34){const u=(t-14)/20,ys=y0-14;A.y=ys+(FLOOR-24*S-ys)*u*u;A.x=cl(c.x0+d*(8+14*u));
+    const sp=Math.floor((t-14)/3)%2?-1:1;A.facing=d*sp;B.facing=-A.facing;pz(A,'crouch');pz(B,'airhit',{rot:-180});B.x=cl(A.x+A.facing*4*k);B.y=A.y+24*S;
+    if(t%3===0&&!G.resim){A.ghosts.push({x:A.x,y:A.y,pose:Object.assign({},A.dpose),f:A.facing,t:8,col:A.col.accent});B.ghosts.push({x:B.x,y:B.y,pose:Object.assign({},B.dpose),f:B.facing,t:8,col:A.col.accent});addMote(B.x+rnd(-8,8),B.y-rnd(0,30),rnd(-1,1),-rnd(0.5,1.5),A.col.accent,1,14)}}
+  else if(t<=44){A.facing=d;B.facing=-d;pz(B,'down');B.x=cl(c.lx+d*6*k);B.y=FLOOR;pz(A,'crouch');A.x=c.lx;A.y=FLOOR-14*S;
+    if(t===35){const dmg=Math.round(c.dmg*dmgScale(B,false,B.combo));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=40;B.combo++;A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);comboShow(A,B);
+      G.shake=8;G.impact=3;G.zoomKick=0.22;G.excite=1;B.flash=4;B.flashCol='#ffffff';
+      if(!G.resim){SFX.hit(3,B.x);SFX.land(9,B.x);addFx('quake',B.x,FLOOR,2);addFx('spark',B.x,FLOOR-10,2);addFx('ring',B.x,FLOOR-8);kiBurst(B.x,FLOOR-10,A.col.accent,22,2.6);addFx('text',A.x,FLOOR-110,0,'IZUNA DROP!',A.col.accent);if(!G.demo)vib(45)}}}
+  else if(t<=62){const u=(t-44)/18;A.x=cl(c.lx-d*52*u);A.y=FLOOR-14*S*(1-u)-H(u,42);A.facing=d;pz(A,'jump',{rot:-d*0+(-360*u)});pz(B,'down')}
+  if(t<=34)c.lx=A.x;
+  if(t>=62){G.thr=null;A.y=FLOOR;A.state='land';A.t=0;A.landT=4;A.grabbed=false;A.facing=d;B.y=FLOOR;B.combo=0;B.comboDmg=0;
+    if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,d)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8}}
+  if(!G.resim)for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
+  const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
+  if(!G.resim)updFx()}
+function stepThrow(){if(G.thr.kind==='izuna')return stepIzuna();if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
   const y0=c.y0??FLOOR;
   if(t<=6){const u=t/6;A.y=y0;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=c.by0!=null?c.by0+(y0-c.by0)*u:FLOOR}
