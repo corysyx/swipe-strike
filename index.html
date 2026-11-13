@@ -1665,7 +1665,7 @@ function aiExec(ai,inp,dir,dist,me){
 /* ============================ FX ============================ */
 function addFx(type,x,y,s=1,str,col,dir){
   if(G.resim)return;
-  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{mushroom:100,puff:30,zap:8,whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
+  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{mushroom:48,puff:30,zap:8,whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
   if(type==='quake'){f.parts=Array.from({length:6+s*6},()=>({x:rnd(-14,14),vx:rnd(-2.2,2.2),vy:rnd(-4.5,-1.5)*s*0.8,c:pick(['#6a4a3a','#8a6a50','#c8b090','#4a3428'])}))}
   if(type==='spark'){f.parts=Array.from({length:6+s*4},()=>({a:rnd(0,Math.PI*2),v:rnd(1.5,3.5)*s,l:rnd(3,7)*s}))}
   if(type==='dust'||type==='smoke'||type==='csmoke'){f.parts=Array.from({length:type==='dust'?4:8},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='dust'?1:4),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
@@ -1744,12 +1744,12 @@ function drawFx(g,ox){
         const T=f.t,L=f.life,k=T/L,sd=f.seed,J=i=>Math.sin(sd*7.31+i*12.9898)*0.5+0.5,eo=v=>1-Math.pow(1-Math.min(1,Math.max(0,v)),3);
         const PAL=[[0.10,'#ffb020','#ffe860','#ffffff'],[0.24,'#e8301c','#ffb020','#fff8d0'],[0.40,'#d82a18','#f2e01c','#fffbd0'],[0.54,'#c02218','#ff8a1a','#ffd23f'],[0.68,'#2a1a18','#e8561a','#ff9a30'],[0.84,'#141212','#2a2222','#e8561a'],[1.01,'#141212','#1e1a1a','#3a2a26']];
         const pal=PAL.find(q=>k<q[0]),rim=pal[1],mid=pal[2],hi=pal[3];
-        const sz=eo(T/16)*(1+k*0.15),R=46*sz,Hh=96*sz,top=y-Hh-k*10,brk=Math.max(0,(k-0.8)/0.2);// brk: smoke breaking apart at the end
+        const sz=eo(T/8)*(1+k*0.15)*0.62,R=46*sz,Hh=96*sz,top=y-Hh-k*6,brk=Math.max(0,(k-0.8)/0.2);// brk: smoke breaking apart at the end
         const pts=[];
         for(let i=0;i<9;i++){const an=Math.PI*(1.08+0.84*i/8),rr=0.62+0.14*J(i);pts.push([Math.cos(an)*rr,0.5+Math.sin(an)*0.42*rr*1.1,0.36+0.1*J(i+9)])}// dome
         for(let i=0;i<12;i++)pts.push([((i%4)-1.5)*0.3+(J(i+20)-0.5)*0.12,0.2+Math.floor(i/4)*0.16+J(i+21)*0.06,0.32+0.08*J(i+22)]);// fill
         for(let i=0;i<5;i++)pts.push([(J(i+30)-0.5)*0.2,0.6+i*0.09,0.24+0.05*J(i+31)]);// column
-        for(let i=0;i<10;i++){const sx2=(i%2?1:-1)*(0.1+Math.floor(i/2)*0.16);pts.push([sx2*(0.6+0.4*eo(T/30)),0.98-0.05*J(i+40),0.24+0.07*J(i+41)])}// ground billows
+        for(let i=0;i<10;i++){const sx2=(i%2?1:-1)*(0.1+Math.floor(i/2)*0.16);pts.push([sx2*(0.6+0.4*eo(T/15)),0.98-0.05*J(i+40),0.24+0.07*J(i+41)])}// ground billows
         const P=pts.map(([nx,ny,nr],i)=>{const sc=(1-brk*(0.4+0.6*J(i+60)))*(1+0.05*Math.sin(T*0.25+i)),dx=brk*(J(i+70)-0.5)*40,dy=-brk*J(i+71)*20;
           return[x+nx*R*(1+k*0.1)+dx,top+ny*Hh+dy,Math.max(0,nr*R*sc)]}).filter(q=>q[2]>0.8);
         const disc=(px,py,r,c)=>{g.fillStyle=c;g.beginPath();g.arc(Math.round(px),Math.round(py),r,0,7);g.fill()};
@@ -1770,7 +1770,7 @@ function drawFx(g,ox){
         // glowing embers in the black smoke
         if(k>=0.66&&k<0.95)for(let i=0;i<10;i++){const p2=P[(i*5)%P.length];if(!p2)continue;const er=p2[2]*0.25*(1-brk);g.strokeStyle=i%2?'#e8561a':'#ff9a30';g.lineWidth=1.5;g.beginPath();g.arc(Math.round(p2[0]+(J(i+90)-0.5)*p2[2]),Math.round(p2[1]+(J(i+91)-0.5)*p2[2]),er,Math.PI*(1+J(i+92)),Math.PI*(1.7+J(i+92)));g.stroke()}
         // flying debris specks
-        if(k>0.08&&k<0.7)for(let i=0;i<8;i++){const an=-Math.PI*(0.15+0.7*J(i+100)),dd=(20+T*1.8)*(0.6+0.4*J(i+101));g.fillStyle='#2a2a2e';g.fillRect(Math.round(x+Math.cos(an)*dd),Math.round(top+Hh*0.4+Math.sin(an)*dd),2,2)}
+        if(k>0.08&&k<0.7)for(let i=0;i<8;i++){const an=-Math.PI*(0.15+0.7*J(i+100)),dd=(12+T*2.2)*(0.6+0.4*J(i+101));g.fillStyle='#2a2a2e';g.fillRect(Math.round(x+Math.cos(an)*dd),Math.round(top+Hh*0.4+Math.sin(an)*dd),2,2)}
         g.globalAlpha=1;break}
       case'puff':{const a=1-k,r=(3+f.t*0.35)*(f.s||1);g.fillStyle=(f.col||'rgba(80,80,80,')+(0.45*a*a)+')';g.beginPath();g.arc(x+(f.vx||0)*f.t,y+(f.vy||0)*f.t,r,0,7);g.fill();break}
       case'zap':{const a=1-k;if(f.t>5)break;let px=x,py=y;const an=f.ang||0;g.strokeStyle=f.col||'#fff';g.lineWidth=1.2;g.globalAlpha=a;g.beginPath();g.moveTo(px,py);for(let i=1;i<=4;i++){const d=(f.len||14)*i/4;px=x+Math.cos(an)*d+((i*37+f.seed*10)%7-3);py=y+Math.sin(an)*d+((i*53+f.seed*10)%7-3);g.lineTo(px,py)}g.stroke();g.globalAlpha=1;break}
