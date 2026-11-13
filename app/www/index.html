@@ -1669,7 +1669,7 @@ function aiExec(ai,inp,dir,dist,me){
 /* ============================ FX ============================ */
 function addFx(type,x,y,s=1,str,col,dir){
   if(G.resim)return;
-  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{puff:30,zap:8,whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
+  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{mushroom:80,puff:30,zap:8,whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
   if(type==='quake'){f.parts=Array.from({length:6+s*6},()=>({x:rnd(-14,14),vx:rnd(-2.2,2.2),vy:rnd(-4.5,-1.5)*s*0.8,c:pick(['#6a4a3a','#8a6a50','#c8b090','#4a3428'])}))}
   if(type==='spark'){f.parts=Array.from({length:6+s*4},()=>({a:rnd(0,Math.PI*2),v:rnd(1.5,3.5)*s,l:rnd(3,7)*s}))}
   if(type==='dust'||type==='smoke'||type==='csmoke'){f.parts=Array.from({length:type==='dust'?4:8},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='dust'?1:4),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
@@ -1744,6 +1744,22 @@ function drawFx(g,ox){
       case'ripple':{const rx=5+f.t*1.6;g.strokeStyle=f.col||'#9dffcf';g.globalAlpha=(1-k)*0.7;g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,rx,rx*0.18,0,0,7);g.stroke();g.globalAlpha=1;break}
       case'spray':{const vx=(f.dir||1)*(0.8+Math.sin(f.seed)*0.6),vy=-1.8-Math.cos(f.seed)*0.8,px=x+vx*f.t,py=y+vy*f.t+0.16*f.t*f.t;if(py<FLOOR){g.fillStyle=k<0.4?'#ffffff':(f.col||'#9dffcf');g.fillRect(Math.round(px),Math.round(py),2,1)}break}
       case'vring':{const a=1-k,ry=(9+f.t*0.9)*(f.s||1),rx=Math.max(1.5,ry*0.32),ux=f.ux??(f.dir||1),uy=f.uy||0,cx2=x-ux*f.t*0.7,cy2=y-uy*f.t*0.7,an=Math.atan2(uy,ux);g.globalAlpha=a*0.9;g.strokeStyle=f.col||'#fff';g.lineWidth=2;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,0,7);g.stroke();g.strokeStyle='#ffffff';g.lineWidth=1;g.globalAlpha=a*0.7;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,(f.t*0.7)%6.28,(f.t*0.7)%6.28+2.2);g.stroke();g.globalAlpha=1;break}
+      case'mushroom':{const T=f.t,L=80,eo=v=>1-Math.pow(1-Math.min(1,v),3),heat=Math.max(0,1-T/34),a=(1-Math.max(0,(T-L*0.45)/(L*0.55)))*(0.7+0.3*heat),
+        h=104*eo(T/34)+T*0.12,cr=10+30*eo(T/40),sd=f.seed,J=i=>Math.sin(sd*7+i*12.9898)*0.5+0.5;
+        const mix=(u)=>{const hot=[[255,246,190],[255,176,48],[232,82,26]][Math.min(2,Math.floor(u*3))],smk=[96,78,74];const w=heat;return `rgba(${hot.map((c,i)=>Math.round(c*w+smk[i]*(1-w))).join(',')},`};
+        // ground shockwave and dust skirt
+        g.globalAlpha=Math.max(0,1-T/30)*0.8;g.strokeStyle='#fff2c0';g.lineWidth=3;g.beginPath();g.ellipse(x,y,10+T*4,3+T*0.6,0,0,7);g.stroke();
+        for(let i=0;i<10;i++){const dx=(i-4.5)*(7+T*0.6),r=(5+T*0.18)*(0.7+J(i)*0.6);g.globalAlpha=a*0.55*Math.max(0,1-T/70);g.fillStyle=`rgba(150,120,100,1)`;g.beginPath();g.arc(x+dx,y-r*0.5,r,0,7);g.fill()}
+        // stem
+        for(let i=0;i<9;i++){const u=i/8,yy=y-u*h,w=(7+5*u+3*J(i+20))*(0.8+0.4*eo(T/20)),wob=Math.sin(T*0.15+i)*1.5;g.globalAlpha=a*0.95;g.fillStyle=mix(0.35+u*0.5)+'1)';g.beginPath();g.arc(x+wob,yy,w,0,7);g.fill();
+          if(heat>0.05){g.globalAlpha=a*heat;g.fillStyle='rgba(255,240,170,1)';g.beginPath();g.arc(x+wob,yy,w*0.45,0,7);g.fill()}}
+        // cap: rolling ring of puffs plus a domed top
+        const cy=y-h;
+        for(let i=0;i<14;i++){const an=i/14*6.283+T*0.05,px2=x+Math.cos(an)*cr,py2=cy+Math.sin(an)*cr*0.45,r=cr*(0.38+0.16*J(i+40)),under=Math.sin(an)>0;
+          g.globalAlpha=a*0.95;g.fillStyle=mix(under?0.9:0.55)+'1)';g.beginPath();g.arc(px2,py2,r,0,7);g.fill()}
+        for(let i=0;i<7;i++){const ox3=(i-3)*cr*0.28,r=cr*(0.42+0.12*J(i+60));g.globalAlpha=a;g.fillStyle=mix(0.3+Math.abs(i-3)*0.15)+'1)';g.beginPath();g.arc(x+ox3,cy-cr*0.35-Math.cos((i-3)*0.45)*cr*0.2,r,0,7);g.fill()}
+        if(heat>0.05){g.globalAlpha=a*heat*0.9;g.fillStyle='rgba(255,248,210,1)';g.beginPath();g.arc(x,cy-cr*0.3,cr*0.45,0,7);g.fill()}
+        g.globalAlpha=1;break}
       case'puff':{const a=1-k,r=(3+f.t*0.35)*(f.s||1);g.fillStyle=(f.col||'rgba(80,80,80,')+(0.45*a*a)+')';g.beginPath();g.arc(x+(f.vx||0)*f.t,y+(f.vy||0)*f.t,r,0,7);g.fill();break}
       case'zap':{const a=1-k;if(f.t>5)break;let px=x,py=y;const an=f.ang||0;g.strokeStyle=f.col||'#fff';g.lineWidth=1.2;g.globalAlpha=a;g.beginPath();g.moveTo(px,py);for(let i=1;i<=4;i++){const d=(f.len||14)*i/4;px=x+Math.cos(an)*d+((i*37+f.seed*10)%7-3);py=y+Math.sin(an)*d+((i*53+f.seed*10)%7-3);g.lineTo(px,py)}g.stroke();g.globalAlpha=1;break}
       case'whirl':{const a=1-k,an=f.ang||0,l0=f.t*2.2,l1=l0+7+f.t*1.2;g.globalAlpha=a*0.8;g.strokeStyle=f.col||'#fff';g.lineWidth=1.2;g.beginPath();g.moveTo(x+Math.cos(an)*l0,y+Math.sin(an)*l0);g.lineTo(x+Math.cos(an)*l1,y+Math.sin(an)*l1);g.stroke();g.globalAlpha=1;break}
@@ -2401,7 +2417,7 @@ function stepBuster(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],t=++c.t,S=A.
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
   const hit=(n,big)=>{c.n=n;const per=Math.round(c.dmg/4),dmg=Math.max(1,Math.round(per*dmgScale(B,true,B.combo)));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=80;B.combo++;comboShow(A,B);
     G.shake=big?10:6;G.impact=big?4:2;G.zoomKick=big?0.28:0.14;B.flash=4;B.flashCol='#ffffff';
-    if(!G.resim){SFX.hit(big?3:2,B.x);SFX.land(big?12:8,B.x);addFx('quake',B.x,FLOOR,big?2:1);addFx('spark',B.x,FLOOR-12,2);for(let i=0;i<(big?5:3);i++)addFx('dust',B.x+rnd(-20,20),FLOOR);if(big){addFx('ring',B.x,FLOOR-10);addFx('text',A.x,FLOOR-130,0,((A.ch.specials&&A.ch.specials.SU)||'SUPER')+'!','#ffd23f')}if(!G.demo)vib(big?60:25)}};
+    if(!G.resim){SFX.hit(big?3:2,B.x);SFX.land(big?12:8,B.x);addFx('quake',B.x,FLOOR,big?2:1);addFx('spark',B.x,FLOOR-12,2);for(let i=0;i<(big?5:3);i++)addFx('dust',B.x+rnd(-20,20),FLOOR);if(big){addFx('ring',B.x,FLOOR-10);addFx('mushroom',B.x,FLOOR,1);for(let i=0;i<18;i++){const an=-Math.PI*rnd(0.1,0.9);addMote(B.x+rnd(-8,8),FLOOR-10,Math.cos(an)*rnd(1,3.4),Math.sin(an)*rnd(2,4.5),i%3?'#ffb030':'#fff2a0',1.2,30+(Math.random()*20|0))}G.scrFlash={t:6,col:'#fff2c0'};addFx('text',A.x,FLOOR-130,0,((A.ch.specials&&A.ch.specials.SU)||'SUPER')+'!','#ffd23f')}if(!G.demo)vib(big?60:25)}};
   // suplex arc: B goes over A's head from side s0 to side -s0
   const suplex=(u,s0)=>{const th=Math.PI*u;A.x=c.lx;A.y=FLOOR;pz(A,u<0.3?'tbLift':'tbBridge');A.facing=s0;B.x=cl(A.x+s0*Math.cos(th)*24*k);B.y=FLOOR-Math.sin(th)*58*S;pz(B,'tbHeld',{rot:180*u});B.facing=-s0};
   const d=c.dir;
