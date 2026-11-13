@@ -2325,9 +2325,9 @@ function separate(a,b){
 const IN={left:null,right:new Map(),h:0,down:false,jump:false,dash:0,guard:false,q:[],trails:[],pops:[],lastHD:0,lastHT:0,prevH:0,touch:false,lastRightStart:0};
 const KB={l:false,r:false,u:false,d:false,g:false,lastL:0,lastR:0,dash:0};
 function toGame(x,y){return{x:(x-view.x)/view.s,y:(y-view.y)/view.s}}
-const GLABEL={L:'LIGHT',H:'HEAVY',U:'LAUNCHER',D:'SWEEP',P:'PARRY'};
+const GLABEL={L:'LIGHT',H:'HEAVY',U:'LAUNCHER',D:'SWEEP',P:'PARRY'};const GLABEL_AIR={D:'AIR KICK',H:'AIR HEAVY',U:'AIR HEAVY',P:'AIR PARRY'};
 function pushAct(a,x,y){IN.q.push(a);if(IN.q.length>2)IN.q.shift();
-  const sp=(G.me||G.p1)&&(G.me||G.p1).ch.specials;const meF=G.me||G.p1,inAir=meF&&meF.air;const stc=meF&&meF.stance&&sp&&sp['c'+a]?sp['c'+a]:null;const label=sp&&inAir&&(a==='S1'||a==='S3')?sp[a==='S1'?'AS':'AS2']:(stc||(/^S[1-4U]$/.test(a)&&sp?sp[a]:GLABEL[a]));
+  const sp=(G.me||G.p1)&&(G.me||G.p1).ch.specials;const meF=G.me||G.p1,inAir=meF&&meF.air;const stc=meF&&meF.stance&&sp&&sp['c'+a]?sp['c'+a]:null;const label=sp&&inAir&&(a==='S1'||a==='S3')?sp[a==='S1'?'AS':'AS2']:(stc||(/^S[1-4U]$/.test(a)&&sp?sp[a]:((inAir&&GLABEL_AIR[a])||GLABEL[a])));
   if(x!=null)IN.pops.push({x,y,text:label,t:performance.now(),col:a==='SU'?'#ffd23f':/^S[1-4]$/.test(a)?'#7fd8ff':a==='P'?'#8fe0ff':'#ffffff'})}
 function classify(pts,dur){
   const a=pts[0],b=pts[pts.length-1],dx=b.x-a.x,dy=b.y-a.y;let path=0;for(let i=1;i<pts.length;i++)path+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);
