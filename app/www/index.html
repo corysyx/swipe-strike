@@ -851,7 +851,7 @@ const CHARS=[
    AS2:{s:9,a:1,r:16,hover:24,pose:'palm',air:true,proj:{type:'orb',vx:2.2,dmg:75,hs:22,bs:14,w:18,h:18,kb:2,life:140,ender:true}},
    AS:{s:7,a:1,r:16,hover:22,pose:'palm',air:true,proj:{type:'flame',vx:3,vy:1.1,dmg:80,hs:24,bs:14,w:24,h:24,kb:2,life:80,ender:true}},
    S4:{s:16,a:1,r:24,pose:'upper',proj:{type:'pillar',ground:true,persist:true,at:100,vx:0,dmg:80,hs:24,bs:14,w:20,h:90,y:-45,launch:5.5,kb:0.5,life:36,multi:99}},
-   S2:{s:9,a:1,r:24,pose:'upper',proj:{type:'firepillar',ground:true,at:30,noQuake:true,persist:true,pull:true,vx:0,dmg:90,hits:3,multi:6,hs:20,bs:14,w:36,h:150,y:-75,launch:5,lastKd:true,kb:0.4,life:42,from:2,until:32}},
+   S2:{s:9,a:1,r:24,pose:'upper',proj:{type:'firepillar',ground:true,at:30,noQuake:true,persist:true,pull:true,vx:0,dmg:90,hits:3,multi:6,hs:20,bs:14,w:30,h:116,y:-58,launch:5,lastKd:true,kb:0.4,life:42,from:2,until:32}},
    SU:{s:16,a:40,r:26,pose:'beampush',beam:{dmg:400,hits:6,multi:6,h:26,y:-50*S,hs:16,bs:10,kb:1,lastKd:true,launch:4}}})},
  {id:'tank',name:'TANK',arch:'GRAPPLER',archCol:'#ffd23f',hp:1200,walk:0.95,dash:3.4,jumpV:5.6,jumpX:1.7,scale:1.3,reach:1.1,thick:1.32,sw:15,hw:11,headK:0.9,frameMod:2,
   col:{skin:'#d79a6a',top:'#d79a6a',pants:'#b8202a',belt:'#ffd23f',hair:'#3a2014',band:'#ffd23f',glove:'#f2f2f2',shoe:'#b8202a',accent:'#ffd23f'},
@@ -1822,18 +1822,21 @@ function drawProj(g,p,ox){
       const seg=3,amp=4+2*k;g.globalAlpha=1;
       const layers=[[1.0,'rgba(170,40,8,0.55)'],[0.78,'#e8521a'],[0.58,'#ff8a20'],[0.38,'#ffc040'],[0.18,'#fff0b0']];
       for(const [wk,cc] of layers){g.fillStyle=cc;
-        for(let yy=cut;yy<hh;yy+=seg){const u=yy/Math.max(1,p.h),w=(14+5*Math.sin(u*3.2)+(u>0.75?(u-0.75)*44:0))*wk+(wk>0.9?Math.sin(yy*0.5+G.tick)*1.5:0),
+        for(let yy=cut;yy<hh;yy+=seg){const u=yy/Math.max(1,p.h),r=yy/Math.max(1,hh),tp=r>0.72?Math.max(0,1-(r-0.72)/0.28):1,w=(11+4*Math.sin(u*3.2)+(r>0.55&&r<0.85?(r-0.55)*16:0))*wk*(0.25+0.75*Math.sqrt(tp))+(wk>0.9?Math.sin(yy*0.5+G.tick)*1.5:0),
           sw=Math.sin(yy*0.07-G.tick*0.45)*amp*(0.5+u),cx2=x+sw;
           if(wk<0.3&&u<0.45)continue;
           g.globalAlpha=Math.min(1,a*(wk>0.9?0.9:1)*(yy<cut+8?(yy-cut)/8:1));g.fillRect(cx2-w,FLOOR-yy-seg,w*2,seg+1)}}
       // twisting dark bands sell the rotation
       g.strokeStyle='rgba(120,24,6,0.55)';g.lineWidth=2;for(let b=0;b<3;b++){g.beginPath();let first=true;
-        for(let yy=cut;yy<hh*0.9;yy+=4){const u=yy/p.h,ph=yy*0.09-G.tick*0.5+b*2.1,w=(14+5*Math.sin(u*3.2))*0.7,bx=x+Math.sin(yy*0.07-G.tick*0.45)*amp*(0.5+u)+Math.sin(ph)*w;
+        for(let yy=cut;yy<hh*0.9;yy+=4){const u=yy/p.h,ph=yy*0.09-G.tick*0.5+b*2.1,w=(11+4*Math.sin(u*3.2))*0.7,bx=x+Math.sin(yy*0.07-G.tick*0.45)*amp*(0.5+u)+Math.sin(ph)*w;
           if(Math.cos(ph)<0){first=true;continue}if(first){g.moveTo(bx,FLOOR-yy);first=false}else g.lineTo(bx,FLOOR-yy)}g.globalAlpha=a*0.8;g.stroke()}
-      // flaring crown of flame licks at the top
-      for(let i=0;i<7;i++){const an=-Math.PI/2+(i-3)*0.32+Math.sin(G.tick*0.4+i)*0.15,L=10+((i*7+G.tick*3)%10),bx=x+Math.sin(hh*0.07-G.tick*0.45)*amp*1.5,by=FLOOR-hh+4;
-        g.globalAlpha=a*0.85;g.fillStyle=i%2?'#ff8a20':'#ffc040';g.beginPath();g.moveTo(bx+Math.cos(an+1.57)*5,by+Math.sin(an+1.57)*5);g.lineTo(bx+Math.cos(an)*L,by+Math.sin(an)*L);g.lineTo(bx+Math.cos(an-1.57)*5,by+Math.sin(an-1.57)*5);g.fill()}
-      g.globalAlpha=a*0.5;g.fillStyle='#ffd070';g.beginPath();g.ellipse(x,FLOOR,22,4,0,0,7);g.fill();g.globalAlpha=1;break}
+      // flame tongues licking up off the top so it never ends in a hard line
+      {const tx=x+Math.sin(hh*0.07-G.tick*0.45)*amp*1.5,ty=FLOOR-hh*0.86;
+       const tongue=(ox3,w3,L,cc,al)=>{g.globalAlpha=a*al;g.fillStyle=cc;g.beginPath();g.moveTo(tx+ox3-w3,ty);g.quadraticCurveTo(tx+ox3-w3*0.9,ty-L*0.55,tx+ox3+Math.sin(G.tick*0.6+ox3)*3,ty-L);g.quadraticCurveTo(tx+ox3+w3*0.9,ty-L*0.55,tx+ox3+w3,ty);g.closePath();g.fill()};
+       for(let i=0;i<5;i++){const ox3=(i-2)*5.5,L=hh*0.16+((i*13+G.tick*2.3)%14)+(i===2?8:0);tongue(ox3,7,L+6,'rgba(200,50,10,0.75)',0.8);tongue(ox3,5,L,'#ff8a20',0.95)}
+       for(let i=0;i<3;i++){const ox3=(i-1)*5,L=hh*0.12+((i*11+G.tick*3)%10);tongue(ox3,3.5,L,'#ffc040',1);tongue(ox3,1.8,L*0.6,'#fff0b0',1)}
+       g.globalAlpha=a*0.6;g.fillStyle='#ffb030';g.beginPath();g.arc(tx,ty,9,0,7);g.fill()}
+      g.globalAlpha=a*0.5;g.fillStyle='#ffd070';g.beginPath();g.ellipse(x,FLOOR,18,3.5,0,0,7);g.fill();g.globalAlpha=1;break}
     case'wave':{const d=Math.sign(p.vx)||1,T=G.tick,b=FLOOR,cc=c||'#9dffcf',sw=Math.sin(T*0.35)*2;
       // floor glow
       const gl=g.createRadialGradient(x,b,2,x,b,34);gl.addColorStop(0,'rgba(200,255,230,0.55)');gl.addColorStop(1,'rgba(157,255,207,0)');g.fillStyle=gl;g.beginPath();g.ellipse(x-d*6,b,34,7,0,0,7);g.fill();
