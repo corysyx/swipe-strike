@@ -879,7 +879,7 @@ const CHARS=[
   ai:{aa:'S3',ender:'S1',zone:'S1',tele:'S2'},rushPoses:['heavy','kick'],
   moves:(B,S)=>({
    S2:{s:9,a:0,r:10,tele:8,vanish:[3,8],inv:[0,10],streak:true,pose:'crouch'},
-   S3:{s:4,a:15,r:20,dmg:110,hits:2,multi:6,hs:22,bs:14,hb:B([-4,-100,46,98],1),kb:0.8,launch:7.4,lastKd:true,kdRepeat:true,inv:[0,6],vy:6.4,vx:2.2,pose:'upkick',flipSpin:true,landRec:14},
+   S3:{s:4,a:15,r:20,dmg:110,hits:2,multi:6,hs:24,bs:14,hb:B([-4,-100,46,98],1),kb:0.8,launch:7,lastKd:true,kdRepeat:true,inv:[0,8],vy:6.4,vx:1.8,pose:'upkick',flipSpin:true,landRec:6,fastFall:FF_MUL*1.25,juggleCap:2},
    S4:{s:6,a:14,r:16,dmg:65,hs:20,bs:14,hb:B([4,-14,34,14]),lvl:'low',kd:true,vx:6,inv:[0,10],pose:'sweep',crouch:true},
    AS:{s:4,a:5,r:20,grab:true,airGrab:true,izuna:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
    AS2:{s:7,a:1,r:14,hover:16,pose:'jab',air:true,projs:[{type:'kunai',vx:3.7,vy:4.1,dmg:40,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:3.0,vy:4.6,dmg:40,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true}]},
@@ -1427,7 +1427,7 @@ class Fighter{
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
         if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
-        if(m.kdRepeat&&m.flipSpin&&t>m.s){const b=Object.assign({},t<=m.s+6?POSES.upkick:POSES.jump);b.rot=-Math.min(360,(t-m.s)*16);return b}
+        if(m.kdRepeat&&m.flipSpin&&t>m.s){const b=Object.assign({},t<=m.s+6?POSES.upkick:POSES.jump);b.rot=-Math.min(360,(t-m.s)*20);return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
         if(pn==='arrow'||pn==='drillv'||pn==='drillup'||pn==='drillsuper'||pn==='drillhoriz'){if(t>m.s)pn={arrow:'drillD',drillv:'drillV',drillup:'drillU',drillsuper:'drillH',drillhoriz:'drillH'}[pn]+(1+Math.floor(t/2)%4)}
@@ -1568,11 +1568,10 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   const airKd=!!m.kdAfterAir&&!isProj&&A.air&&(A.airHits||0)>=2;
   /* air punch (air swipe up): pops them up so air lights can follow; the Nth air punch in one jump knocks down */
   let airUKd=false;if(m.kdNth&&!isProj&&A.air){A.airUn=(A.airUn||0)+1;if(A.airUn>=m.kdNth){airUKd=true;A.airUn=0}}
-  let capKd=false;if(m.juggleCap&&!isProj){B.capN=(B.capN||0)+1;if(B.capN>=m.juggleCap)capKd=true}
+  let capKd=false;if(m.juggleCap&&!isProj&&(!m.hits||nth>=hits)){B.capN=(B.capN||0)+1;if(B.capN>=m.juggleCap)capKd=true}
   /* kdCap: a ground move that links into lights; if it keeps landing in a loop (Nth hit within 150 frames of the last), that hit knocks down */
   if(m.kdCap&&!isProj){if(G.phaseT-(B.akLast??-999)>150||G.phaseT<(B.akLast??0))B.akN=0;B.akN=(B.akN||0)+1;B.akLast=G.phaseT;if(B.akN>=m.kdCap){capKd=true;B.akN=0}}
   /* kdRepeat: the 2nd use of this move in one combo knocks down */
-  if(m.kdRepeat&&!isProj&&nth>=hits){if(G.phaseT-(B.gcLast??-999)>150||G.phaseT<(B.gcLast??0))B.gcN=0;B.gcLast=G.phaseT;B.gcN=(B.gcN||0)+1;if(B.gcN>=2){capKd=true;B.gcN=0;B.tumble=true}}
   const isLaunch=!!m.launch&&!capKd&&(nth>=hits||!m.lastKd);let limited=false;
   if(isLaunch){B.launchN=(B.launchN||0)+1;if(B.launchN>MAX_LAUNCH){limited=true;B.juggle=true;B.vy=-2.6;B.vx=dir*4.6;B.y=Math.min(B.y,FLOOR-1);B.juggleInv=true}}/* over the limit: pushed away, out of the combo */
   /* relaunch push: every launch after the first in a combo shoves the opponent further away, so the juggle only continues if you dash in.
@@ -1591,7 +1590,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   }
   /* latch: a multi-hit dive slows down while it grinds into them, so every hit connects */
   if(m.latch&&!isProj&&nth<hits&&A.air){A.vx=clamp((B.x-A.x)*0.15+A.facing*0.6,-m.latch[0],m.latch[0]);A.vy=A.y>FLOOR-24?-1.8:Math.min(A.vy,m.latch[1])}
-  if(m.kdRepeat&&capKd&&!isProj){B.vx=dir*2.4;B.vy=Math.min(B.vy,-6.4)}
+  if(m.kdRepeat&&capKd&&!isProj){B.tumble=true;B.vx=dir*2.4;B.vy=Math.min(B.vy,-6.4)}
   else if(!isProj&&A.air&&!m.ender&&!m.airGrab&&B.air){A.vy=B.vy+0.2;A.y=lerp(A.y,B.y+4,0.5)}// keep air combos level
   /* pull: a pillar drags them into its centre and holds them up so every hit lands */
   if(isProj&&src&&src.pull&&nth<hits){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=-2.6;B.vx=clamp((src.x-B.x)*0.12,-2.5,2.5)}
