@@ -730,9 +730,16 @@ Object.assign(POSES,{
   airkick:P({lean:6,fl1:78,fl2:0,bl1:20,bl2:-105,fa1:60,fa2:85,ba1:40}),
   airheavy:P({lean:22,fl1:58,fl2:-4,bl1:32,bl2:-112,fa1:125,fa2:30,ba1:-40,ba2:40}),
   airupper:P({lean:12,head:-10,ba1:116,ba2:0,fa1:20,fa2:120,fl1:100,fl2:-108,bl1:-36,bl2:-24,dx:4}),
-  arrowA:P({lean:0,head:4,fl1:3,fl2:0,bl1:-3,bl2:0,fa1:28,fa2:142,ba1:-12,ba2:156,rot:-90}),
-  arrowB:P({lean:0,head:-4,fl1:-2,fl2:0,bl1:4,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-90}),
-  arrow_w:P({lean:18,head:-6,fl1:70,fl2:-110,bl1:30,bl2:-100,fa1:40,fa2:120,ba1:20,ba2:130,rot:-30}),
+  drillD1:P({lean:0,head:6,fl1:4,fl2:0,bl1:-4,bl2:0,fa1:28,fa2:142,ba1:-12,ba2:156,rot:-50}),
+  drillD2:P({lean:0,head:0,fl1:0,fl2:0,bl1:0,bl2:0,fa1:8,fa2:152,ba1:8,ba2:152,rot:-50}),
+  drillD3:P({lean:0,head:-6,fl1:-3,fl2:0,bl1:5,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-50}),
+  drillD4:P({lean:0,head:2,fl1:1,fl2:0,bl1:-1,bl2:0,fa1:58,fa2:122,ba1:48,ba2:128,rot:-50}),
+  drillV1:P({lean:0,head:6,fl1:4,fl2:0,bl1:-4,bl2:0,fa1:28,fa2:142,ba1:-12,ba2:156,rot:4}),
+  drillV2:P({lean:0,head:0,fl1:0,fl2:0,bl1:0,bl2:0,fa1:8,fa2:152,ba1:8,ba2:152,rot:0}),
+  drillV3:P({lean:0,head:-6,fl1:-3,fl2:0,bl1:5,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-4}),
+  drillV4:P({lean:0,head:2,fl1:1,fl2:0,bl1:-1,bl2:0,fa1:58,fa2:122,ba1:48,ba2:128,rot:0}),
+  arrow_w:P({lean:18,head:-6,fl1:70,fl2:-110,bl1:30,bl2:-100,fa1:40,fa2:120,ba1:20,ba2:130,rot:-20}),
+  drillv_w:P({lean:4,head:-8,fl1:80,fl2:-120,bl1:70,bl2:-115,fa1:150,fa2:30,ba1:140,ba2:40,rot:0}),
   airdkick:P({lean:14,fl1:38,fl2:2,bl1:-6,bl2:-110,fa1:30,fa2:70,ba1:-30,ba2:60}),
   palm_w:P({lean:-8,fa1:35,fa2:70,ba1:25,ba2:80,dx:-3}),
   palm:P({lean:20,fa1:90,fa2:-4,ba1:86,ba2:6,fl1:46,fl2:-10,bl1:-38,bl2:0,dx:5}),
@@ -814,8 +821,8 @@ const CHARS=[
    S2:{s:16,a:6,r:12,dmg:75,hs:20,bs:12,hb:B([0,-44,26,34]),lvl:'high',kb:2,hop:[4.6,2.6],pose:'airheavy',landRec:6},
    S3:{s:3,a:12,r:22,dmg:90,hs:26,bs:16,hb:B([-2,-88,34,86],1),launch:6.5,kd:true,inv:[0,6],vy:5.4,vx:0.9,pose:'airkick',landRec:12},
    S4:{s:5,a:16,r:16,dmg:70,hs:20,bs:14,hb:B([6,-14,36,14]),lvl:'low',kd:true,vx:5,pose:'sweep',crouch:true},
-   AS:{s:6,a:34,r:6,dmg:95,hs:20,bs:14,hb:B([0,-48,42,52],1),lvl:'high',kb:2,hover:6,dive:6,diveV:[3.8,5.2],pose:'airheavy',ender:true,air:true,landRec:8},
-   AS2:{s:4,a:20,r:8,dmg:90,hits:4,multi:5,hs:14,bs:10,hb:B([-18,-60,54,40],1),kb:0.8,hover:24,vx:1.4,pose:'arrow',drill:true,ender:true,air:true},
+   AS:{s:6,a:40,r:6,dmg:95,hs:20,bs:14,hb:B([-14,-40,28,48],1),lvl:'high',kb:2,hover:7,dive:7,diveV:[0,6.6],pose:'drillv',drill:true,ender:true,air:true,landRec:8,landQuake:true},
+   AS2:{s:5,a:38,r:8,dmg:90,hits:3,multi:4,hs:14,bs:10,hb:B([0,-44,42,46],1),kb:1.2,hover:5,dive:5,diveV:[4.2,4.4],pose:'arrow',drill:true,ender:true,air:true,landRec:10,landQuake:true},
    SU:{s:6,a:42,r:22,dmg:430,multi:5,hits:8,hs:16,bs:8,hb:B([0,-62,32,44]),kb:0.8,vx:3,pose:'rush',finPose:'upper',lastKd:true}})},
  {id:'sol',name:'SOL',arch:'ZONER',archCol:'#c86bff',hp:950,walk:1.1,dash:3.6,jumpV:6.0,jumpX:1.8,scale:1.2,reach:1.45,armK:1.32,legK:1.08,torsoK:1.05,sw:10,hw:9,
   col:{skin:'#c98a5e',top:'#f08a24',pants:'#f08a24',belt:'#8a2a1a',hair:'#c98a5e',band:'#5a2a1a',glove:'#c98a5e',shoe:'#c98a5e',accent:'#c86bff'},
@@ -1339,7 +1346,7 @@ class Fighter{
       if(/^S[1-4]$/.test(b)&&m.key!=='AS'&&m.key!=='AS2'){nm=this.pick(b)}
       else if(m.key==='jL'||m.key==='jU'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='D')nm=this.moves.jD||this.moves.jH;else if(b==='U')nm=this.moves.jU||this.moves.jH;else if(b==='H')nm=this.moves.jH}
       if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
-    if(m.drill&&t>m.s&&t<=m.s+m.a){if(t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:7});if(!G.resim&&t%3===0){const f=addFx('vring',this.x+this.facing*26*this.S,this.y-46*this.S,1,null,this.col.accent,this.facing)}}
+    if(m.drill&&t>m.s&&t<=m.s+m.a){if(t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:7});if(!G.resim){const sp=Math.hypot(this.vx,this.vy)||1,ux=(this.vx||this.facing*0.001)/sp,uy=this.vy/sp,tx=this.x+ux*34*this.S,ty=this.y-40*this.S+uy*34*this.S;if(t%3===0){const f=addFx('vring',tx,ty,1,null,this.col.accent,this.facing);if(f){f.ux=ux;f.uy=uy}}if(t%2===0)addMote(this.x-ux*10*this.S+rnd(-6,6),this.y-40*this.S-uy*10*this.S+rnd(-6,6),-ux*rnd(0.6,1.4),-uy*rnd(0.6,1.4),Math.random()<0.4?'#ffffff':this.col.accent,1.2,16)}}
     if(m.super&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
     if(m.projInv&&t<=m.s+m.a&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(m.tele&&m.teleFwd&&t<=m.s&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
@@ -1401,7 +1408,7 @@ class Fighter{
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
-        if(pn==='arrow')pn=t<=m.s?'arrow':(Math.floor(t/3)%2?'arrowA':'arrowB');
+        if(pn==='arrow'||pn==='drillv'){if(t>m.s)pn=(pn==='arrow'?'drillD':'drillV')+(1+Math.floor(t/2)%4)}
         if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor((this.rushT+1)/(m.rush.every||3))%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.ch.punchOnly&&PUNCH_SUB[pn])pn=PUNCH_SUB[pn];
         if(this.grabbed)pn='slam';this.pn=pn;
@@ -1659,7 +1666,7 @@ function drawFx(g,ox){
       case'wisp':{const a=1-k,rx=x+Math.sin(f.t*0.25+f.seed)*3,ry=y-f.t*0.7,r=2.4*(1-k*0.7);g.globalAlpha=a*0.45;g.fillStyle=f.col||'#9dffcf';g.beginPath();g.arc(rx,ry,r*2.2,0,7);g.fill();g.globalAlpha=a;g.fillStyle='#ffffff';g.fillRect(Math.round(rx)-1,Math.round(ry)-1,2,2);g.globalAlpha=1;break}
       case'ripple':{const rx=5+f.t*1.6;g.strokeStyle=f.col||'#9dffcf';g.globalAlpha=(1-k)*0.7;g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,rx,rx*0.18,0,0,7);g.stroke();g.globalAlpha=1;break}
       case'spray':{const vx=(f.dir||1)*(0.8+Math.sin(f.seed)*0.6),vy=-1.8-Math.cos(f.seed)*0.8,px=x+vx*f.t,py=y+vy*f.t+0.16*f.t*f.t;if(py<FLOOR){g.fillStyle=k<0.4?'#ffffff':(f.col||'#9dffcf');g.fillRect(Math.round(px),Math.round(py),2,1)}break}
-      case'vring':{const a=1-k,ry=(9+f.t*0.9)*(f.s||1),rx=Math.max(1.5,ry*0.32);g.globalAlpha=a*0.9;g.strokeStyle=f.col||'#fff';g.lineWidth=2;g.beginPath();g.ellipse(x-(f.dir||1)*f.t*0.6,y,rx,ry,0,0,7);g.stroke();g.strokeStyle='#ffffff';g.lineWidth=1;g.globalAlpha=a*0.6;g.beginPath();g.ellipse(x-(f.dir||1)*f.t*0.6,y,rx,ry,0,(f.t*0.6)%6.28,(f.t*0.6)%6.28+2.2);g.stroke();g.globalAlpha=1;break}
+      case'vring':{const a=1-k,ry=(9+f.t*0.9)*(f.s||1),rx=Math.max(1.5,ry*0.32),ux=f.ux??(f.dir||1),uy=f.uy||0,cx2=x-ux*f.t*0.7,cy2=y-uy*f.t*0.7,an=Math.atan2(uy,ux);g.globalAlpha=a*0.9;g.strokeStyle=f.col||'#fff';g.lineWidth=2;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,0,7);g.stroke();g.strokeStyle='#ffffff';g.lineWidth=1;g.globalAlpha=a*0.7;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,(f.t*0.7)%6.28,(f.t*0.7)%6.28+2.2);g.stroke();g.globalAlpha=1;break}
       case'mote':{const a=1-k,px=x+(f.vx||0)*f.t,py=y+(f.vy||0)*f.t,r=Math.max(0.5,(f.s||1)*(1.5-k));g.globalAlpha=a*0.3;g.fillStyle=f.col||'#fff';g.fillRect(px-r*2,py-r*2,r*4,r*4);g.globalAlpha=a;g.fillRect(px-r,py-r,r*2,r*2);g.globalAlpha=1;break}
       case'ember':{g.fillStyle=k<0.5?'#ffe070':'#ff6a20';g.fillRect(x+Math.sin(f.t)*2,y-f.t*0.6,2,2);break}
       case'text':{const yy=y-f.t*0.5;g.globalAlpha=k>0.7?(1-k)/0.3:1;txt(g,f.str,x,yy,8,f.col,'center');g.globalAlpha=1;break}
