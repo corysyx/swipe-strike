@@ -1361,8 +1361,8 @@ class Fighter{
       if(/^S[1-4]$/.test(b)&&m.key!=='AS'&&m.key!=='AS2'){nm=this.pick(b)}
       else if(m.key==='jL'||m.key==='jU'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='D')nm=this.moves.jD||this.moves.jH;else if(b==='U')nm=this.moves.jU||this.moves.jH;else if(b==='H')nm=this.moves.jH}
       if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
-    if(m.drill&&t>m.s&&t<=m.s+m.a){if(t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:7});if(!G.resim){const sp=Math.hypot(this.vx,this.vy)||1,ux=(this.vx||this.facing*0.001)/sp,uy=this.vy/sp,tx=this.x+ux*34*this.S,ty=this.y-40*this.S+uy*34*this.S;if(t%3===0){const f=addFx('vring',tx,ty,1,null,this.col.accent,this.facing);if(f){f.ux=ux;f.uy=uy}}if(t%2===0)addMote(this.x-ux*10*this.S+rnd(-6,6),this.y-40*this.S-uy*10*this.S+rnd(-6,6),-ux*rnd(0.6,1.4),-uy*rnd(0.6,1.4),Math.random()<0.4?'#ffffff':this.col.accent,1.2,16)}}
-    if(m.super&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
+    if(m.drill&&t>m.s&&t<=m.s+m.a){if(!G.resim&&t>m.s+2)drillFx(this,m,t)}
+    if(m.super&&!m.drill&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
     if(m.projInv&&t<=m.s+m.a&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(m.tele&&m.teleFwd&&t<=m.s&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(this.canCancel&&this.buf&&t>a0&&!this.air){
@@ -1646,11 +1646,37 @@ function aiExec(ai,inp,dir,dist,me){
 /* ============================ FX ============================ */
 function addFx(type,x,y,s=1,str,col,dir){
   if(G.resim)return;
-  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
+  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
   if(type==='quake'){f.parts=Array.from({length:6+s*6},()=>({x:rnd(-14,14),vx:rnd(-2.2,2.2),vy:rnd(-4.5,-1.5)*s*0.8,c:pick(['#6a4a3a','#8a6a50','#c8b090','#4a3428'])}))}
   if(type==='spark'){f.parts=Array.from({length:6+s*4},()=>({a:rnd(0,Math.PI*2),v:rnd(1.5,3.5)*s,l:rnd(3,7)*s}))}
   if(type==='dust'||type==='smoke'||type==='csmoke'){f.parts=Array.from({length:type==='dust'?4:8},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='dust'?1:4),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
   G.fx.push(f);return f}
+// ---- drill / corkscrew effects (Riot) ----
+function drillAxisQ(Q){const tip={x:(Q.ftF.x+Q.ftB.x)/2,y:(Q.ftF.y+Q.ftB.y)/2},bk=Q.head;let ux=tip.x-bk.x,uy=tip.y-bk.y;const L=Math.hypot(ux,uy)||1;ux/=L;uy/=L;return{tip,bk,ux,uy,L}}
+function drillAxis(f){const d=drillAxisQ(rigPts(f.ch,f.dpose||f.pose,f.air||!!(f.move&&f.move.air))),fc=f.facing;
+  return{tip:{x:f.x+d.tip.x*fc,y:f.y+d.tip.y},bk:{x:f.x+d.bk.x*fc,y:f.y+d.bk.y},ux:d.ux*fc,uy:d.uy,L:d.L}}
+function drillFx(f,m,t){const d=drillAxis(f),S=f.S,su=!!m.super,ux=d.ux,uy=d.uy,nx=-uy,ny=ux,acc=f.col.accent,hot=f.col.hair;
+  const ax=d.tip.x+ux*5*S,ay=d.tip.y+uy*5*S;
+  // cone rings peel off the drill tip and trail back along the body
+  if(t%3===0){const r=addFx('vring',ax,ay,su?0.8:0.65,null,(t/3|0)%2?hot:acc);if(r){r.ux=ux;r.uy=uy}}
+  // sparks thrown sideways off the tip, spinning the way she spins
+  const sd=(t%2?1:-1);for(let i=0;i<(su?2:1);i++){const v=rnd(1.2,2.6);addMote(ax+rnd(-2,2),ay+rnd(-2,2),nx*sd*v-ux*rnd(0.2,1),ny*sd*v-uy*rnd(0.2,1),Math.random()<0.5?'#ffffff':acc,0.7,8+(Math.random()*5|0))}
+  // wind streaks off the back
+  if(t%2===0)addFx('whirl',d.bk.x-ux*4*S+nx*rnd(-8,8)*S,d.bk.y-uy*4*S+ny*rnd(-8,8)*S,1,null,'#ffffff',f.facing).ang=Math.atan2(-uy,-ux);
+  // grinding the floor during the low super
+  if(su&&!f.air&&t%3===0){addFx('dust',ax-ux*6*S,FLOOR);addMote(ax,FLOOR-1,-ux*rnd(1,2.5),-rnd(1,2.5),'#ffffff',0.8,10)}}
+function drawDrillHelix(g,f,d,sx,sy,fc,side){const S=f.S,su=f.move&&f.move.super,R0=(su?15:12)*S,turns=2.2,ph=-f.t*0.95,N=26;
+  const ux=d.ux,uy=d.uy,nx=-uy,ny=ux,cols=[f.col.accent,f.col.hair];
+  g.lineCap='round';
+  for(let k=0;k<2;k++){g.strokeStyle=cols[k];
+    for(let i=0;i<N;i++){const s0=i/N,s1=(i+1)/N,a0=s0*turns*6.283+ph+k*Math.PI,a1=s1*turns*6.283+ph+k*Math.PI;
+      const dep=Math.cos((a0+a1)/2);if(dep*side<0)continue;
+      const r0=R0*(1-0.8*s0),r1=R0*(1-0.8*s1),l0=-0.1+s0*1.25,l1=-0.1+s1*1.25;
+      const p0x=d.bk.x+ux*d.L*l0+nx*Math.sin(a0)*r0,p0y=d.bk.y+uy*d.L*l0+ny*Math.sin(a0)*r0,p1x=d.bk.x+ux*d.L*l1+nx*Math.sin(a1)*r1,p1y=d.bk.y+uy*d.L*l1+ny*Math.sin(a1)*r1;
+      g.globalAlpha=(side>0?0.75:0.4)*(0.35+0.65*s0);g.lineWidth=(side>0?2:1.4)*(1-0.5*s0)+0.4;
+      g.beginPath();g.moveTo(sx+p0x*fc,sy+p0y);g.lineTo(sx+p1x*fc,sy+p1y);g.stroke()}}
+  if(side>0){const tx=sx+(d.tip.x+d.ux*4*S)*fc,ty=sy+d.tip.y+d.uy*4*S,fl=G.tick%2;g.globalAlpha=0.9;g.fillStyle=fl?'#ffffff':f.col.accent;g.beginPath();g.arc(tx,ty,(su?3.2:2.4)*S+fl,0,7);g.fill()}
+  g.globalAlpha=1}
 function addMote(x,y,vx,vy,col,s=1,life=24){const f=addFx('mote',x,y,s,null,col);if(f){f.vx=vx;f.vy=vy;f.life=life}}
 function kiBurst(x,y,c,n,sp){for(let i=0;i<n;i++){const a=i/n*Math.PI*2+Math.random()*0.4,v=sp*(0.5+Math.random()*0.8);addMote(x,y,Math.cos(a)*v,Math.sin(a)*v,i%3?c:'#ffffff',1.2+Math.random()*0.8,18+(Math.random()*10|0))}}
 function updFx(){for(const f of G.fx)f.t++;G.fx=G.fx.filter(f=>f.t<f.life)}
@@ -1682,6 +1708,7 @@ function drawFx(g,ox){
       case'ripple':{const rx=5+f.t*1.6;g.strokeStyle=f.col||'#9dffcf';g.globalAlpha=(1-k)*0.7;g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,rx,rx*0.18,0,0,7);g.stroke();g.globalAlpha=1;break}
       case'spray':{const vx=(f.dir||1)*(0.8+Math.sin(f.seed)*0.6),vy=-1.8-Math.cos(f.seed)*0.8,px=x+vx*f.t,py=y+vy*f.t+0.16*f.t*f.t;if(py<FLOOR){g.fillStyle=k<0.4?'#ffffff':(f.col||'#9dffcf');g.fillRect(Math.round(px),Math.round(py),2,1)}break}
       case'vring':{const a=1-k,ry=(9+f.t*0.9)*(f.s||1),rx=Math.max(1.5,ry*0.32),ux=f.ux??(f.dir||1),uy=f.uy||0,cx2=x-ux*f.t*0.7,cy2=y-uy*f.t*0.7,an=Math.atan2(uy,ux);g.globalAlpha=a*0.9;g.strokeStyle=f.col||'#fff';g.lineWidth=2;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,0,7);g.stroke();g.strokeStyle='#ffffff';g.lineWidth=1;g.globalAlpha=a*0.7;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,(f.t*0.7)%6.28,(f.t*0.7)%6.28+2.2);g.stroke();g.globalAlpha=1;break}
+      case'whirl':{const a=1-k,an=f.ang||0,l0=f.t*2.2,l1=l0+7+f.t*1.2;g.globalAlpha=a*0.8;g.strokeStyle=f.col||'#fff';g.lineWidth=1.2;g.beginPath();g.moveTo(x+Math.cos(an)*l0,y+Math.sin(an)*l0);g.lineTo(x+Math.cos(an)*l1,y+Math.sin(an)*l1);g.stroke();g.globalAlpha=1;break}
       case'mote':{const a=1-k,px=x+(f.vx||0)*f.t,py=y+(f.vy||0)*f.t,r=Math.max(0.5,(f.s||1)*(1.5-k));g.globalAlpha=a*0.3;g.fillStyle=f.col||'#fff';g.fillRect(px-r*2,py-r*2,r*4,r*4);g.globalAlpha=a;g.fillRect(px-r,py-r,r*2,r*2);g.globalAlpha=1;break}
       case'ember':{g.fillStyle=k<0.5?'#ffe070':'#ff6a20';g.fillRect(x+Math.sin(f.t)*2,y-f.t*0.6,2,2);break}
       case'text':{const yy=y-f.t*0.5;g.globalAlpha=k>0.7?(1-k)/0.3:1;txt(g,f.str,x,yy,8,f.col,'center');g.globalAlpha=1;break}
@@ -2455,7 +2482,7 @@ function drawFighterWorld(g,f,camX,opt={}){
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
   const pose=f.dpose||f.pose,air=f.air||(f.state==='attack'&&f.move&&f.move.air);
-  for(const gh of f.ghosts){g.globalAlpha=gh.t/18;drawChar(g,f.ch,gh.pose,gh.x-camX,gh.y,gh.f,f,{pal:flatPal(f.col.accent),air:gh.y<FLOOR-0.1,ghost:true,noTail:true,flat:true})}g.globalAlpha=1;
+  for(const gh of f.ghosts){g.globalAlpha=gh.col?gh.t/16:gh.t/18;drawChar(g,f.ch,gh.pose,gh.x-camX,gh.y,gh.f,f,{pal:flatPal(gh.col||f.col.accent),air:gh.y<FLOOR-0.1,ghost:true,noTail:true,flat:true})}g.globalAlpha=1;
   const Q=rigPts(f.ch,pose,air);
   // smear frames: streak behind the striking limb
   const m=f.state==='attack'?f.move:null,limb=m&&!m.drill&&(m.hb||m.grab)?(SMEAR_LIMB[f.pn]!==undefined?SMEAR_LIMB[f.pn]:'haF'):null;
@@ -2469,10 +2496,12 @@ function drawFighterWorld(g,f,camX,opt={}){
   const aura=(f.state==='attack'&&f.move.super)||(G.superFlash&&G.superFlash.f===f);
   if(aura){const ap=flatPal(G.tick%4<2?f.col.accent:'#ffffff');g.globalAlpha=0.55;
     for(const [ax,ay] of [[-2,0],[2,0],[0,-2],[0,1.5]])drawChar(g,f.ch,pose,sx+ax,sy+ay,fc,f,{pal:ap,air,noTail:true,flat:true,ghost:true,Q,sq:f.sq});g.globalAlpha=1}
+  const dr=m&&m.drill&&f.t>m.s&&f.t<=m.s+m.a?drillAxisQ(Q):null;if(dr)drawDrillHelix(g,f,dr,sx,sy,fc,-1);
   let pal=null;if(f.flash>0){pal=flatPal(f.flashCol||'#fff');f.flash--}
   if(f.state==='attack'&&f.move.armor&&f.t<=f.move.s+f.move.a&&!f.armorUsed&&G.tick%6<3)pal=pal||flatPal('#ffb0a0');
   const inv=f.isInv()&&f.state!=='down'&&f.state!=='ko'&&G.tick%4<2;if(inv)g.globalAlpha=0.6;
   drawChar(g,f.ch,pose,sx,sy,fc,f,{pal:pal||f.pal,air,flat:!!pal,Q,sq:f.sq});g.globalAlpha=1;
+  if(dr)drawDrillHelix(g,f,dr,sx,sy,fc,1);
 }
 function renderWorld(g){
   const p1=G.p1,p2=G.p2;let shx=0,shy=0;if(G.shake>0){shx=rnd(-G.shake,G.shake);shy=rnd(-G.shake,G.shake)*0.6;if(!G.hitstop)G.shake*=0.85;if(G.shake<0.4)G.shake=0}
