@@ -761,6 +761,11 @@ Object.assign(POSES,{
   elbow_w:P({lean:4,fa1:60,fa2:150}),
   elbow:P({lean:32,fa1:96,fa2:150,ba1:-22,ba2:90,fl1:52,fl2:-20,bl1:-46,bl2:0,dx:4}),
   grab_w:P({lean:16,fa1:70,fa2:40,ba1:60,ba2:50}),
+  tbLift:P({lean:-4,head:-14,fa1:166,fa2:-28,ba1:158,ba2:-30,fl1:30,fl2:-42,bl1:-20,bl2:-34}),
+  tbAir:P({lean:-6,head:-14,fa1:166,fa2:-28,ba1:158,ba2:-30,fl1:72,fl2:-96,bl1:18,bl2:-92}),
+  tbSlam:P({lean:48,head:14,fa1:70,fa2:20,ba1:58,ba2:24,fl1:88,fl2:-128,bl1:-34,bl2:-96}),
+  tbFlex:P({lean:-6,head:-12,fa1:96,fa2:-118,ba1:88,ba2:-118,fl1:34,fl2:-50,bl1:-12,bl2:-40}),
+  tbHeld:P({rot:180,lean:-6,head:-20,fa1:150,fa2:20,ba1:128,ba2:24,fl1:16,fl2:-28,bl1:-12,bl2:-22}),
   grab:P({lean:24,fa1:88,fa2:18,ba1:82,ba2:24,fl1:40,fl2:-20,bl1:-30,bl2:-4,dx:4}),
   slam:P({lean:-28,head:-15,fa1:165,fa2:15,ba1:150,ba2:25,fl1:32,fl2:-30,bl1:-26,bl2:-10}),
   lariat:P({lean:4,fa1:95,fa2:0,ba1:-95,ba2:0,fl1:30,fl2:-25,bl1:-28,bl2:-10}),
@@ -861,7 +866,7 @@ const CHARS=[
   ai:{aa:'U',ender:'S2',grab:'S1'},
   moves:(B,S)=>({
    H:{armor:true},
-   S1:{s:5,a:3,r:30,grab:true,dmg:190,hb:B([0,-70,30,70],1),pose:'grab'},
+   S1:{s:5,a:3,r:30,grab:true,bomb:true,dmg:190,hb:B([0,-70,30,70],1),pose:'grab'},
    S3:{s:10,a:16,r:18,dmg:100,hs:22,bs:16,hb:B([6,-62,26,50]),kb:7,kd:true,vx:5.2,armor:true,pose:'elbow'},
    S4:{s:16,a:4,r:22,dmg:95,hs:24,bs:16,hb:B([-56,-12,112,12],1),lvl:'low',kd:true,launch:3.5,kb:1,pose:'pound',quake:true},
    AS:{s:8,a:44,r:8,dmg:120,hs:24,bs:16,hb:B([-14,-46,48,46],1),kb:2,hover:7,dive:7,diveV:[2.4,7],pose:'press',ender:true,air:true,landRec:12,landQuake:true},
@@ -1522,6 +1527,9 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(2,px);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   if(m.grab){
     if(B.air||B.state==='hit'||B.state==='block'||B.state==='getup')return'none';
+    if(m.bomb&&G.mode!=='bonus'){/* flying powerbomb: scripted lift, leap and slam (see stepThrow) */
+      A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
+      G.thr={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x};G.zoomKick=0.12;SFX.hit(1,px);addFx('spark',px,py,1);return'hit'}
     const dmg=Math.round(m.dmg*dmgScale(B,!!m.super,B.combo));B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;A.grabbed=true;
     Object.assign(B,{state:'hit',juggle:true,t:0,vy:-6.6,vx:-A.facing*2.7,y:FLOOR-24,move:null});B.x=A.x+A.facing*4;
     A.meter=Math.min(100,A.meter+(m.super?0:dmg*0.1));G.hitstop=14;G.shake=8;B.flash=4;addFx('spark',px,py-10,2);addFx('ring',A.x,A.y-50);
@@ -2365,7 +2373,7 @@ function startTagMatch(keep){const s=G.sel;if(!keep||!s.p2||!s.p2b){const pool=C
 function startMatch(){if(G.selMode==='tag'&&G.sel&&G.sel.p1b)return startTagMatch(true);G.tag=null;G.resUsed=false;const a=CH[G.sel.p1],b=(DBG.opp==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=(c2+1)%4;G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
   const lv=G.training?1:(b.boss?2:clamp(G.diff+(G.ladderIdx>=4?1:0),0,2));G.ai=makeAI(lv);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
 function startRound(){if(G.tag)tagRoundReset();G.p1.reset(STAGE_W/2-70);G.p2.reset(STAGE_W/2+70);if(G.bonusReward&&G.round===1&&!G.net){G.p1.meter=100;G.bonusReward=false}G.projs=[];G.fx=[];G.timer=99;G.timerF=0;if(dbgLive()&&G.mode!=='bonus')[G.p1,G.p2].forEach((f,i)=>{const L=DBG.life[i];if(L==='low')f.hp=Math.round(f.ch.hp*0.1);else if(L==='one')f.hp=1;f.redHp=f.hp});G.phase='intro';G.phaseT=0;
-  G.camX=(STAGE_W-W)/2;G.superFlash=null;G.cine=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.perfect=false;G.koWinner=null;if(G.training){G.p1.meter=100;G.phase='fight';banner('TRAINING',60,16)}}
+  G.camX=(STAGE_W-W)/2;G.superFlash=null;G.cine=null;G.thr=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.perfect=false;G.koWinner=null;if(G.training){G.p1.meter=100;G.phase='fight';banner('TRAINING',60,16)}}
 function endRound(winner){
   if(winner)G.wins[winner===G.p1?0:1]++;
   G.phase='roundover';G.phaseT=0;
@@ -2383,10 +2391,26 @@ function stepCine(){const c=G.cine,F=[G.p1,G.p2],A=F[c.a],B=F[c.b];c.t++;const N
     addFx('sigil',A.x,A.y-48*A.S);
     if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,c.dir)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8;SFX.land(8,B.x);addFx('quake',B.x,FLOOR,2)}}
   if(!G.resim)updFx()}
+function stepThrow(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
+  const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
+  if(t<=6){const u=t/6;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=FLOOR}
+  else if(t<=16){const u=(t-6)/10;pz(A,u<0.4?'grab':'tbLift');pz(B,'tbHeld',{rot:180*u});B.x=cl(c.x0+d*(22-12*u)*S/1.3);B.y=FLOOR-24*S*u}
+  else if(t<=40){const u=(t-16)/24;if(t===17&&!G.resim){SFX.jump();addFx('dust',A.x,FLOOR);addFx('dust',A.x-d*10,FLOOR)}
+    A.x=cl(c.x0+d*72*u);A.y=FLOOR-H(u,38);c.lx=A.x;pz(A,u<0.12||u>0.88?'tbLift':'tbAir');pz(B,'tbHeld');B.x=cl(A.x+d*15*S/1.3);B.y=A.y-24*S}
+  else if(t<=52){A.y=FLOOR;A.x=c.lx;pz(A,'tbSlam');pz(B,'down');B.x=cl(A.x+d*20*S/1.3);B.y=FLOOR;
+    if(t===41){const dmg=Math.round(c.dmg*dmgScale(B,false,B.combo));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=40;B.combo++;A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);comboShow(A,B);
+      G.shake=9;G.impact=4;G.zoomKick=0.25;G.excite=1;B.flash=4;B.flashCol='#ffffff';
+      if(!G.resim){SFX.hit(3,B.x);SFX.land(10,B.x);addFx('quake',B.x,FLOOR,2);addFx('spark',B.x,FLOOR-14,2);addFx('ring',B.x,FLOOR-10);for(let i=0;i<4;i++)addFx('dust',B.x+rnd(-24,24),FLOOR);addFx('text',A.x,A.y-100,0,'TITAN SUPLEX!','#ffd23f');if(!G.demo)vib(50)}}}
+  else if(t<=70){const u=(t-52)/18;A.x=cl(c.lx-d*46*u);A.y=FLOOR-H(u,34);pz(A,u>0.85?'crouch':'tbFlex');pz(B,'down');const v=clamp((t-52)/10,0,1);B.y=FLOOR-H(v,10)}
+  if(t>=70){G.thr=null;A.y=FLOOR;A.state='land';A.t=0;A.landT=6;A.grabbed=false;B.y=FLOOR;B.combo=0;B.comboDmg=0;
+    if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,d)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8}}
+  const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
+  if(!G.resim)updFx()}
 function stepFight(netIn){
   let p1=G.p1,p2=G.p2;
   if(G.superFlash){if(--G.superFlash.t<=0)G.superFlash=null;updFx();return}
   if(G.cine){stepCine();return}
+  if(G.thr){stepThrow();return}
   if(G.hitstop>0){G.hitstop--;return}
   if(G.slow>0){G.slow--;if(G.slow%3)return}
   G.excite=Math.max(0,G.excite-0.006);
@@ -2931,7 +2955,7 @@ function placeProxy(X,t){X.x=t.x;X.y=t.y;X.propBox={x:t.x-t.w/2,y:t.y-t.h,w:t.w,
 function resetProxy(X){Object.assign(X,{hp:99999,redHp:99999,state:'idle',t:0,vx:0,vy:0,juggle:false,juggleInv:false,juggleN:0,stun:0,combo:0,launchN:0,lHits:0,capN:0,comboDmg:0,inv:0,move:null,ko:false})}
 function startBonus(type,after){G.tag=null;
   const P=new Fighter(CH[G.sel.p1],0,G.sel.c1||0),X=new Fighter(CH[G.sel.p1],1,0);X.hidden=true;X.inp=EMPTY();
-  G.p1=P;G.p2=X;G.me=P;G.projs=[];G.fx=[];G.net=null;G.demo=false;G.result=null;G.paused=false;G.superFlash=null;G.cine=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.banner=null;
+  G.p1=P;G.p2=X;G.me=P;G.projs=[];G.fx=[];G.net=null;G.demo=false;G.result=null;G.paused=false;G.superFlash=null;G.cine=null;G.thr=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.banner=null;
   P.reset(STAGE_W/2-70);resetProxy(X);P.meter=0;
   G.stage=type==='car'?1:12;G.camX=(STAGE_W-W)/2;
   const B=G.bonus={free:G.selMode==='bonus',type,t:0,phase:'intro',timer:type==='car'?40:30,timerF:0,targets:[],spawned:0,broken:0,total:type==='car'?1:16,after,spawnT:0,res:null};
@@ -3087,11 +3111,11 @@ function saveState(frame){const g={};for(const k of GK)g[k]=G[k];
     tg:G.tag?{act:G.tag.act.slice(),cd:G.tag.cd.slice(),ho:G.tag.ho.slice(),k:G.tag.k,tf:G.tag.teams.map(t=>t.map(saveF))}:null,
     projs:G.projs.map(p=>Object.assign({},p,{owner:ownCode(p.owner)})),
     sf:G.superFlash?{s:G.superFlash.f.side,t:G.superFlash.t,name:G.superFlash.name}:null,
-    cine:G.cine?Object.assign({},G.cine):null,koW:G.koWinner?G.koWinner.side:-1,tuW:G.tuWin===undefined?-2:(G.tuWin?G.tuWin.side:-1),res:G.result?Object.assign({},G.result):null}}
+    cine:G.cine?Object.assign({},G.cine):null,thr:G.thr?Object.assign({},G.thr):null,koW:G.koWinner?G.koWinner.side:-1,tuW:G.tuWin===undefined?-2:(G.tuWin?G.tuWin.side:-1),res:G.result?Object.assign({},G.result):null}}
 function loadState(st){if(st.tg&&G.tag){const T=G.tag;T.act=st.tg.act.slice();T.cd=st.tg.cd.slice();T.ho=st.tg.ho.slice();T.k=st.tg.k;st.tg.tf.forEach((t,s)=>t.forEach((o,i)=>loadF(T.teams[s][i],o)));tagSetActive()}
   const F=[G.p1,G.p2];for(const k of GK)G[k]=st.g[k];loadF(G.p1,st.f[0]);loadF(G.p2,st.f[1]);G.wins=st.wins.slice();PID=st.PID;
   G.projs=st.projs.map(p=>Object.assign({},p,{owner:ownOf(p.owner,F)}));
-  G.superFlash=st.sf?{f:F[st.sf.s],t:st.sf.t,name:st.sf.name}:null;G.cine=st.cine?Object.assign({},st.cine):null;G.koWinner=st.koW>=0?F[st.koW]:null;
+  G.superFlash=st.sf?{f:F[st.sf.s],t:st.sf.t,name:st.sf.name}:null;G.cine=st.cine?Object.assign({},st.cine):null;G.thr=st.thr?Object.assign({},st.thr):null;G.koWinner=st.koW>=0?F[st.koW]:null;
   G.tuWin=st.tuW===-2?undefined:(st.tuW>=0?F[st.tuW]:null);G.result=st.res?Object.assign({},st.res):null}
 function hashSt(st){let s='';for(const f of st.f)s+=[f.x,f.y,f.vx,f.vy,f.hp,f.meter].map(v=>Math.round(v*100)).join(',')+f.state+f.t+(f.move||'')+'|';
   for(const p of st.projs)s+=Math.round(p.x*100)+','+Math.round(p.y*100)+','+p.hitsLeft+';';s+=st.g.phase+st.g.phaseT+st.g.timer+st.g.hitstop+st.wins+(st.tg?'T'+st.tg.act+st.tg.cd+st.tg.ho+st.tg.tf.map(t=>t.map(f=>f.hp).join('/')).join('/'):'');
