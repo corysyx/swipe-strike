@@ -729,6 +729,8 @@ Object.assign(POSES,{
   kick:P({lean:-22,head:4,fl1:108,fl2:-4,bl1:-8,bl2:-4,fa1:30,fa2:110,ba1:-25,ba2:90}),
   upper_w:P({lean:22,head:-5,fa1:15,fa2:70,fl1:55,fl2:-90,bl1:0,bl2:-70}),
   upper:P({lean:-8,head:-10,fa1:174,fa2:4,ba1:30,ba2:95,fl1:22,fl2:-12,bl1:-18,bl2:-45}),
+  slidekick:P({lean:-45,head:-8,fl1:88,fl2:0,bl1:25,bl2:-115,fa1:120,fa2:70,ba1:20,ba2:-10}),
+  slidekick_w:P({lean:20,head:6,fl1:70,fl2:-110,bl1:-10,bl2:-100,fa1:60,fa2:60,ba1:-20,ba2:40}),
   sweep:P({lean:38,head:12,fl1:96,fl2:0,bl1:20,bl2:-140,fa1:28,fa2:45,ba1:-40,ba2:30}),
   cjab:P({lean:26,head:-6,fl1:85,fl2:-135,bl1:12,bl2:-125,fa1:96,fa2:0,ba1:40,ba2:100}),
   airkick:P({lean:6,fl1:78,fl2:0,bl1:20,bl2:-105,fa1:60,fa2:85,ba1:40}),
@@ -884,7 +886,7 @@ const CHARS=[
   moves:(B,S)=>({
    S2:{s:9,a:0,r:10,tele:8,vanish:[3,8],inv:[0,10],streak:true,pose:'crouch'},
    S3:{s:4,a:15,r:20,dmg:110,hits:2,multi:6,hs:24,bs:14,hb:B([-4,-100,46,98],1),kb:0.8,launch:7,lastKd:true,kdRepeat:true,inv:[0,8],vy:6.4,vx:1.8,pose:'upkick',flipSpin:true,landRec:6,fastFall:FF_MUL*1.25,juggleCap:2},
-   S4:{s:6,a:14,r:16,dmg:65,hs:20,bs:14,hb:B([4,-14,34,14]),lvl:'low',kd:true,vx:6,inv:[0,10],pose:'sweep',crouch:true},
+   S4:{s:6,a:14,r:16,dmg:65,hs:20,bs:14,hb:B([4,-14,34,14]),lvl:'low',kd:true,vx:6,inv:[0,10],pose:'slidekick',crouch:true,slideDust:true},
    AS:{s:4,a:5,r:20,grab:true,airGrab:true,izuna:true,dmg:170,hb:B([-4,-74,40,78],1),hover:9,pose:'grab',air:true},
    AS2:{s:7,a:1,r:14,hover:16,pose:'jab',air:true,projs:[{type:'kunai',vx:3.7,vy:4.1,dmg:40,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true},{type:'kunai',vx:3.0,vy:4.6,dmg:40,hs:14,bs:10,w:14,h:8,kb:1.5,life:90,ender:true}]},
    S1:{s:8,a:1,r:17,pose:'kthrow',crouch:true,proj:{type:'kunai',big:true,vx:6,dmg:48,hs:14,bs:10,w:18,h:8,y:-16*S,lvl:'low',kb:2,life:120}},
@@ -1355,6 +1357,7 @@ class Fighter{
     if(m.projs&&t===a0)for(const pr of m.projs)spawnProj(this,pr);
     if(m.beam&&t===a0)spawnBeam(this,m);
     if(m.vanish&&t===m.vanish[0]&&!G.resim){for(let i=0;i<3;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S);this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:16});SFX.whoosh(1)}
+    if(m.slideDust&&t>m.s&&t<=m.s+m.a+4&&t%2===0&&!G.resim){addFx('dust',this.x-this.facing*6,FLOOR);if(t%4===0)addMote(this.x+this.facing*20,FLOOR-2,-this.facing*rnd(0.5,1.5),-rnd(0.3,1),'#ffffff',0.8,10)}
     if(m.kunaiEnd&&t>m.s+m.a&&!this.grabbed){const K=m.kunaiEnd,j=t-(m.s+m.a)-1-(K.delay||0);if(j===-(K.delay||0)){this.vx=-this.facing*2.4}if(j>=0&&j%K.every===0&&j/K.every<K.n){const i=j/K.every;spawnProj(this,Object.assign({},K.proj,{vy:[-0.5,0.3,-0.2,0.5,-0.35,0.2,0][i]||0,lastKd:i===K.n-1}));if(!G.resim)SFX.whoosh(0)}}
     if(m.tele&&t===m.tele){const x0=this.x;this.teleport(op,m.teleBack,m.teleFwd,m.teleFront);if(m.streak&&!G.resim){G.fx.push({type:'streak',x:x0,x2:this.x,y:this.y-36*this.S,t:0,life:14,col:this.col.accent,s:1});for(let i=0;i<2;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S)}}
     if(m.hover&&t<=m.hover&&this.air&&!this.grabbed){this.vy=-GRAV;this.vx*=0.85}
@@ -2657,7 +2660,7 @@ function uiTap(x,y){for(let i=BTN.length-1;i>=0;i--){const b=BTN[i];if(x>=b.x&&x
 const go=m=>{G.mode=m;SFX.sel()};
 
 /* ============================ RENDER ============================ */
-const SMEAR_LIMB={flykick:'ftF',bikeA:'ftF',bikeB:'ftB',upkick:'ftF',roll:null,dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
+const SMEAR_LIMB={flykick:'ftF',bikeA:'ftF',bikeB:'ftB',upkick:'ftF',roll:null,dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',slidekick:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
 function drawFighterWorld(g,f,camX,opt={}){
   if(f.state==='attack'&&f.move&&f.move.vanish&&f.t>=f.move.vanish[0]&&f.t<f.move.vanish[1])return;
   if(f.ch.aura&&!opt.flat){const x=f.x-camX,y=f.y-48*f.S,a=0.10+0.05*Math.sin(G.tick*0.08);g.fillStyle=`rgba(255,220,120,${a})`;g.beginPath();g.ellipse(x,y,30*f.S,56*f.S,0,0,7);g.fill()}
