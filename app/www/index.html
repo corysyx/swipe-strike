@@ -896,14 +896,14 @@ const CHARS=[
   col:{skin:'#e2b08a',top:'#2f6b4a',pants:'#203a2c',belt:'#d9c48a',hair:'#e8e8ee',band:'#e8e8ee',glove:'#e2b08a',shoe:'#3a2a1a',accent:'#9dffcf'},
   style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true},stats:[4,2,3],hPose:'palm',
   desc:'Counter. Mirror Stance punishes any attack. His palm swats fireballs away.',
-  specials:{S1:'MIRROR STANCE',S2:'TYPHOON PALM',S3:'RIVER THROW',S4:'SPIRIT RIPPLE',AS:'FALLING PALMS',AS2:'CRANE KICK',SU:'ENDLESS TIDE'},quote:'Your own force defeated you.',
+  specials:{S1:'MIRROR STANCE',S2:'TYPHOON PALM',S3:'RIVER THROW',S4:'SPIRIT RIPPLE',AS:'FALLING KICKS',AS2:'CRANE KICK',SU:'ENDLESS TIDE'},quote:'Your own force defeated you.',
   ai:{aa:'U',ender:'S2',counter:'S1'},rushPoses:['palm','jab'],
   moves:(B,S)=>({
    S1:{s:3,a:26,r:16,counter:true,pose:'stance'},
    CTR:{s:1,a:5,r:20,dmg:140,hs:30,hb:B([0,-70,46,64],1),kb:6,kd:true,launch:5,pose:'palm',inv:[0,10]},
    S2:{s:12,a:4,r:20,dmg:90,hs:24,bs:16,hb:B([4,-62,40,30]),kb:8,kd:true,launch:3,reflect:true,pose:'palm'},
-   S3:{s:4,a:3,r:28,grab:true,dmg:150,hb:B([0,-70,28,70],1),pose:'grab'},
-   AS:{s:6,a:18,r:10,dmg:100,hits:4,multi:4,hs:14,bs:8,hb:B([2,-64,40,44]),kb:0.6,hover:24,pose:'rush',ender:true,air:true},
+   S3:{s:4,a:3,r:28,grab:true,river:true,dmg:150,hb:B([0,-70,28,70],1),pose:'grab'},
+   AS:{s:6,a:34,r:10,dmg:100,hits:4,multi:4,hs:14,bs:8,hb:B([-2,-44,46,52],1),kb:0.4,latch:[1.4,0.6],hover:6,dive:6,diveV:[3.6,4.0],pose:'fallkicks',pushLast:5,ender:true,air:true,landRec:8},
    AS2:{s:8,a:10,r:10,dmg:105,hs:24,bs:16,hb:B([4,-56,40,36]),kb:4,hover:18,vx:3.2,pose:'kick',ender:true,air:true},
    S4:{s:14,a:1,r:22,pose:'palm',proj:{type:'wave',ground:true,vx:2.2,dmg:60,hs:20,bs:12,w:22,h:12,y:-6,lvl:'low',kb:2,life:160}},
    SU:{s:6,a:22,r:26,dmg:24,hs:30,bs:16,hb:B([0,-70,34,70],1),kb:0.2,vx:7,inv:[0,10],pose:'tide',rush:{hits:12,every:3,dmg:290,fin:120}}})},
@@ -1430,6 +1430,7 @@ class Fighter{
       case 'taunt':case 'cine':return POSES.reaper;
       case 'attack':{const m=this.move;let pn=m.pose;
         if(pn==='rush'){const rp=this.ch.rushPoses||['jab','heavy'];if(t<=m.s)pn='palm';else{const mu=m.multi||4,k=Math.floor((t-m.s-1+2)/mu);pn=(m.finPose&&k>=(m.hits||1)-1)?m.finPose:rp[k%2]}}
+        if(pn==='fallkicks'){if(t<=m.s)pn='airheavy';else{const b=Object.assign({},POSES[Math.floor((t-m.s)/3)%2?'airkick':'flykick']);b.rot=32;return b}}
         if(m.kunaiEnd&&t>m.s+m.a)pn=t-m.s-m.a-1<(m.kunaiEnd.delay||0)?'crouch':(Math.floor((t-m.s-m.a-1)/3)%2)?'palm':'jab';
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
         if(m.key==='L')pn=GROUND_SEQ[((this.gL||1)-1)%GROUND_SEQ.length];
@@ -1539,6 +1540,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(2,px);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   if(m.grab){
     if(B.air||B.state==='hit'||B.state==='block'||B.state==='getup')return'none';
+    if(m.river&&G.mode!=='bonus'){A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
+      G.thr={kind:'river',t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x};G.zoomKick=0.1;SFX.hit(1,px);if(!G.resim)kiBurst(px,py,'#7fd8ff',12,1.6);return'hit'}
     if(m.buster&&G.mode!=='bonus'){/* super: chain of suplexes and spinning piledrivers (see stepBuster) */
       A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
       G.thr={kind:'buster',t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x,n:0};G.zoomKick=0.2;G.impact=3;G.excite=1;SFX.hit(2,px);addFx('spark',px,py,2);return'hit'}
@@ -2494,7 +2497,24 @@ function stepIzuna(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c
   if(!G.resim)for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
   const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   if(!G.resim)updFx()}
-function stepThrow(){if(G.thr.kind==='izuna')return stepIzuna();if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
+function stepRiver(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),k=S/1.2,WC='#7fd8ff';
+  const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};A.x=c.x0;A.y=FLOOR;
+  if(t<=6){const u=t/6;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*24*k-c.bx0)*u);B.y=FLOOR}
+  else if(t<=30){// the opponent is swept up and over in a flowing arc, like water round a stone
+    const u=(t-6)/24,e=u<0.5?2*u*u:1-2*(1-u)*(1-u),th=Math.PI*e,R=30*k;A.facing=e<0.55?d:-d;pz(A,e<0.25?'grab':e<0.55?'tbLift':'palm');
+    B.x=cl(c.x0+d*Math.cos(th)*R*1.15);B.y=FLOOR-Math.sin(th)*R*1.9;pz(B,'airhit',{rot:-300*e});B.facing=-d;
+    if(!G.resim&&t%2===0){B.ghosts.push({x:B.x,y:B.y,pose:Object.assign({},B.dpose),f:B.facing,t:8,col:WC});addMote(B.x+rnd(-6,6),B.y-rnd(10,40),rnd(-0.8,0.8),rnd(-0.6,0.4),Math.random()<0.5?'#ffffff':WC,0.9,14)}}
+  else if(t<=46){A.facing=-d;pz(A,t<36?'palm':'stance');const u=(t-30)/16;B.x=cl(c.x0-d*(30*k*1.15+26*(1-(1-u)*(1-u))));B.y=FLOOR;pz(B,'down');
+    if(!G.resim&&t%3===0)addFx('dust',B.x+d*8,FLOOR);
+    if(t===31){const dmg=Math.round(c.dmg*dmgScale(B,false,B.combo));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=40;B.combo++;A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);comboShow(A,B);
+      G.shake=7;G.zoomKick=0.18;G.excite=1;B.flash=3;B.flashCol='#ffffff';
+      if(!G.resim){SFX.hit(2,B.x);SFX.land(8,B.x);addFx('quake',B.x,FLOOR,1);addFx('ring',B.x,FLOOR-6);kiBurst(B.x,FLOOR-8,WC,20,2.4);for(let i=0;i<8;i++){const an=-Math.PI*(0.15+0.7*i/7);addMote(B.x,FLOOR-4,Math.cos(an)*rnd(1,2.6),Math.sin(an)*rnd(1.5,3.2),i%2?'#ffffff':WC,1.1,22)}addFx('text',A.x,FLOOR-110,0,'RIVER THROW!',WC);if(!G.demo)vib(35)}}}
+  if(t>=46){G.thr=null;A.state='idle';A.t=0;A.grabbed=false;A.facing=-d;B.y=FLOOR;B.facing=d;B.combo=0;B.comboDmg=0;
+    if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,-d)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8}}
+  if(!G.resim)for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
+  const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
+  if(!G.resim)updFx()}
+function stepThrow(){if(G.thr.kind==='river')return stepRiver();if(G.thr.kind==='izuna')return stepIzuna();if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
   const y0=c.y0??FLOOR;
   if(t<=6){const u=t/6;A.y=y0;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=c.by0!=null?c.by0+(y0-c.by0)*u:FLOOR}
