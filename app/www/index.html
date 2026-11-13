@@ -743,6 +743,11 @@ Object.assign(POSES,{
   drillV3:P({lean:0,head:-6,fl1:-3,fl2:0,bl1:5,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-4}),
   drillV4:P({lean:0,head:2,fl1:1,fl2:0,bl1:-1,bl2:0,fa1:58,fa2:122,ba1:48,ba2:128,rot:0}),
   arrow_w:P({lean:18,head:-6,fl1:70,fl2:-110,bl1:30,bl2:-100,fa1:40,fa2:120,ba1:20,ba2:130,rot:-20}),
+  drillU1:P({lean:0,head:6,fl1:4,fl2:0,bl1:-4,bl2:0,fa1:28,fa2:142,ba1:-12,ba2:156,rot:-135}),
+  drillU2:P({lean:0,head:0,fl1:0,fl2:0,bl1:0,bl2:0,fa1:8,fa2:152,ba1:8,ba2:152,rot:-135}),
+  drillU3:P({lean:0,head:-6,fl1:-3,fl2:0,bl1:5,bl2:0,fa1:-14,fa2:158,ba1:26,ba2:144,rot:-135}),
+  drillU4:P({lean:0,head:2,fl1:1,fl2:0,bl1:-1,bl2:0,fa1:58,fa2:122,ba1:48,ba2:128,rot:-135}),
+  drillup_w:P({lean:24,head:-6,fl1:60,fl2:-100,bl1:-20,bl2:-60,fa1:40,fa2:120,ba1:20,ba2:130,dy:6}),
   drillv_w:P({lean:4,head:-8,fl1:80,fl2:-120,bl1:70,bl2:-115,fa1:150,fa2:30,ba1:140,ba2:40,rot:0}),
   airdkick:P({lean:14,fl1:38,fl2:2,bl1:-6,bl2:-110,fa1:30,fa2:70,ba1:-30,ba2:60}),
   palm_w:P({lean:-8,fa1:35,fa2:70,ba1:25,ba2:80,dx:-3}),
@@ -818,12 +823,12 @@ const CHARS=[
   col:{skin:'#f0c09a',top:'#3fbf6a',pants:'#2a2433',belt:'#d8d8e0',hair:'#ff4fa3',band:'#ff4fa3',glove:'#d62f5c',shoe:'#3a2f2a',accent:'#ffd23f'},
   style:{hair:'pony',tail:'hair',boots:true},stats:[3,5,2],hPose:'kick',
   desc:'Rushdown. Fastest walk, dash and buttons. Gets in your face and stays there.',
-  specials:{S1:'ROCKET ELBOW',S2:'SKULL HOP',S3:'FLASH FLIP',S4:'POWER SLIDE',AS:'METEOR STOMP',AS2:'SPIN CYCLE',SU:'RIOT RUSH'},quote:'Too slow! Keep up next time!',
+  specials:{S1:'ROCKET ELBOW',S2:'FLASH FLIP',S3:'SKULL HOP',S4:'POWER SLIDE',AS:'METEOR STOMP',AS2:'SPIN CYCLE',SU:'RIOT RUSH'},quote:'Too slow! Keep up next time!',
   ai:{aa:'U',ender:'S1',rush:true},rushPoses:['jab','kick'],
   moves:(B,S)=>({
    S1:{s:6,a:12,r:16,dmg:80,hs:22,bs:14,hb:B([4,-56,24,22]),kb:5,vx:6.2,pose:'elbow'},
-   S2:{s:16,a:6,r:12,dmg:75,hs:20,bs:12,hb:B([0,-44,26,34]),lvl:'high',kb:2,hop:[4.6,2.6],pose:'airheavy',landRec:6},
-   S3:{s:3,a:12,r:22,dmg:90,hs:26,bs:16,hb:B([-2,-88,34,86],1),launch:6.5,kd:true,inv:[0,6],vy:5.4,vx:0.9,pose:'airkick',landRec:12},
+   S2:{s:3,a:12,r:22,dmg:90,hs:26,bs:16,hb:B([0,-92,40,88],1),launch:6.5,kd:true,inv:[0,6],vy:5.4,vx:1.8,pose:'drillup',drill:true,landRec:12},
+   S3:{s:16,a:6,r:12,dmg:75,hs:20,bs:12,hb:B([0,-44,26,34]),lvl:'high',kb:2,hop:[4.6,2.6],pose:'airheavy',landRec:6},
    S4:{s:5,a:16,r:16,dmg:70,hs:20,bs:14,hb:B([6,-14,36,14]),lvl:'low',kd:true,vx:5,pose:'sweep',crouch:true},
    AS:{s:6,a:40,r:6,dmg:95,hs:20,bs:14,hb:B([-14,-40,28,48],1),lvl:'high',kb:2,hover:7,dive:7,diveV:[0,6.6],pose:'drillv',drill:true,ender:true,air:true,landRec:8,landQuake:true},
    AS2:{s:5,a:38,r:8,dmg:90,hits:3,multi:4,hs:14,bs:10,hb:B([0,-44,42,46],1),kb:1.2,hover:5,dive:5,diveV:[4.2,4.4],pose:'arrow',drill:true,ender:true,air:true,landRec:10,landQuake:true},
@@ -1069,8 +1074,9 @@ function rigPts(ch,p,air){
   const Q={hip,sh,neck,head,shF,shB,elF,haF,elB,haB,hipF,hipB,knF,ftF,knB,ftB};
   if(p.rot){const c=Math.cos(p.rot*D2R),s=Math.sin(p.rot*D2R);for(const k in Q){const q=Q[k];Q[k]={x:q.x*c-q.y*s,y:q.x*s+q.y*c}}}
   let oy;
-  if(air)oy=-(TH+SH)*0.95;
-  else oy=-Math.max(Q.ftF.y+1.5*S,Q.ftB.y+1.5*S,Q.knF.y+2.5*S,Q.knB.y+2.5*S,Q.head.y+R,Q.sh.y+3*S,Q.hip.y+4*S);
+  const gOy=-Math.max(Q.ftF.y+1.5*S,Q.ftB.y+1.5*S,Q.knF.y+2.5*S,Q.knB.y+2.5*S,Q.head.y+R,Q.sh.y+3*S,Q.hip.y+4*S,Q.haF.y+2*S,Q.haB.y+2*S);
+  if(air)oy=Math.abs(p.rot||0)>90?Math.min(-(TH+SH)*0.95,gOy):-(TH+SH)*0.95;// upside-down poses never dip below the feet line
+  else oy=gOy;
   const dx=(p.dx||0)*S,dy=oy+(p.dy||0)*S;
   for(const k in Q){Q[k].x+=dx;Q[k].y+=dy}
   Q.R=R;Q.S=S;Q.ang=p.lean+p.head+(p.rot||0);
@@ -1412,7 +1418,7 @@ class Fighter{
         if(pn==='roll'&&t>m.s){const b=Object.assign({},POSES.jump);b.rot=(t-m.s)*40;this.flip=false;return b}
         if(m.flipSpin&&t>m.s&&t<=m.s+m.a){const b=Object.assign({},POSES.upkick);b.rot=-(t-m.s)*30;return b}
         if(pn==='bike'&&t>m.s)pn=(Math.floor(t/4)%2)?'bikeA':'bikeB';
-        if(pn==='arrow'||pn==='drillv'){if(t>m.s)pn=(pn==='arrow'?'drillD':'drillV')+(1+Math.floor(t/2)%4)}
+        if(pn==='arrow'||pn==='drillv'||pn==='drillup'){if(t>m.s)pn={arrow:'drillD',drillv:'drillV',drillup:'drillU'}[pn]+(1+Math.floor(t/2)%4)}
         if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor((this.rushT+1)/(m.rush.every||3))%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.ch.punchOnly&&PUNCH_SUB[pn])pn=PUNCH_SUB[pn];
         if(this.grabbed)pn='slam';this.pn=pn;
