@@ -761,6 +761,7 @@ Object.assign(POSES,{
   tbAir:P({lean:-6,head:-14,fa1:166,fa2:-28,ba1:158,ba2:-30,fl1:72,fl2:-96,bl1:18,bl2:-92}),
   tbSlam:P({lean:48,head:14,fa1:70,fa2:20,ba1:58,ba2:24,fl1:88,fl2:-128,bl1:-34,bl2:-96}),
   tbFlex:P({lean:-6,head:-12,fa1:96,fa2:-118,ba1:88,ba2:-118,fl1:34,fl2:-50,bl1:-12,bl2:-40}),
+  tbBridge:P({lean:-48,head:-30,fa1:196,fa2:-16,ba1:186,ba2:-20,fl1:46,fl2:-78,bl1:14,bl2:-66}),
   tbHeld:P({rot:180,lean:-6,head:-20,fa1:150,fa2:20,ba1:128,ba2:24,fl1:16,fl2:-28,bl1:-12,bl2:-22}),
   grab:P({lean:24,fa1:88,fa2:18,ba1:82,ba2:24,fl1:40,fl2:-20,bl1:-30,bl2:-4,dx:4}),
   slam:P({lean:-28,head:-15,fa1:165,fa2:15,ba1:150,ba2:25,fl1:32,fl2:-30,bl1:-26,bl2:-10}),
@@ -868,7 +869,7 @@ const CHARS=[
    AS:{s:8,a:44,r:8,dmg:120,hs:24,bs:16,hb:B([-14,-46,48,46],1),kb:2,hover:7,dive:7,diveV:[2.4,7],pose:'press',ender:true,air:true,landRec:12,landQuake:true},
    AS2:{s:4,a:5,r:22,grab:true,airGrab:true,dmg:190,hb:B([-4,-78,42,82],1),hover:9,pose:'grab',air:true,grabText:'AIR SUPLEX!'},
    S2:{s:8,a:26,r:20,dmg:120,hits:3,multi:9,hs:18,bs:12,hb:B([-30,-62,60,22],1),armor:true,vx:1.6,pose:'lariat',spin:true,kb:3,lastKd:true},
-   SU:{s:6,a:4,r:34,grab:true,dmg:520,hb:B([0,-74,50,74],1),pose:'grab'}})},
+   SU:{s:6,a:4,r:34,grab:true,buster:true,dmg:520,hb:B([0,-74,50,74],1),pose:'grab'}})},
  {id:'nyx',name:'NYX',arch:'MIX-UP',archCol:'#b48cff',hp:880,walk:1.9,dash:5,jumpV:6.8,jumpX:2.6,scale:1.15,reach:1,sw:7.6,hw:7.2,flips:true,
   col:{skin:'#f2c8a8',top:'#5a2c94',pants:'#5a2c94',belt:'#c8243a',hair:'#c4a8f4',band:'#e0263f',glove:'#24143a',shoe:'#24143a',accent:'#c89cff'},
   alts:[{top:'#d8488e',pants:'#d8488e',belt:'#fff0f8',band:'#ffffff',hair:'#ffd0e8',glove:'#3a1428',shoe:'#3a1428',accent:'#ff8ac8'},{top:'#b81e2c',pants:'#b81e2c',belt:'#1a1a1e',band:'#ffd23f',hair:'#1a1014',glove:'#1e0a0e',shoe:'#1e0a0e',accent:'#ff5a5a'},{top:'#b49ae8',pants:'#b49ae8',belt:'#5a2c94',band:'#ffffff',hair:'#f4f0ff',glove:'#3a2a5c',shoe:'#3a2a5c',accent:'#e0d0ff'}],
@@ -1523,6 +1524,9 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     A.vy=6;A.vx=0;A.meter=Math.min(100,A.meter+dmg*0.1);G.hitstop=14;G.shake=6;G.impact=3;G.zoomKick=0.2;addFx('spark',px,py,2);addFx('text',A.x,A.y-90,0,m.grabText||'IZUNA DROP!',A.col.accent);SFX.hit(2,px);if(!G.demo)vib(40);comboShow(A,B);if(B.hp<=0)KO(B,A,dir);return'hit'}
   if(m.grab){
     if(B.air||B.state==='hit'||B.state==='block'||B.state==='getup')return'none';
+    if(m.buster&&G.mode!=='bonus'){/* super: chain of suplexes and spinning piledrivers (see stepBuster) */
+      A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
+      G.thr={kind:'buster',t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x,n:0};G.zoomKick=0.2;G.impact=3;G.excite=1;SFX.hit(2,px);addFx('spark',px,py,2);return'hit'}
     if(m.bomb&&G.mode!=='bonus'){/* flying powerbomb: scripted lift, leap and slam (see stepThrow) */
       A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
       G.thr={t:0,a:A.side,b:B.side,dmg:m.dmg,dir:A.facing,x0:A.x,bx0:B.x,lx:A.x};G.zoomKick=0.12;SFX.hit(1,px);addFx('spark',px,py,1);return'hit'}
@@ -2387,7 +2391,39 @@ function stepCine(){const c=G.cine,F=[G.p1,G.p2],A=F[c.a],B=F[c.b];c.t++;const N
     addFx('sigil',A.x,A.y-48*A.S);
     if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,c.dir)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8;SFX.land(8,B.x);addFx('quake',B.x,FLOOR,2)}}
   if(!G.resim)updFx()}
-function stepThrow(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
+function stepBuster(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],t=++c.t,S=A.S,k=S/1.3,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
+  const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
+  const hit=(n,big)=>{c.n=n;const per=Math.round(c.dmg/4),dmg=Math.max(1,Math.round(per*dmgScale(B,true,B.combo)));B.hp=Math.max(0,B.hp-dmg);addComboDmg(B,dmg);B.redT=80;B.combo++;comboShow(A,B);
+    G.shake=big?10:6;G.impact=big?4:2;G.zoomKick=big?0.28:0.14;B.flash=4;B.flashCol='#ffffff';
+    if(!G.resim){SFX.hit(big?3:2,B.x);SFX.land(big?12:8,B.x);addFx('quake',B.x,FLOOR,big?2:1);addFx('spark',B.x,FLOOR-12,2);for(let i=0;i<(big?5:3);i++)addFx('dust',B.x+rnd(-20,20),FLOOR);if(big){addFx('ring',B.x,FLOOR-10);addFx('text',A.x,FLOOR-130,0,((A.ch.specials&&A.ch.specials.SU)||'SUPER')+'!','#ffd23f')}if(!G.demo)vib(big?60:25)}};
+  // suplex arc: B goes over A's head from side s0 to side -s0
+  const suplex=(u,s0)=>{const th=Math.PI*u;A.x=c.lx;A.y=FLOOR;pz(A,u<0.3?'tbLift':'tbBridge');A.facing=s0;B.x=cl(A.x+s0*Math.cos(th)*24*k);B.y=FLOOR-Math.sin(th)*58*S;pz(B,'tbHeld',{rot:180*u});B.facing=-s0};
+  const d=c.dir;
+  if(t<=10){A.x=c.lx;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*k-c.bx0)*t/10);B.y=FLOOR}
+  else if(t<=30)suplex((t-10)/20,d);                       // back suplex: slams behind
+  else if(t<=38){pz(A,'tbSlam');A.facing=-d;pz(B,'down');B.x=cl(A.x-d*22*k);B.y=FLOOR;if(t===31)hit(1)}
+  else if(t<=58)suplex((t-38)/20,-d);                      // and back over the other way
+  else if(t<=66){pz(A,'tbSlam');A.facing=d;pz(B,'down');B.x=cl(A.x+d*22*k);B.y=FLOOR;if(t===59)hit(2)}
+  else{ // two spinning jump piledrivers
+    const seg=t<=110?{t0:66,lift:8,air:32,h:44,dx:26,n:3,spin:4}:{t0:118,lift:8,air:36,h:56,dx:18,n:4,spin:3};
+    const r=t-seg.t0;
+    if(t>110&&t<=118){pz(A,'tbSlam');pz(B,'down');B.x=cl(A.x+A.facing*20*k);B.y=FLOOR}
+    else if(r<=seg.lift){const u=r/seg.lift;A.y=FLOOR;pz(A,'tbLift');pz(B,'tbHeld',{rot:180*u});B.x=cl(A.x+A.facing*(20-6*u)*k);B.y=FLOOR-24*S*u;if(r===1)c.sx=A.x}
+    else if(r<=seg.lift+seg.air){const u=(r-seg.lift)/seg.air;if(r===seg.lift+1&&!G.resim){SFX.jump();addFx('dust',A.x,FLOOR)}
+      A.x=cl(c.sx+d*seg.dx*u);A.y=FLOOR-H(u,seg.h);A.facing=(Math.floor(r/seg.spin)%2?-1:1)*d;pz(A,'tbAir');pz(B,'tbHeld');B.facing=-A.facing;B.x=cl(A.x+A.facing*8*k);B.y=A.y-24*S}
+    else if(seg.n===3&&t<=110){pz(A,'tbSlam');A.y=FLOOR;A.facing=d;pz(B,'tbHeld',{rot:200});B.x=cl(A.x+d*14*k);B.y=FLOOR-4;if(c.n<3)hit(3)}
+    else if(seg.n===4){A.y=FLOOR;A.facing=d;pz(A,'tbSlam');if(c.n<4){hit(4,true);B.x=cl(A.x+d*14*k)}
+      // launch them away across the screen and finish
+      G.thr=null;A.state='land';A.t=0;A.landT=24;A.grabbed=false;A.y=FLOOR;
+      Object.assign(B,{state:'hit',t:0,stun:40,juggle:true,juggleInv:true,vy:-5.6,vx:d*3.4,y:FLOOR-2,facing:-d});
+      if(B.hp<=0&&!G.training){B.hp=0;KO(B,A,-d)}else if(B.hp<=0)B.hp=1}}
+  c.lx=A.x;
+  // blue afterimages, like the original
+  if(!G.resim){for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
+    if(G.thr&&t>10&&t%3===0){A.ghosts.push({x:A.x,y:A.y,pose:Object.assign({},A.dpose),f:A.facing,t:12,col:'#3a5cff'});B.ghosts.push({x:B.x,y:B.y,pose:Object.assign({},B.dpose),f:B.facing,t:12,col:'#7a9cff'})}}
+  const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
+  if(!G.resim)updFx()}
+function stepThrow(){if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
   if(t<=6){const u=t/6;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=FLOOR}
   else if(t<=16){const u=(t-6)/10;pz(A,u<0.4?'grab':'tbLift');pz(B,'tbHeld',{rot:180*u});B.x=cl(c.x0+d*(22-12*u)*S/1.3);B.y=FLOOR-24*S*u}
