@@ -958,7 +958,7 @@ const CHARS=[
    S4:{s:10,a:1,r:22,pose:'lowpalm',crouch:true,proj:{type:'dflame',vx:3.6,dmg:55,hs:18,bs:12,w:20,h:12,lvl:'low',kb:2,life:200}},
    AS:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,proj:{type:'dflame',vx:4,vy:0,dmg:60,hs:20,bs:14,w:18,h:14,kb:2,life:90,ender:true}},
    AS2:{s:4,a:26,r:8,dmg:90,hs:22,bs:14,hb:B([8,-52,36,34],1),kb:5,hover:4,dive:4,diveV:[6,2.2],pose:'flykick',ender:true,air:true,landRec:6},
-   SU:{s:12,a:1,r:30,pose:'palm',proj:{type:'dragon',vx:3.2,dmg:420,hits:7,multi:5,hs:22,bs:14,w:46,h:40,kb:0,noPush:4.2,lastKd:true,launch:3.4,life:240}}})},
+   SU:{s:12,a:1,r:30,pose:'palm',proj:{type:'dragon',vx:3.2,dmg:420,hits:7,multi:5,hs:22,bs:14,w:46,h:40,kb:0,noPush:[1.6,4.2],lastKd:true,launch:3.4,life:240}}})},
   {id:'lihua',name:'LIDIA',arch:'FOOTSIES',archCol:'#7fe0ff',hp:900,walk:1.9,dash:5.0,jumpV:6.9,jumpX:2.6,scale:1.1,reach:1.06,sw:9,hw:7,
   col:{skin:'#f2c8a0',top:'#c81e3a',pants:'#f0ece4',belt:'#e8c060',hair:'#1a1220',band:'#e8c060',glove:'#e8c060',shoe:'#f0ece4',accent:'#7fe0ff'},
   style:{hair:'lihua',tail:'hair',sleeve:'none',robe:true,boots:true},stats:[3,4,4],hPose:'kick',rushPoses:['lkA','lkB'],
@@ -1640,7 +1640,9 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   if(m.pushWith&&!isProj&&nth<hits){B.vx=dir*Math.abs(m.vx||A.vx)*1.04}
   if(m.pushLast&&!isProj&&nth>=hits){B.vx=dir*m.pushLast;B.stun=Math.max(B.stun,26)}
   /* noPush: the opponent stays where they were hit, and the finisher pops them straight up (Taolin's dragon super) */
-  if(m.noPush){if(nth<hits)B.vx=0;else{B.vx=dir*m.noPush;B.juggle=true;B.vy=Math.min(B.vy,-3.4);B.y=Math.min(B.y,FLOOR-1)}}
+  if(m.noPush){const wasAir=B.y<FLOOR-2;/* push: [per-hit shove, final shove]; airborne victims are driven back, not up */
+    if(nth<hits){B.vx=dir*m.noPush[0]*(wasAir?0.75:1);if(wasAir){B.vy=-1.7;B.juggle=true}}
+    else{B.vx=dir*m.noPush[1]*(wasAir?1.2:1);B.juggle=true;B.vy=wasAir?-1.6:Math.min(B.vy,-3.4);B.y=Math.min(B.y,FLOOR-1)}}
   if(m.kdRepeat&&capKd&&!isProj){B.tumble=true;B.vx=dir*2.4;B.vy=Math.min(B.vy,-6.4)}
   else if(!isProj&&A.air&&!m.ender&&!m.airGrab&&B.air){A.vy=B.vy+0.2;A.y=lerp(A.y,B.y+4,0.5)}// keep air combos level
   /* pull: a pillar drags them into its centre and holds them up so every hit lands */
