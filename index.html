@@ -2866,10 +2866,11 @@ const go=m=>{G.mode=m;SFX.sel()};
 const SMEAR_LIMB={flykick:'ftF',bikeA:'ftF',bikeB:'ftB',upkick:'ftF',roll:null,dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',slidekick:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
 function drawFighterWorld(g,f,camX,opt={}){
   if(f.state==='attack'&&f.move&&f.move.vanish&&f.t>=f.move.vanish[0]&&f.t<f.move.vanish[1])return;
-  /* stance aura (Shenwu): green for Mantis, ice blue for Crane, flaring briefly on a swap */
-  if(f.ch.stances&&!opt.flat&&!f.ko){const x=f.x-camX,y=f.y-46*f.S,sw=(f.swapT||0)/24,a=0.2+0.06*Math.sin(G.tick*0.1)+sw*0.3,rgb=f.stance?'160,224,255':'125,255,90';
-    const gr=g.createRadialGradient(x,y,4,x,y,46*f.S);gr.addColorStop(0,`rgba(${rgb},${a*1.3})`);gr.addColorStop(0.7,`rgba(${rgb},${a})`);gr.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=gr;g.beginPath();g.ellipse(x,y,30*f.S*(1+sw*0.3),58*f.S*(1+sw*0.2),0,0,7);g.fill();
-    if(G.tick%4===0&&!G.resim&&G.mode==='fight')addMote(f.x+rnd(-14,14)*f.S,f.y-rnd(4,70)*f.S,rnd(-0.2,0.2),-rnd(0.4,1),f.stance?'#a0e0ff':'#7dff5a',0.6,22)}
+  /* stance aura (Shenwu): a breathing glow around his head, green for Mantis, ice blue for Crane, flaring briefly on a swap */
+  if(f.ch.stances&&!opt.flat&&!f.ko){const Qh=rigPts(f.ch,f.dpose||POSES.stance,f.air),hx=f.x-camX+Qh.head.x*f.facing,hy=f.y+Qh.head.y,sw=(f.swapT||0)/24,
+    br=0.5+0.5*Math.sin(G.tick*0.055),R=(17+8*br+8*sw)*f.S,a=0.38+0.3*br+sw*0.3,rgb=f.stance?'160,224,255':'125,255,90';
+    const gr=g.createRadialGradient(hx,hy,2,hx,hy,R);gr.addColorStop(0,`rgba(${rgb},${Math.min(1,a)})`);gr.addColorStop(0.5,`rgba(${rgb},${a*0.6})`);gr.addColorStop(1,`rgba(${rgb},0)`);g.save();g.globalCompositeOperation='lighter';g.fillStyle=gr;g.beginPath();g.arc(hx,hy,R,0,7);g.fill();g.restore();
+    if(G.tick%9===0&&G.mode==='fight')addMote(f.x+Qh.head.x*f.facing+rnd(-8,8)*f.S,f.y+Qh.head.y+rnd(-6,4)*f.S,rnd(-0.15,0.15),-rnd(0.3,0.7),f.stance?'#a0e0ff':'#7dff5a',0.5,18)}
   if(f.ch.aura&&!opt.flat){const x=f.x-camX,y=f.y-48*f.S,a=0.10+0.05*Math.sin(G.tick*0.08);g.fillStyle=`rgba(255,220,120,${a})`;g.beginPath();g.ellipse(x,y,30*f.S,56*f.S,0,0,7);g.fill()}
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
