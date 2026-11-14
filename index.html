@@ -1506,7 +1506,9 @@ function updateProjs(){
     addFx('spark',(a.x+b.x)/2,(a.y+b.y)/2,1);SFX.block()}
   // proj vs fighter
   for(const p of G.projs){if(p.dead)continue;const B=p.owner===G.p1?G.p2:G.p1;
-    if(p.persist&&p.hitsLeft<=0)continue;if(p.t-p.lastHit<(p.multi||0))continue;if((p.from&&p.t<p.from)||(p.until&&p.t>p.until))continue;const box=projBox(p),hu=B.hurt();if(!overlap(box,hu))continue;
+    if(p.persist&&p.hitsLeft<=0)continue;if(p.t-p.lastHit<(p.multi||0))continue;if((p.from&&p.t<p.from)||(p.until&&p.t>p.until))continue;const box=projBox(p),hu=B.hurt();/* projectiles travelling along can't sail over a crouching opponent: stretch the box down to their crouch height */
+    if(B.crouching()&&!B.air&&!p.ground&&Math.abs(p.vy||0)<1.5&&box.y+box.h<hu.y+hu.h*0.6){box.h=hu.y+hu.h*0.6-box.y}
+    if(!overlap(box,hu))continue;
     const nth=p.hits-p.hitsLeft+1;const r=resolveHit(p.owner,B,p,box,hu,true,p,nth);
     if(r!=='none'){if((p.type==='ki'||p.type==='bigki')&&r!=='parry')kiBurst(p.x,p.y,p.owner.col.accent,p.type==='bigki'?(p.hitsLeft<=1?34:10):16,p.type==='bigki'?(p.hitsLeft<=1?3.2:1.8):2);p.hitsLeft--;p.lastHit=p.t;if(p.hits>1)p.hold=(p.multi||4)+1;if(r==='parry'&&!p.beam&&!(p.hits>1&&p.hitsLeft>0))p.dead=true;if(p.hitsLeft<=0&&!p.persist)p.dead=true}}
   G.projs=G.projs.filter(p=>!p.dead);
