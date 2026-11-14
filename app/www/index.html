@@ -1317,8 +1317,7 @@ class Fighter{
       else if(this.buf==='P'&&!this.air){this.buf=null;this.bufT=0;this.state='parry';this.t=0;this.vx=0;SFX.whoosh(0)}if(this.t>=this.stun){this.state='idle';this.t=0}}
     else if(st==='down'){this.vx*=0.8;if(this.t>=34&&!this.ko){this.state='getup';this.t=0}}
     else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0;this.capN=0}}
-    else if(st==='parry'){/* once the 10-frame window has passed, another back swipe re-parries straight away (stops light spam beating parry) */
-      if(this.buf==='P'&&this.t>10){this.buf=null;this.bufT=0;this.t=0;SFX.whoosh(0)}else if(this.t>=16){this.state='idle';this.t=0}}
+    else if(st==='parry'){if(this.t>=20){this.state='idle';this.t=0}}
     else if(st==='ko'||st==='win'){this.vx*=0.85}
     else if(st==='taunt'){this.vx=0;if(this.t>=50){this.state='idle';this.t=0}}
     // physics
@@ -2643,7 +2642,7 @@ function dummyInput(me,op){const inp=EMPTY();if(G.dummy==='cpu')return aiInput(G
   if(G.dummy==='parry'){/* taps parry just before each blow (or projectile) arrives */
     const K=atk&&m.kunaiEnd,kj=K?op.t-(m.s+m.a)-1-(K.delay||0):-99;
     const soon=(atk&&!m.grab&&op.t>=m.s-4&&op.t<=m.s+m.a-(m.kunaiEnd?6:0)&&Math.abs(op.x-me.x)<110)||(pj&&Math.abs(pj.x-me.x)<40)||(K&&kj>=-1&&kj<K.n*K.every&&(kj+1)%K.every===0);
-    if(soon&&(['idle','walk','crouch','block'].includes(me.state)||(me.state==='parry'&&me.t>10)))inp.act='P'}
+    if(soon&&me.state!=='parry'&&['idle','walk','crouch'].includes(me.state))inp.act='P'}
   if(G.dummy==='jump'&&me.state==='idle')inp.jump=true;
   return inp}
 function separate(a,b){
