@@ -943,6 +943,7 @@ const CHARS=[
    cAS:{s:7,a:30,r:8,dmg:105,hs:24,bs:16,hb:B([-4,-40,42,52],1),lvl:'high',kb:2,kd:true,hover:7,dive:7,diveV:[1.6,6.6],pose:'hammer',ender:true,air:true,landQuake:true,landRec:8},
    cAS2:{s:4,a:20,r:8,dmg:90,hits:3,multi:6,hs:16,bs:10,hb:B([-26,-66,62,46],1),kb:1.6,hover:24,pose:'windmill',ender:true,air:true},
    SU:{s:6,a:20,r:24,dmg:620,zFin:190,hs:20,bs:10,hb:B([0,-70,38,62],1),kb:2,vx:8,inv:[0,12],pose:'jab',zanei:true,dashTrail:true},
+   zSU:{s:6,a:20,r:24,dmg:24,hs:20,bs:10,hb:B([0,-70,38,62],1),kb:2,inv:[0,12],pose:'zrush',special:true,super:true,rush:{hits:6,every:9,dmg:430,fin:190}},/* Thousand Mantis after the dash is parried/blocked: the flurry plays out as a rush that must be parried/blocked blow by blow */
    cSU:{s:6,a:32,r:22,dmg:420,hits:8,multi:4,hs:18,bs:8,hb:B([-12,-104,48,100],1),kb:0.3,carry:true,vy:7.4,vx:1.2,inv:[0,10],pose:'upkick',flipSpin:true,lastKd:true,launch:6,landRec:16}})},
   {id:'taolin',name:'TAOLIN',arch:'KUNG FU',archCol:'#ff6a1a',hp:960,walk:1.65,dash:4.8,jumpV:6.6,jumpX:2.4,scale:1.17,reach:1,sw:11,hw:8,
   col:{skin:'#e2b080',top:'#e2b080',pants:'#16141c',belt:'#c8202a',hair:'#18121a',band:'#c8202a',glove:'#f0ece4',shoe:'#16141c',accent:'#ff6a1a'},
@@ -1469,6 +1470,7 @@ class Fighter{
         if(pn==='hammer'){if(t<=m.s){const b=Object.assign({},POSES.jump);b.rot=-t*(360/m.s);return b}pn='airheavy'}
         if(pn==='windmill'){const b=Object.assign({},POSES.airkick);if(t>m.s)b.rot=-(t-m.s)*30;return b}
         if(pn==='arrow'||pn==='drillv'||pn==='drillup'||pn==='drillsuper'||pn==='drillhoriz'){if(t>m.s)pn={arrow:'drillD',drillv:'drillV',drillup:'drillU',drillsuper:'drillH',drillhoriz:'drillH'}[pn]+(1+Math.floor(t/2)%4)}
+        if(pn==='zrush'){const zs=['jab','palm','kick','elbow','heavy','axe'],ev=m.rush.every,k=Math.floor(this.rushT/ev);pn=this.rushT<=0?'jab':(this.rushT%ev<ev-3?zs[Math.min(5,k)%6]:'stance')}
         if(pn==='tide'){const rp=this.ch.rushPoses||['jab','heavy'];pn=this.rushT>0?rp[Math.floor((this.rushT+1)/(m.rush.every||3))%2]:(t<=m.s?'palm_w':(t<=m.s+m.a?'dash':'palm'))}
         if(this.ch.punchOnly&&PUNCH_SUB[pn])pn=PUNCH_SUB[pn];
         if(this.grabbed)pn='slam';this.pn=pn;
@@ -1539,6 +1541,7 @@ function checkHits(A,B){
   const hu=B.hurt();if(!overlap(hb,hu))return;
   const r=resolveHit(A,B,m,hb,hu,false,null,A.hitCount+1);
   if((r==='parry'||r==='block')&&m.rush&&!A.rushT&&B.hp>0){A.rushT=1;A.rushN=0;A.rushDef=true}
+  if((r==='parry'||r==='block')&&m.zanei&&A.moves.zSU&&!A.rushT&&B.hp>0){A.move=A.moves.zSU;A.rushT=1;A.rushN=0;A.rushDef=true;A.hitCount=1}
   if(r==='hit'&&m.rush&&!A.rushT&&B.hp>0){A.rushT=1;A.rushN=0;A.rushDef=false;B.y=FLOOR;B.vy=0;B.juggle=false;if(!G.resim){G.zoomKick=0.12;addFx('ring',B.x,B.y-40)}}
   /* sustain: once a multi-hit move connects, keep it active long enough for the remaining hits */
   if(r==='hit'&&m.sustain&&A.hitCount+1<hits){const need=m.s+m.a-m.multi*(hits-A.hitCount-1);if(A.t>need)A.t=need}
