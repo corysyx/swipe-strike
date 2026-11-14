@@ -148,7 +148,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
 const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'rgb'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 /* debug options (offline only - never applied to online matches or the attract demo) */
-const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',boxes:false,info:false,speed:1};
+const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',me:'normal',boxes:false,info:false,speed:1};
 const DBG=(()=>{let o=JSON.parse(JSON.stringify(DBG_DEF));try{const v=JSON.parse(localStorage.getItem('ss_debug')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 function saveDbg(){try{localStorage.setItem('ss_debug',JSON.stringify(DBG))}catch(e){}}
 const dbgLive=()=>!G.net&&!G.demo;
@@ -2450,7 +2450,7 @@ function aiTag(s){const T=G.tag,A=T.teams[s][T.act[s]],B=tagPartner(s);if(!tagCa
 function startTagMatch(keep){const s=G.sel;if(!keep||!s.p2||!s.p2b){const pool=CHARS.filter(q=>q.id!==s.p1&&q.id!==s.p1b).map(q=>q.id).sort(()=>Math.random()-.5);s.p2=pool[0];s.p2b=pool[1];s.c2=0;s.c2b=0}
   G.tag=tagMake([[s.p1,s.p1b],[s.p2,s.p2b]],[[s.c1||0,s.c1b||0],[s.c2||0,s.c2b||0]]);G.resUsed=false;G.me=null;tagSetActive();G.me=G.p1;
   G.net=null;G.demo=false;G.training=false;G.wins=[0,0];G.round=1;G.ai=makeAI(G.diff);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
-function startMatch(){if(G.selMode==='tag'&&G.sel&&G.sel.p1b)return startTagMatch(true);G.tag=null;G.resUsed=false;const a=CH[G.sel.p1],b=(DBG.opp==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=(c2+1)%4;G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
+function startMatch(){if(G.selMode==='tag'&&G.sel&&G.sel.p1b)return startTagMatch(true);G.tag=null;G.resUsed=false;const a=(DBG.me==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p1],b=(DBG.opp==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=(c2+1)%4;G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
   const lv=G.training?1:(b.boss?2:clamp(G.diff+(G.ladderIdx>=4?1:0),0,2));G.ai=makeAI(lv);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
 function startRound(){if(G.tag)tagRoundReset();G.p1.reset(STAGE_W/2-70);G.p2.reset(STAGE_W/2+70);if(G.bonusReward&&G.round===1&&!G.net){G.p1.meter=100;G.bonusReward=false}G.projs=[];G.fx=[];G.timer=99;G.timerF=0;if(dbgLive()&&G.mode!=='bonus')[G.p1,G.p2].forEach((f,i)=>{const L=DBG.life[i];if(L==='low')f.hp=Math.round(f.ch.hp*0.1);else if(L==='one')f.hp=1;f.redHp=f.hp});G.phase='intro';G.phaseT=0;
   G.camX=(STAGE_W-W)/2;G.superFlash=null;G.cine=null;G.thr=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.perfect=false;G.koWinner=null;if(G.training){G.p1.meter=100;G.phase='fight';banner('TRAINING',60,16)}}
@@ -2973,7 +2973,7 @@ function renderTagSelect(g){
     tap:(c,i,h)=>{SFX.sel();s.info=i;
       if(!h&&s.p1===c.id&&!s.h1)s.c1=(s.c1+1)%NCOL();else if(!h&&s.p1b===c.id&&!s.h1b)s.c1b=(s.c1b+1)%NCOL();
       else if(!s.p1){s.p1=h?rndPick(s.p1b):c.id;s.c1=h?rndCol():0;s.h1=!!h}else{s.p1b=h?rndPick(s.p1):c.id;s.c1b=h?rndCol():0;s.h1b=!!h}s.p2=null;s.p2b=null}});
-  drawInfo(g,s.info<0?null:CHARS[s.info]||CHARS[0]);
+  drawInfo(g,s.info<0?null:CHARS[s.info]||CHARS[0]);if(DBG.me==='archon'&&G.selMode!=='bonus')txt(g,'DEBUG: PLAYING AS ARCHON',W-8,160,8,'#ff8aff','right');
   const dn=['EASY','NORMAL','HARD'],ready=!!(s.p1&&s.p1b);
   button(g,6,198,110,20,'CPU: '+dn[G.diff],()=>{G.diff=(G.diff+1)%3},{col:'#ff8a3a'});
   button(g,120,198,130,20,stageName(),stageNext,{col:'#b48cff'});
@@ -2993,7 +2993,7 @@ function renderSelect(g){
       if(!s.p1){s.p1=h?rndPick():c.id;s.c1=h?rndCol():0;s.h1=!!h;s.p2=rndPick(s.p1);s.c2=0;s.h2=false;return}
       if(h){s.p2=rndPick(s.p1);s.c2=rndCol();s.h2=true;return}
       if(s.p2===c.id&&!s.h2&&s.p1!==c.id){s.c2=(s.c2+1)%NCOL()}else if(s.p1===c.id&&!s.h1){s.c1=(s.c1+1)%NCOL()}else{s.p2=c.id;s.c2=s.p1===c.id?1:0;s.h2=false}}});
-  drawInfo(g,s.info<0?null:CHARS[s.info]||CHARS[0]);
+  drawInfo(g,s.info<0?null:CHARS[s.info]||CHARS[0]);if(DBG.me==='archon'&&G.selMode!=='bonus')txt(g,'DEBUG: PLAYING AS ARCHON',W-8,160,8,'#ff8aff','right');
   const dn=['EASY','NORMAL','HARD'];
   if(G.selMode==='bonus'){button(g,6,198,244,20,'BONUS: '+(G.bonusType==='car'?'CAR CRUSH':'BARREL BREAK'),()=>{G.bonusType=G.bonusType==='car'?'barrels':'car'},{col:'#ffd23f'});
     button(g,254,198,124,20,s.p1?'PLAY!':'PICK 1P',()=>{if(s.p1)startFreeBonus()},{col:s.p1?'#ffd23f':'#555',def:true});return}
@@ -3058,10 +3058,11 @@ function renderDebug(g){
   row(x2,106,'FRAME INFO: '+(DBG.info?'ON':'OFF'),DBG.info,false,()=>DBG.info=!DBG.info);
   row(x1,128,'GAME SPEED: '+Math.round(100/DBG.speed)+'%',DBG.speed,1,()=>DBG.speed=DBG.speed===1?2:DBG.speed===2?4:1);
   row(x2,128,'OPPONENT: '+(DBG.opp==='archon'?'ARCHON (BOSS)':'NORMAL'),DBG.opp,'normal',()=>DBG.opp=DBG.opp==='archon'?'normal':'archon');
-  txt(g,'DRAIN: DOWN TO 1 HP. LOW/1HP: AT ROUND START',W/2,152,8,'#8a80b0','center');
-  txt(g,'BOXES: GREEN BODY, RED ATTACK, YELLOW SHOT',W/2,163,8,'#8a80b0','center');
-  button(g,x1,178,bw,18,'RESET ALL',()=>{Object.assign(DBG,JSON.parse(JSON.stringify(DBG_DEF)));ch()},{col:'#ffd23f'});
-  button(g,x2,178,bw,18,'BACK',()=>{G.mode='settings'},{def:true});
+  row(x1,150,'PLAY AS: '+(DBG.me==='archon'?'ARCHON (BOSS)':'YOUR PICK'),DBG.me,'normal',()=>DBG.me=DBG.me==='archon'?'normal':'archon');
+  txt(g,'DRAIN: DOWN TO 1 HP. LOW/1HP: AT ROUND START',W/2,172,8,'#8a80b0','center');
+  txt(g,'BOXES: GREEN BODY, RED ATTACK, YELLOW SHOT',W/2,182,8,'#8a80b0','center');
+  button(g,x1,194,bw,18,'RESET ALL',()=>{Object.assign(DBG,JSON.parse(JSON.stringify(DBG_DEF)));ch()},{col:'#ffd23f'});
+  button(g,x2,194,bw,18,'BACK',()=>{G.mode='settings'},{def:true});
 }
 function renderPause(g){
   if(G.net){g.fillStyle='rgba(6,3,16,0.6)';g.fillRect(0,0,W,H);bigTxt(g,'MENU',W/2,40,16);txt(g,'THE MATCH KEEPS RUNNING!',W/2,58,8,'#ffd23f','center');
