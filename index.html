@@ -1758,9 +1758,6 @@ function drawThunder(g,f,m,Q,sx,sy,fc){const t=f.t,up=m.key==='S2',acc=f.col.acc
     ltnBolt(g,hx,hy,ex,ey,4,3,acc,3,0.45);ltnBolt(g,hx,hy,ex,ey,4,2.4,'#ffffff',1.1,1)}
   if(act){/* arcs crawling from the fist down her arm and body to her feet */
     const fx2=sx+((Q.ftF.x+Q.ftB.x)/2)*fc,fy2=sy+(Q.ftF.y+Q.ftB.y)/2;for(let k=0;k<2;k++){const mx=sx+rnd(-8,8)*S,my=sy+Q.hip.y+rnd(-10,10)*S;ltnBolt(g,hx,hy,mx,my,5,4,acc,2.6,0.4);ltnBolt(g,hx,hy,mx,my,5,3,'#ffffff',0.9,0.85);if(up)ltnBolt(g,mx,my,fx2+rnd(-6,6),fy2,4,3,'#ffffff',0.8,0.7)}}
-  if(up&&t>m.s&&t<=m.s+5){/* the sky answers: a bolt from the top of the screen onto her fist */
-    const a=1-(t-m.s-1)/5,tx=hx+rnd(-30,30);g.globalAlpha=0.35*a;g.fillStyle=acc;g.fillRect(hx-10*S,-20,20*S,hy+20);
-    ltnBolt(g,tx,-20,hx,hy,10,9,acc,6,0.55*a);ltnBolt(g,tx,-20,hx,hy,10,7,'#ffffff',2.2,a);ltnBolt(g,tx+rnd(-20,20),-20,hx,hy,8,10,'#ffffff',0.9,0.6*a)}
   if(!up&&act){/* Thunder Palm: a forward discharge in front of the palm */
     for(let k=0;k<3;k++){const ex=hx+fc*rnd(16,34)*S,ey=hy+rnd(-16,16)*S;ltnBolt(g,hx,hy,ex,ey,5,4,acc,3.2,0.45);ltnBolt(g,hx,hy,ex,ey,5,3,'#ffffff',1.2,1)}}
   g.restore()}
