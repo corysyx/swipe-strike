@@ -933,7 +933,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S1',rush:true},
   moves:(B,S)=>({
    S1:{s:4,a:24,r:14,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([6,-62,32,26]),kb:0.4,pose:'rush',finPose:'heavy',lastKd:true},
-   S2:{s:3,a:16,r:18,dmg:105,hits:3,multi:5,hs:22,bs:14,hb:B([0,-92,34,74],1),kb:1,launch:4.2,lastKd:true,carry:true,airCancel:true,inv:[0,6],vy:6.2,vx:1.4,pose:'upkick',landRec:14},
+   S2:{s:3,a:16,r:18,dmg:105,hits:3,multi:5,hs:22,bs:14,hb:B([0,-92,34,74],1),kb:1,launch:4.2,lastKd:true,carry:true,airCancel:true,airLink:true,inv:[0,6],vy:6.2,vx:1.4,pose:'upkick',landRec:14},
    S3:{s:6,a:18,r:14,dmg:80,hits:2,multi:8,hs:20,bs:12,hb:B([0,-30,30,30]),lvl:'low',kb:2,vx:5,lastKd:true,pose:'roll',crouch:true},
    S4:{s:5,a:0,r:10,stanceSwap:true,pose:'stance'},
    cS1:{s:8,a:16,r:12,dmg:90,hs:22,bs:14,hb:B([4,-56,34,30],1),kb:3,kd:true,hop:[3.6,4.6],pose:'airkick',landRec:8},
@@ -943,7 +943,7 @@ const CHARS=[
    AS:{s:5,a:34,r:6,dmg:90,hs:20,bs:14,hb:B([0,-36,32,38],1),lvl:'high',kb:2,hover:5,dive:5,diveV:[4.6,5],pose:'airheavy',ender:true,air:true,landRec:6},
    AS2:{s:4,a:18,r:8,dmg:95,hits:6,multi:3,hs:12,bs:8,hb:B([4,-64,36,42]),kb:0.4,hover:22,pose:'bike',ender:true,air:true},
    cAS:{s:7,a:30,r:8,dmg:105,hs:24,bs:16,hb:B([-4,-40,42,52],1),lvl:'high',kb:2,kd:true,hover:7,dive:7,diveV:[1.6,6.6],pose:'hammer',ender:true,air:true,landQuake:true,landRec:8},
-   cAS2:{s:4,a:20,r:8,dmg:90,hits:3,multi:6,hs:16,bs:10,hb:B([-26,-66,62,46],1),kb:1.6,hover:24,pose:'windmill',ender:true,air:true},
+   cAS2:{s:4,a:20,r:8,dmg:90,hits:3,multi:6,hs:16,bs:10,hb:B([-26,-66,62,46],1),kb:1.6,hover:24,pose:'windmill',ender:true,air:true,lastKd:true},
    SU:{s:6,a:20,r:24,dmg:620,zFin:190,hs:20,bs:10,hb:B([0,-70,38,62],1),kb:2,vx:8,inv:[0,12],pose:'jab',zanei:true,dashTrail:true},
    zSU:{s:6,a:20,r:24,dmg:24,hs:20,bs:10,hb:B([0,-70,38,62],1),kb:2,inv:[0,12],pose:'zrush',special:true,super:true,rush:{hits:6,every:9,dmg:430,fin:190}},/* Thousand Mantis after the dash is parried/blocked: the flurry plays out as a rush that must be parried/blocked blow by blow */
    cSU:{s:6,a:32,r:22,dmg:420,hits:8,multi:4,hs:18,bs:8,hb:B([-12,-104,48,100],1),kb:0.3,carry:true,vy:7.4,vx:1.2,inv:[0,10],pose:'upkick',flipSpin:true,lastKd:true,launch:6,landRec:16}})},
@@ -971,7 +971,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S4',zone:'S1',rush:true},
   moves:(B,S)=>({
    S1:{s:12,a:1,r:18,pose:'palm',proj:{type:'ki',vx:3.4,dmg:60,hs:20,bs:14,w:16,h:14,kb:2.5,life:64}},
-   S2:{s:3,a:20,r:20,dmg:105,hits:3,multi:6,hs:22,bs:14,hb:B([0,-96,30,80],1),kb:1,launch:6.4,lastKd:true,carry:true,airCancel:true,inv:[0,6],vy:6.4,vx:1.2,pose:'upkick',landRec:14},
+   S2:{s:3,a:20,r:20,dmg:105,hits:3,multi:6,hs:22,bs:14,hb:B([0,-96,30,80],1),kb:1,launch:6.4,lastKd:true,carry:true,airCancel:true,airLink:true,inv:[0,6],vy:6.4,vx:1.2,pose:'upkick',landRec:14},
    S3:{s:8,a:34,r:14,dmg:120,hits:5,multi:6,hs:16,bs:10,hb:B([-30,-62,60,30],1),kb:0.6,hop:[3.2,0],hover:34,vx:3.2,pose:'birdL',spin:true,lastKd:true,landRec:10},
    S4:{s:4,a:26,r:16,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([8,-72,36,40]),kb:0.4,pose:'rush',finPose:'lkA',lastKd:true},
    AS:{s:4,a:22,r:6,dmg:80,hs:20,bs:14,hb:B([-6,-22,28,26],1),lvl:'high',kb:1.5,hover:4,dive:4,diveV:[1.2,6.4],pose:'stomp',air:true,bounce:5.8,spring:true,landRec:6},
@@ -1016,7 +1016,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S4',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'bolt',vx:4.2,dmg:62,hs:20,bs:14,w:16,h:14,kb:2.5,life:200}},
-   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-92,24,72],1),kb:1.5,launch:7,kd:true,airCancel:true,syncLaunch:5.2,inv:[0,8],vy:6.6,vx:1.4,pose:'upper',landRec:14,thunder:true},
+   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-92,24,72],1),kb:1.5,launch:7,kd:true,airCancel:true,airLink:true,syncLaunch:5.2,inv:[0,8],vy:6.6,vx:1.4,pose:'upper',landRec:14,thunder:true},
    S3:{s:6,a:24,r:14,dmg:96,hits:3,multi:8,hs:16,bs:12,hb:B([-24,-62,48,20],1),kb:2.5,vx:2.8,pose:'kick',spin:true,lastKd:true},
    S4:{s:8,a:8,r:18,dmg:95,hits:2,multi:5,hs:30,bs:14,hb:B([4,-64,30,36]),kb:2.4,pose:'palm',zap:true,thunder:true},
    AS:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,proj:{type:'bolt',vx:3.4,vy:2.6,dmg:60,hs:20,bs:14,w:16,h:14,kb:2,life:90,ender:true}},
@@ -1289,7 +1289,7 @@ class Fighter{
     this.rushT=0;this.qAct=null;this.qSwap=false;this.aimDive=false;this.springing=false;
     const chainL=this.state==='attack'&&this.move&&this.move.key==='L';
     if(m.key==='L'){this.gL=chainL?(this.gL||0)+1:1;this.enderH=false}else{this.enderH=m.key==='H'&&chainL&&(this.gL||0)>=2;this.gL=0}
-    Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(/^c?AS2?$/.test(m.key))this.airSp=true;
+    Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(/^c?AS2?$/.test(m.key))this.airSp=true;else if(!this.air&&m.airLink)this.airSp=false;
     if(this.air)this.airAtk=true;
     if(m.super){this.flash=8;this.flashCol='#ffffff';this.meter=Math.max(0,this.meter-100);G.superFlash={f:this,t:46,name:(this.ch.specials[m.key]||this.ch.specials.SU)};SFX.super();G.excite=1}
     else if(m.special)SFX.special();else SFX.whoosh(m.dmg>=70);
@@ -1297,8 +1297,13 @@ class Fighter{
     if(!this.air&&!m.vx&&!m.hop)this.vx*=0.3;
   }
   swapStance(){this.stance=this.stance?0:1;this.swapT=24;addFx('text',this.x,this.y-92*this.S,0,this.ch.stances[this.stance]+' STYLE',this.stance?'#a0e0ff':'#7dff5a');addFx('ring',this.x,this.y-40*this.S);SFX.special()}
+  /* start an air special as a combo follow-up: face the opponent, home in, and (spring moves) leap above a rising opponent first */
+  comboAir(nm,op){this.faceOpp(op);this.startMove(nm);this.aimDive=true;this.linkT=0;
+    if(FLOOR-this.y<44*this.S&&!nm.spring&&!nm.dive){this.vy=Math.min(this.vy,-2.8)}/* late follow-up close to the floor: a small hop so it has room to land */
+    if(nm.spring&&op&&op.air&&(op.vy<0||op.y<this.y-6)){const pk=op.y-Math.max(0,-op.vy)**2/(2*GRAV),h=clamp(this.y-(pk-30*this.S),10,150);this.vy=-Math.min(9.5,Math.sqrt(2*GRAV*h));this.springing=true}}
   faceOpp(op){const d=op.x-this.x;if(Math.abs(d)>2)this.facing=d>0?1:-1}
-  update(inp,op){
+  update(inp,op){if(this.linkT>0&&(--this.linkT===0||!this.air))this.linkT=0;
+    if(((this.linkT>0&&this.state==='jump')||(this.aimDive&&this.state==='attack'&&this.move&&this.move.air&&this.t<=this.move.s&&!this.springing))&&op.state==='hit'&&op.air){op.juggle=true;op.x=clamp(this.x+this.facing*20*this.S,20,STAGE_W-20);op.y=Math.min(FLOOR-24,this.y+16*this.S);op.vy=Math.min(this.vy,1);op.vx=0}
     this.inp=inp;if(this.aparryT>0)this.aparryT--;
     if(inp.act){this.buf=inp.act;this.bufT=9}else if(this.bufT>0){if(--this.bufT===0)this.buf=null}
     this.t++;if(this.inv>0)this.inv--;if(this.swapT>0)this.swapT--;
@@ -1307,7 +1312,7 @@ class Fighter{
     else if(st==='land'){this.vx*=0.6;if(this.t>=this.landT){this.state='idle';this.t=0;this.neutral(inp,op)}}
     else if(st==='jump'){if(this.sj&&this.t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});if(this.buf==='P'){this.buf=null;this.bufT=0;if(!this.aparryUsed&&!this.airAtk){this.aparryT=10;this.aparryUsed=true;SFX.whoosh(0)}}
     else if(this.buf==='S4'&&this.ch.stances){this.buf=null;this.bufT=0;this.swapStance()}
-    else if(this.buf&&(!this.airAtk||/^S[1-4]$/.test(this.buf))){const m=this.pick(this.buf);if(m){this.buf=null;this.bufT=0;this.startMove(m)}}}
+    else if(this.buf&&(!this.airAtk||/^S[1-4]$/.test(this.buf))){const m=this.pick(this.buf);if(m){this.buf=null;this.bufT=0;if(this.linkT>0&&m.air&&op.state==='hit')this.comboAir(m,op);else this.startMove(m)}}}
     else if(st==='dash'&&this.buf&&this.t>=(this.dashDir===this.facing?2:7)&&this.dashCancel(op)){}
     else if(st==='dash'){const d=this.dashDir,fwd=d===this.facing,dur=fwd?15:18;
       this.vx=d*this.ch.dash*Math.max(0,1-this.t/dur)*(fwd?1.5:1.25);if(!fwd&&this.t<7)this.inv=1;
@@ -1380,16 +1385,18 @@ class Fighter{
     if(m.slideDust&&t>m.s&&t<=m.s+m.a+4&&t%2===0&&!G.resim){addFx('dust',this.x-this.facing*6,FLOOR);if(t%4===0)addMote(this.x+this.facing*20,FLOOR-2,-this.facing*rnd(0.5,1.5),-rnd(0.3,1),'#ffffff',0.8,10)}
     if(m.kunaiEnd&&t>m.s+m.a&&!this.grabbed){const K=m.kunaiEnd,j=t-(m.s+m.a)-1-(K.delay||0);if(j===-(K.delay||0)){this.vx=-this.facing*2.4}if(j>=0&&j%K.every===0&&j/K.every<K.n){const i=j/K.every;spawnProj(this,Object.assign({},K.proj,{noImpact:true,vy:[-0.5,0.3,-0.2,0.5,-0.35,0.2,0][i]||0,lastKd:i===K.n-1}));if(!G.resim)SFX.whoosh(0)}}
     if(m.tele&&t===m.tele){const x0=this.x;this.teleport(op,m.teleBack,m.teleFwd,m.teleFront);if(m.streak&&!G.resim){G.fx.push({type:'streak',x:x0,x2:this.x,y:this.y-36*this.S,t:0,life:14,col:this.col.accent,s:1});for(let i=0;i<2;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S)}}
-    if(m.hover&&t<=m.hover&&this.air&&!this.grabbed&&!this.springing){this.vy=-GRAV;this.vx*=0.85}
+    if(m.hover&&t<=m.hover&&this.air&&!this.grabbed&&!this.springing){this.vy=-GRAV;this.vx*=0.85;
+      /* a hovering air special cancelled out of a special tracks the opponent so every hit lands */
+      if(this.aimDive&&!m.dive&&!m.proj&&op&&op.state!=='down'){const hu=op.hurt(),ty=Math.min(FLOOR-12,hu.y+hu.h*0.5+34*this.S),tx=op.x-this.facing*16*this.S;this.vy=clamp((ty-this.y)*0.3,-3.2,3.2)-GRAV;this.vx=clamp((tx-this.x)*0.3,-3.4,3.4)}}
     if(m.lift&&t<=m.s&&!this.grabbed){this.y=Math.min(this.y,FLOOR-0.5-m.lift*t/m.s)}
     if(m.stanceSwap&&t===m.s)this.swapStance();
     /* stance cancel: arc down during a special (once it has hit, or in its recovery) swaps style instantly,
        and for a short window the next special can cancel the rest of the move */
     if(m.airCancel&&this.buf&&/^S[1-4]$/.test(this.buf)){if(this.buf==='S4'&&this.ch.stances)this.qSwap=true;else if(this.buf!=='S4')this.qAct=this.buf;this.buf=null;this.bufT=0}
     if(m.airCancel&&this.qSwap&&this.canCancel){this.qSwap=false;this.swapStance()}
-    if(m.airCancel&&this.qAct&&this.air&&!this.grabbed&&(this.hitCount>=(m.hits||1)||(t>m.s+m.a&&this.hitCount>0))){const nm=this.pick(this.qAct);this.qAct=null;if(nm){this.startMove(nm);this.aimDive=true;
-      /* spring: a downward dive cancelled under a rising opponent first leaps above where they will peak, then dives at the apex */
-      if(nm.spring&&op&&op.air&&(op.vy<0||op.y<this.y-6)){const pk=op.y-Math.max(0,-op.vy)**2/(2*GRAV),h=clamp(this.y-(pk-30*this.S),10,150);this.vy=-Math.min(9.5,Math.sqrt(2*GRAV*h));this.springing=true}return}}
+    /* airLink: after a riser has hit, the juggled opponent floats just in front of and below the attacker until the animation ends, ready for the follow-up */
+    if(m.airLink&&this.hitCount>0&&this.air&&op.state==='hit'&&op.air&&t>m.s+m.a){op.juggle=true;op.x=clamp(this.x+this.facing*20*this.S,20,STAGE_W-20);op.y=Math.min(FLOOR-24,this.y+16*this.S);op.vy=Math.min(this.vy,1);op.vx=0}
+    if(m.airCancel&&this.qAct&&this.air&&!this.grabbed&&(m.airLink?(t>=tot-1&&this.hitCount>0):(this.hitCount>=(m.hits||1)||(t>m.s+m.a&&this.hitCount>0)))){const nm=this.pick(this.qAct);this.qAct=null;if(nm){this.comboAir(nm,op);return}}
     if(this.ch.stances&&m.special&&!m.stanceSwap&&!m.super&&this.buf==='S4'&&(this.canCancel||t>m.s+m.a)&&!this.grabbed){this.buf=null;this.bufT=0;this.swapStance()}
     if(this.swapT>0&&m.special&&!m.stanceSwap&&this.buf&&/^(S[1-3]|SU)$/.test(this.buf)&&(this.canCancel||t>m.s+m.a)&&!this.grabbed){const nm=this.pick(this.buf);if(nm&&nm!==m){this.buf=null;this.bufT=0;this.swapT=0;this.startMove(nm);return}}
     if(this.springing){if(this.vy<0&&t>=m.dive-1){this.t=m.dive-1;if(!G.resim&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8})}else if(t>=m.dive-1){this.springing=false;this.t=m.dive-1}}
@@ -1416,7 +1423,7 @@ class Fighter{
       if(b==='SU')ok=!m.super;else if(b==='S1'||b==='S2')ok=!m.special;else ok=(m.key==='L'||m.key==='cL')&&b!=='P'&&(b!=='L'||(m.key==='L'&&(this.gL||0)<5&&!this.inp.down));
       if(ok){const nm=this.pick(b);if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
     }
-    if(t>=tot){this.move=null;if(this.air){this.state='jump';this.airAtk=true;this.flip=false}else{this.state='idle';this.t=0}}
+    if(t>=tot){this.move=null;if(this.air){this.state='jump';this.airAtk=true;this.flip=false;if(m.airLink&&this.hitCount>0)this.linkT=36}else{this.state='idle';this.t=0}}
   }
   dashCancel(op){const v=this.vx;this.faceOpp(op);if(!this.tryAct(this.buf))return false;this.buf=null;this.bufT=0;
     if(this.state==='attack'&&!this.move.vx&&!this.move.hop&&!this.move.grab)this.vx=v*0.6;// keep some dash momentum: slide into the move
@@ -1507,7 +1514,7 @@ function handPos(f){const m=f.move;let pn=m&&m.pose||'palm';if(pn==='rush')pn='p
 function spawnProj(f,pr){const hp=handPos(f);G.projs.push(Object.assign({},pr,{id:++PID,owner:f,x:pr.ground?f.x+f.facing*24*f.S:hp.x,y:pr.ground?f.y+pr.y:hp.y,vx:pr.vx*f.facing,vy:pr.vy||0,
   hits:pr.hits||1,hitsLeft:pr.hits||1,lastHit:-99,t:0,special:true,sup:!!(f.move&&f.move.super),lvl:pr.lvl||'mid',key:'proj',fromAir:!!f.air}));const q=G.projs[G.projs.length-1];if(!pr.ground)q.reach=Math.max(0,Math.abs(hp.x-f.x)-12*f.S);if(pr.at){q.x=f.x+f.facing*pr.at;if(!pr.noQuake)addFx('quake',q.x,FLOOR,1)}if(pr.atOpp!=null){const op=f===G.p1?G.p2:G.p1;q.x=op.x+pr.atOpp*f.facing;q.vx=pr.vx*f.facing}
   /* an air projectile cancelled out of a launcher is aimed at the juggled opponent, a little faster, so the combo connects */
-  if(f.aimDive&&!pr.ground){const op=f===G.p1?G.p2:G.p1;if(op.air&&op.state==='hit'){const sp=Math.max(5.5,Math.hypot(pr.vx,pr.vy||0)),tx=op.x+op.vx*6,ty=op.y-36*op.S+op.vy*6,dx=tx-q.x,dy=ty-q.y,L=Math.hypot(dx,dy)||1;q.vx=dx/L*sp;q.vy=dy/L*sp}}}
+  if(f.aimDive&&!pr.ground){q.comboKd=true;const op=f===G.p1?G.p2:G.p1;if(op.air&&op.state==='hit'){if((q.x-op.x)*f.facing>-6)q.x=op.x-f.facing*6;const sp=Math.max(5.5,Math.hypot(pr.vx,pr.vy||0)),tx=op.x+op.vx*6,ty=op.y-36*op.S+op.vy*6,dx=tx-q.x,dy=ty-q.y,L=Math.hypot(dx,dy)||1;q.vx=dx/L*sp;q.vy=dy/L*sp}}}
 function spawnBeam(f,m){const hp=handPos(f);G.projs.push(Object.assign({},m.beam,{id:++PID,owner:f,beam:true,t:0,life:m.a,hitsLeft:m.beam.hits,lastHit:-99,special:true,super:true,lvl:'mid',
   x:hp.x,y:hp.y,y0:hp.y-f.y,x0:(hp.x-f.x)*f.facing,w:420,vx:f.facing}));G.shake=4}
 function projBox(p){if(p.beam){const o=p.owner,sx=o.x+o.facing*6*o.S,x=p.vx>0?sx:sx-p.w;return{x,y:p.y-p.h/2,w:p.w,h:p.h}}if(p.reach&&p.t<=3){const d=Math.sign(p.vx)||1,x0=p.x-p.w/2-(d>0?p.reach:0);return{x:x0,y:p.y-p.h/2,w:p.w+p.reach,h:p.h}}return{x:p.x-p.w/2,y:p.y-p.h/2,w:p.w,h:p.h}}
@@ -1659,6 +1666,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   /* pull: a pillar drags them into its centre and holds them up so every hit lands */
   if(isProj&&src&&src.pull&&nth<hits){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=-2.6;B.vx=clamp((src.x-B.x)*0.12,-2.5,2.5)}
   /* syncLaunch: the launcher sends the opponent up level with the attacker, just in front, so an air-special cancel always connects */
+  /* a combo follow-up air special always knocks down on its last hit */
+  if(B.hp>0&&B.state==='hit'&&(isProj?(src&&src.comboKd):(A.aimDive&&A.move===m&&nth>=hits))){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=Math.min(B.vy,-2.6)}
   if(m.syncLaunch&&!isProj&&!finisher&&B.hp>0){B.juggle=true;B.x=clamp(A.x+A.facing*24*A.S,20,STAGE_W-20);B.y=clamp(B.y,A.y-26,A.y-2);B.vy=-(typeof m.syncLaunch==='number'?m.syncLaunch:5);B.vx=A.facing*0.4}
   if(m.carry&&!finisher&&!isProj){B.juggle=true;B.y=Math.min(B.y,A.y-2);B.vy=Math.min(A.vy,-1.5);B.vx=0;B.x=A.x+A.facing*22*A.S}
   if(counterHit)addFx('text',B.x,B.y-95*B.S,0,'COUNTER','#ff5a5a');
