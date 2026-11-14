@@ -1496,7 +1496,7 @@ const EMPTY=()=>({sj:false,h:0,down:false,jump:false,dash:0,guard:false,act:null
 /* ============================ PROJECTILES ============================ */
 function handPos(f){const m=f.move;let pn=m&&m.pose||'palm';if(pn==='rush')pn='palm';const Q=rigPts(f.ch,POSES[pn]||POSES.palm,f.air);return{x:Math.round((f.x+(Q.haF.x+3)*f.facing)*100)/100,y:Math.round((f.y+Q.haF.y)*100)/100}}
 function spawnProj(f,pr){const hp=handPos(f);G.projs.push(Object.assign({},pr,{id:++PID,owner:f,x:pr.ground?f.x+f.facing*24*f.S:hp.x,y:pr.ground?f.y+pr.y:hp.y,vx:pr.vx*f.facing,vy:pr.vy||0,
-  hits:pr.hits||1,hitsLeft:pr.hits||1,lastHit:-99,t:0,special:true,lvl:pr.lvl||'mid',key:'proj',fromAir:!!f.air}));const q=G.projs[G.projs.length-1];if(!pr.ground)q.reach=Math.max(0,Math.abs(hp.x-f.x)-12*f.S);if(pr.at){q.x=f.x+f.facing*pr.at;if(!pr.noQuake)addFx('quake',q.x,FLOOR,1)}if(pr.atOpp!=null){const op=f===G.p1?G.p2:G.p1;q.x=op.x+pr.atOpp*f.facing;q.vx=pr.vx*f.facing}}
+  hits:pr.hits||1,hitsLeft:pr.hits||1,lastHit:-99,t:0,special:true,sup:!!(f.move&&f.move.super),lvl:pr.lvl||'mid',key:'proj',fromAir:!!f.air}));const q=G.projs[G.projs.length-1];if(!pr.ground)q.reach=Math.max(0,Math.abs(hp.x-f.x)-12*f.S);if(pr.at){q.x=f.x+f.facing*pr.at;if(!pr.noQuake)addFx('quake',q.x,FLOOR,1)}if(pr.atOpp!=null){const op=f===G.p1?G.p2:G.p1;q.x=op.x+pr.atOpp*f.facing;q.vx=pr.vx*f.facing}}
 function spawnBeam(f,m){const hp=handPos(f);G.projs.push(Object.assign({},m.beam,{id:++PID,owner:f,beam:true,t:0,life:m.a,hitsLeft:m.beam.hits,lastHit:-99,special:true,super:true,lvl:'mid',
   x:hp.x,y:hp.y,y0:hp.y-f.y,x0:(hp.x-f.x)*f.facing,w:420,vx:f.facing}));G.shake=4}
 function projBox(p){if(p.beam){const o=p.owner,sx=o.x+o.facing*6*o.S,x=p.vx>0?sx:sx-p.w;return{x,y:p.y-p.h/2,w:p.w,h:p.h}}if(p.reach&&p.t<=3){const d=Math.sign(p.vx)||1,x0=p.x-p.w/2-(d>0?p.reach:0);return{x:x0,y:p.y-p.h/2,w:p.w+p.reach,h:p.h}}return{x:p.x-p.w/2,y:p.y-p.h/2,w:p.w,h:p.h}}
@@ -2625,6 +2625,8 @@ function drawSuperBg(g){let f=null,c=G.thr;
   if(c&&(c.kind==='zanei'||c.kind==='buster')){f=[G.p1,G.p2][c.a];if(c.kind==='zanei'&&c.t>66)f=null}
   else if(G.cine)f=[G.p1,G.p2][G.cine.a];
   else for(const q of [G.p1,G.p2])if(q.state==='attack'&&q.move&&q.move.super&&q.t>q.move.s&&q.t<=q.move.s+q.move.a+6)f=q;
+  /* projectile supers: keep the backdrop for as long as the super's projectile is on screen and still has hits left */
+  if(!f&&!c&&!G.cine)for(const p of G.projs)if(p.sup&&!p.dead&&p.hitsLeft>0&&p.x>G.camX-20&&p.x<G.camX+W+20){f=p.owner;break}
   if(G.superFlash)f=null;
   /* lock the direction when the backdrop appears, so spinning throws (Tank) don't flip it */
   if(f){SBG.col=f.col.accent;if(SBG.a<=0)SBG.dir=(c&&c.dir)||(G.cine&&G.cine.dir)||f.facing;SBG.a=Math.min(1,SBG.a+0.18)}else SBG.a=Math.max(0,SBG.a-0.08);
