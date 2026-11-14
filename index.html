@@ -2870,7 +2870,12 @@ function drawFighterWorld(g,f,camX,opt={}){
   if(f.ch.stances&&!opt.flat&&!f.ko){const Qh=rigPts(f.ch,f.dpose||POSES.stance,f.air),hx=f.x-camX+Qh.head.x*f.facing,hy=f.y+Qh.head.y,sw=(f.swapT||0)/24,
     br=0.5+0.5*Math.sin(G.tick*0.055),R=(17+8*br+8*sw)*f.S,a=0.38+0.3*br+sw*0.3,rgb=f.stance?'160,224,255':'125,255,90';
     const gr=g.createRadialGradient(hx,hy,2,hx,hy,R);gr.addColorStop(0,`rgba(${rgb},${Math.min(1,a)})`);gr.addColorStop(0.5,`rgba(${rgb},${a*0.6})`);gr.addColorStop(1,`rgba(${rgb},0)`);g.save();g.globalCompositeOperation='lighter';g.fillStyle=gr;g.beginPath();g.arc(hx,hy,R,0,7);g.fill();g.restore();
-    if(G.tick%9===0&&G.mode==='fight')addMote(f.x+Qh.head.x*f.facing+rnd(-8,8)*f.S,f.y+Qh.head.y+rnd(-6,4)*f.S,rnd(-0.15,0.15),-rnd(0.3,0.7),f.stance?'#a0e0ff':'#7dff5a',0.5,18)}
+    const col=f.stance?'#a0e0ff':'#7dff5a',wx=f.x+Qh.head.x*f.facing,wy=f.y+Qh.head.y;
+    if(G.mode==='fight'){
+      /* drifting specks */if(G.tick%3===0)for(let k=0;k<2;k++)addMote(wx+rnd(-11,11)*f.S,wy+rnd(-9,6)*f.S,rnd(-0.25,0.25),-rnd(0.3,0.9),Math.random()<0.25?'#ffffff':col,0.5,16+(Math.random()*10|0));
+      /* embers: bigger, slower, rising and swaying */if(G.tick%8===0)addMote(wx+rnd(-9,9)*f.S,wy+rnd(-4,6)*f.S,rnd(-0.35,0.35),-rnd(0.5,1.1),col,1.1,30+(Math.random()*16|0));
+      /* plasma sparks: short crackles jumping off the glow */if(G.tick%11===0){const z=addFx('zap',wx+rnd(-10,10)*f.S,wy+rnd(-10,8)*f.S,1,null,Math.random()<0.4?'#ffffff':col);if(z){z.ang=rnd(0,6.283);z.len=rnd(6,12)}}}
+    /* plasma arcs crawling around the head */g.save();g.lineCap='round';for(let k=0,n=1+(br>0.6?1:0)+(sw>0?2:0);k<n;k++){const a0=rnd(0,6.283),r0=R*0.45,r1=R*rnd(0.75,1.05);ltnBolt(g,hx+Math.cos(a0)*r0,hy+Math.sin(a0)*r0,hx+Math.cos(a0+rnd(-0.6,0.6))*r1,hy+Math.sin(a0+rnd(-0.6,0.6))*r1,3,1.8,k%2?'#ffffff':col,1,0.75)}g.restore()}
   if(f.ch.aura&&!opt.flat){const x=f.x-camX,y=f.y-48*f.S,a=0.10+0.05*Math.sin(G.tick*0.08);g.fillStyle=`rgba(255,220,120,${a})`;g.beginPath();g.ellipse(x,y,30*f.S,56*f.S,0,0,7);g.fill()}
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
