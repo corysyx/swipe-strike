@@ -2571,7 +2571,8 @@ function drawSuperBg(g){let f=null,c=G.thr;
   else if(G.cine)f=[G.p1,G.p2][G.cine.a];
   else for(const q of [G.p1,G.p2])if(q.state==='attack'&&q.move&&q.move.super&&q.t>q.move.s&&q.t<=q.move.s+q.move.a+6)f=q;
   if(G.superFlash)f=null;
-  if(f){SBG.col=f.col.accent;SBG.dir=f.facing;SBG.a=Math.min(1,SBG.a+0.18)}else SBG.a=Math.max(0,SBG.a-0.08);
+  /* lock the direction when the backdrop appears, so spinning throws (Tank) don't flip it */
+  if(f){SBG.col=f.col.accent;if(SBG.a<=0)SBG.dir=(c&&c.dir)||(G.cine&&G.cine.dir)||f.facing;SBG.a=Math.min(1,SBG.a+0.18)}else SBG.a=Math.max(0,SBG.a-0.08);
   if(SBG.a<=0)return;SBG.ph++;const k=SBG.a,d=SBG.dir,ac=SBG.col;
   g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=0.86*k;const gr=g.createLinearGradient(d>0?W:0,0,d>0?0:W,0);
   gr.addColorStop(0,mixHex(ac,[255,255,255],0.88));gr.addColorStop(0.45,mixHex(ac,[255,255,255],0.3));gr.addColorStop(1,mixHex(ac,[0,0,0],0.45));g.fillStyle=gr;g.fillRect(0,0,W,H);
