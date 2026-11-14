@@ -1019,7 +1019,7 @@ const CHARS=[
   col:{skin:'#dcb898',top:'#dcb898',pants:'#f2eee2',belt:'#d4a017',hair:'#f2dc9a',band:'#d4a017',glove:'#d4a017',shoe:'#d4a017',accent:'#ffd860'},
   style:{hair:'long',tail:'hair',shirtless:true,boots:true,sash:true,eyeGlow:true,eyeGlowCol:'#ffd860'},stats:[5,3,5],hPose:'heavy',
   desc:'The final boss. Commands fire and ice, rains meteors from the sky, and rises again once he falls.',
-  specials:{S1:'PYRO ORB',S2:'SOVEREIGN LARIAT',S3:'MOONSAULT DROP',S4:'CRYO ORB',AS:'METEOR DIVE',AS2:'FROST SHARDS',SU:'SERAPHIC STORM'},quote:'Kneel. The new world has no place for you.',
+  specials:{S1:'PYRO ORB',S2:'SOVEREIGN LARIAT',S3:'MOONSAULT DROP',S4:'CRYO ORB',AS:'METEOR DIVE',AS2:'FROST SHARDS',SU:'SERAPHIC STORM',aSU:'SERAPHIC WINGS'},quote:'Kneel. The new world has no place for you.',
   ai:{aa:'S2',ender:'S2',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:12,a:1,r:20,pose:'palm',proj:{type:'pyro',vx:4.4,dmg:75,hs:22,bs:14,w:20,h:18,kb:3,life:200}},
@@ -1028,6 +1028,7 @@ const CHARS=[
    S4:{s:14,a:1,r:22,pose:'palm',proj:{type:'cryo',vx:3.4,dmg:70,hs:34,bs:14,w:20,h:18,kb:1.5,life:200,freeze:true}},
    AS:{s:5,a:26,r:8,dmg:100,hs:22,bs:14,hb:B([8,-54,36,34],1),kb:5,hover:5,dive:5,diveV:[5,4.6],pose:'flykick',ender:true,air:true,landRec:8,trail:'fire'},
    AS2:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,projs:[{type:'cryo',vx:3.2,vy:3,dmg:40,hs:24,bs:12,w:14,h:14,kb:1.5,life:90,freeze:true},{type:'cryo',vx:2,vy:4,dmg:40,hs:24,bs:12,w:14,h:14,kb:1.5,life:90,freeze:true}]},
+   aSU:{s:12,a:50,r:14,air:true,hover:64,dmg:470,hits:16,multi:3,hs:16,bs:8,hb:B([-112,-160,224,180],1),kb:0.35,lastKd:true,launch:5.5,pose:'airupper',wings:true,inv:[0,14]},
    SU:{s:12,a:1,r:34,pose:'upper',projs:[-10,12,-4,16,-16,6,-8,10].map((o,i)=>({type:'meteor',ground:true,atOpp:o,y:-190-i*26,vx:0.2,vy:5.4,dmg:58,hs:20,bs:10,w:24,h:28,kb:0.3,life:160,lastKd:i===7}))}})},
 ];
 const CH={};
@@ -1064,8 +1065,8 @@ function buildMoves(c){
   };
   const cm=c.moves(B,S);
   for(const k in cm)M[k]=Object.assign({},M[k]||{},cm[k]);
-  for(const k in M){M[k].key=k;M[k].lvl=M[k].lvl||'mid';if(['S1','S2','S3','S4','SU','CTR','AS','AS2','cAS','cAS2','cS1','cS2','cS3','cS4','cSU'].includes(k))M[k].special=true}
-  M.SU.super=true;if(M.cSU)M.cSU.super=true;
+  for(const k in M){M[k].key=k;M[k].lvl=M[k].lvl||'mid';if(['S1','S2','S3','S4','SU','CTR','AS','AS2','cAS','cAS2','cS1','cS2','cS3','cS4','cSU','aSU'].includes(k))M[k].special=true}
+  M.SU.super=true;if(M.cSU)M.cSU.super=true;if(M.aSU)M.aSU.super=true;
   if(c.dmgMul)for(const k in M){if(M[k].dmg&&k!=='SU')M[k].dmg=Math.round(M[k].dmg*c.dmgMul);if(M[k].proj)M[k].proj=Object.assign({},M[k].proj,{dmg:Math.round(M[k].proj.dmg*c.dmgMul)});if(M[k].projs)M[k].projs=M[k].projs.map(q=>Object.assign({},q,{dmg:Math.round(q.dmg*c.dmgMul)}))}
   return M;
 }
@@ -1270,7 +1271,7 @@ class Fighter{
   canBlock(){return['idle','walk','crouch','block','land'].includes(this.state)&&!this.air}
   pick(a){const M=this.moves;
     const ck=k=>(this.stance&&M['c'+k])?M['c'+k]:M[k];
-    if(a==='SU')return(this.meter>=100&&!this.air)?ck('SU'):null;
+    if(a==='SU'){if(this.meter<100)return null;if(this.air)return(M.aSU&&!this.airSp)?M.aSU:null;return ck('SU')}
     if(this.air){if(/^S[1-4]$/.test(a)){const k=a==='S1'?'AS':a==='S3'?'AS2':null;return(!k||this.airSp||!M[k])?null:ck(k)}if(this.airAtk||this.state!=='jump')return null;return a==='L'?M.jL:a==='D'?(M.jD||M.jH):a==='U'?(M.jU||M.jH):a==='H'?M.jH:null}
     if(a==='L')return this.inp.down?M.cL:M.L;
     if(a==='S1'||a==='S2'||a==='S3'||a==='S4'){const m=ck(a);if(m.proj&&G.projs.some(p=>p.owner===this&&p.type===m.proj.type))return null;return m}
@@ -1283,7 +1284,7 @@ class Fighter{
     if(m.key==='L'){this.gL=chainL?(this.gL||0)+1:1;this.enderH=false}else{this.enderH=m.key==='H'&&chainL&&(this.gL||0)>=2;this.gL=0}
     Object.assign(this,{state:'attack',move:m,t:0,hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,grabbed:false});this.moveId++;if(m.key==='jL')this.airL=(this.airL||0)+1;if(/^c?AS2?$/.test(m.key))this.airSp=true;
     if(this.air)this.airAtk=true;
-    if(m.super){this.flash=8;this.flashCol='#ffffff';this.meter=Math.max(0,this.meter-100);G.superFlash={f:this,t:46,name:(m.key==='cSU'?this.ch.specials.cSU:this.ch.specials.SU)};SFX.super();G.excite=1}
+    if(m.super){this.flash=8;this.flashCol='#ffffff';this.meter=Math.max(0,this.meter-100);G.superFlash={f:this,t:46,name:(this.ch.specials[m.key]||this.ch.specials.SU)};SFX.super();G.excite=1}
     else if(m.special)SFX.special();else SFX.whoosh(m.dmg>=70);
     if(m.hop){this.vy=-m.hop[0];this.vx=m.hop[1]*this.facing;this.y=FLOOR-0.5}
     if(!this.air&&!m.vx&&!m.hop)this.vx*=0.3;
@@ -1365,6 +1366,7 @@ class Fighter{
     if(m.beam&&t===a0)spawnBeam(this,m);
     if(m.vanish&&t===m.vanish[0]&&!G.resim){for(let i=0;i<3;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S);this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:16});SFX.whoosh(1)}
     if(m.dashTrail&&t<=m.s+m.a&&t%2===0&&!G.resim){this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:12,col:'#5a3cff'});if(t%4===0)addFx('dust',this.x-this.facing*10,FLOOR)}
+    if(m.wings&&t>m.s-4&&t<=m.s+m.a&&!G.resim){const cy=this.y-60*this.S;if(t%6===0)addFx('rainbowring',this.x,cy,1);if(t%2===0)addMote(this.x+rnd(-20,20),cy+rnd(-20,20),rnd(-2.4,2.4),rnd(-2.4,2.4),['#ff7ab0','#ffd36a','#9dffcf','#7fd8ff','#c89cff'][t%5],1,18)}
     if(m.slideDust&&t>m.s&&t<=m.s+m.a+4&&t%2===0&&!G.resim){addFx('dust',this.x-this.facing*6,FLOOR);if(t%4===0)addMote(this.x+this.facing*20,FLOOR-2,-this.facing*rnd(0.5,1.5),-rnd(0.3,1),'#ffffff',0.8,10)}
     if(m.kunaiEnd&&t>m.s+m.a&&!this.grabbed){const K=m.kunaiEnd,j=t-(m.s+m.a)-1-(K.delay||0);if(j===-(K.delay||0)){this.vx=-this.facing*2.4}if(j>=0&&j%K.every===0&&j/K.every<K.n){const i=j/K.every;spawnProj(this,Object.assign({},K.proj,{noImpact:true,vy:[-0.5,0.3,-0.2,0.5,-0.35,0.2,0][i]||0,lastKd:i===K.n-1}));if(!G.resim)SFX.whoosh(0)}}
     if(m.tele&&t===m.tele){const x0=this.x;this.teleport(op,m.teleBack,m.teleFwd,m.teleFront);if(m.streak&&!G.resim){G.fx.push({type:'streak',x:x0,x2:this.x,y:this.y-36*this.S,t:0,life:14,col:this.col.accent,s:1});for(let i=0;i<2;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S)}}
@@ -1711,11 +1713,20 @@ function aiExec(ai,inp,dir,dist,me){
 /* ============================ FX ============================ */
 function addFx(type,x,y,s=1,str,col,dir){
   if(G.resim)return;
-  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{mushroom:48,puff:30,zap:8,whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
+  const f={type,x,y,t:0,s,str,col,dir:dir||1,life:{rainbowring:30,mushroom:48,puff:30,zap:8,whirl:10,vring:16,spark:16,block:12,parry:22,ring:18,dust:18,smoke:22,csmoke:40,text:50,ember:18,quake:34,sigil:80,wisp:34,ripple:26,spray:20}[type]||16};f.seed=Math.random()*6.28;
   if(type==='quake'){f.parts=Array.from({length:6+s*6},()=>({x:rnd(-14,14),vx:rnd(-2.2,2.2),vy:rnd(-4.5,-1.5)*s*0.8,c:pick(['#6a4a3a','#8a6a50','#c8b090','#4a3428'])}))}
   if(type==='spark'){f.parts=Array.from({length:6+s*4},()=>({a:rnd(0,Math.PI*2),v:rnd(1.5,3.5)*s,l:rnd(3,7)*s}))}
   if(type==='dust'||type==='smoke'||type==='csmoke'){f.parts=Array.from({length:type==='dust'?4:8},()=>({x:rnd(-8,8),y:rnd(-6,2)*(type==='dust'?1:4),vx:rnd(-0.8,0.8),vy:rnd(-0.6,-0.1),r:rnd(2,4)}))}
   G.fx.push(f);return f}
+// ---- angel wings (Archon's air super) ----
+function drawWings(g,f,sx,sy,o){if(o<=0)return;const S=f.S,cx=sx,cy=sy-60*S,fl=Math.sin(G.tick*0.2);g.save();g.lineCap='round';
+  g.globalAlpha=0.4*o;const gr=g.createRadialGradient(cx,cy,2,cx,cy,80*S);gr.addColorStop(0,'#ffffff');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.beginPath();g.arc(cx,cy,80*S,0,7);g.fill();
+  for(const pass of [0,1])for(const sd of [-1,1])for(let row=0;row<2;row++)for(let i=0;i<9;i++){const u=i/8,
+    an=(-90+sd*(22+u*112)*o+(row?sd*8:0))*Math.PI/180,len=(row?0.62:1)*(34+Math.sin(u*Math.PI)*34+(1-u)*6)*S*(0.35+0.65*o)*(1+fl*0.04),
+    bx=cx+sd*6*S,by=cy-4*S+u*6*S,ex=bx+Math.cos(an)*len,ey=by+Math.sin(an)*len,mx=(bx+ex)/2+Math.cos(an+sd*1.2)*6*S,my=(by+ey)/2+Math.sin(an+sd*1.2)*6*S;
+    g.globalAlpha=(row?0.95:0.9)*o;g.strokeStyle=pass?(row?'#ffffff':'#f2f7ff'):'#5a7ad0';g.lineWidth=(pass?(row?5:6.5):(row?7:8.5))*S*(1-u*0.35);
+    g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(mx,my,ex,ey);g.stroke()}
+  g.restore()}
 // ---- drill / corkscrew effects (Riot) ----
 function drillAxisQ(Q){const tip={x:(Q.ftF.x+Q.ftB.x)/2,y:(Q.ftF.y+Q.ftB.y)/2},bk=Q.head;let ux=tip.x-bk.x,uy=tip.y-bk.y;const L=Math.hypot(ux,uy)||1;ux/=L;uy/=L;return{tip,bk,ux,uy,L}}
 function drillAxis(f){const d=drillAxisQ(rigPts(f.ch,f.dpose||f.pose,f.air||!!(f.move&&f.move.air))),fc=f.facing;
@@ -1786,6 +1797,9 @@ function drawFx(g,ox){
       case'ripple':{const rx=5+f.t*1.6;g.strokeStyle=f.col||'#9dffcf';g.globalAlpha=(1-k)*0.7;g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,rx,rx*0.18,0,0,7);g.stroke();g.globalAlpha=1;break}
       case'spray':{const vx=(f.dir||1)*(0.8+Math.sin(f.seed)*0.6),vy=-1.8-Math.cos(f.seed)*0.8,px=x+vx*f.t,py=y+vy*f.t+0.16*f.t*f.t;if(py<FLOOR){g.fillStyle=k<0.4?'#ffffff':(f.col||'#9dffcf');g.fillRect(Math.round(px),Math.round(py),2,1)}break}
       case'vring':{const a=1-k,ry=(9+f.t*0.9)*(f.s||1),rx=Math.max(1.5,ry*0.32),ux=f.ux??(f.dir||1),uy=f.uy||0,cx2=x-ux*f.t*0.7,cy2=y-uy*f.t*0.7,an=Math.atan2(uy,ux);g.globalAlpha=a*0.9;g.strokeStyle=f.col||'#fff';g.lineWidth=2;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,0,7);g.stroke();g.strokeStyle='#ffffff';g.lineWidth=1;g.globalAlpha=a*0.7;g.beginPath();g.ellipse(cx2,cy2,rx,ry,an,(f.t*0.7)%6.28,(f.t*0.7)%6.28+2.2);g.stroke();g.globalAlpha=1;break}
+      case'rainbowring':{const k2=f.t/30,r=10+f.t*6.5;g.save();g.globalAlpha=Math.max(0,1-k2)*0.6;
+        for(let i=0;i<5;i++){g.strokeStyle=`hsl(${(i*55+f.t*6)%360},95%,72%)`;g.lineWidth=2.4;g.beginPath();g.ellipse(x,y,r+i*3,(r+i*3)*0.62,0,0,7);g.stroke()}
+        g.globalAlpha=Math.max(0,1-k2)*0.25;g.fillStyle='#ffffff';g.beginPath();g.ellipse(x,y,r*0.5,r*0.31,0,0,7);g.fill();g.restore();break}
       case'mushroom':{// cartoon cel-shaded explosion: flat colour layers, spiky crown, drop shadow, burns down to black smoke
         const T=f.t,L=f.life,k=T/L,sd=f.seed,J=i=>Math.sin(sd*7.31+i*12.9898)*0.5+0.5,eo=v=>1-Math.pow(1-Math.min(1,Math.max(0,v)),3);
         const PAL=[[0.10,'#ffb020','#ffe860','#ffffff'],[0.24,'#e8301c','#ffb020','#fff8d0'],[0.40,'#d82a18','#f2e01c','#fffbd0'],[0.54,'#c02218','#ff8a1a','#ffd23f'],[0.68,'#2a1a18','#e8561a','#ff9a30'],[0.84,'#141212','#2a2222','#e8561a'],[1.01,'#141212','#1e1a1a','#3a2a26']];
@@ -2769,6 +2783,7 @@ function drawFighterWorld(g,f,camX,opt={}){
   const aura=(f.state==='attack'&&f.move.super)||(G.superFlash&&G.superFlash.f===f);
   if(aura){const ap=flatPal(f.col.accent);g.globalAlpha=0.45;
     for(const [ax,ay] of [[-2,0],[2,0],[0,-2],[0,1.5]])drawChar(g,f.ch,pose,sx+ax,sy+ay,fc,f,{pal:ap,air,noTail:true,flat:true,ghost:true,Q,sq:f.sq});g.globalAlpha=1}
+  if(m&&m.wings&&f.state==='attack')drawWings(g,f,sx,sy,Math.min(1,f.t/12)*(f.t>m.s+m.a?Math.max(0,1-(f.t-m.s-m.a)/12):1));
   const dr=m&&m.drill&&f.t>m.s&&f.t<=m.s+m.a?drillAxisQ(Q):null;if(dr)drawDrillHelix(g,f,dr,sx,sy,fc,-1);
   let pal=null;if(f.flash>0){pal=flatPal(f.flashCol||'#fff');f.flash--}
   if(f.state==='attack'&&f.move.armor&&f.t<=f.move.s+f.move.a&&!f.armorUsed&&G.tick%6<3)pal=pal||flatPal('#ffb0a0');
