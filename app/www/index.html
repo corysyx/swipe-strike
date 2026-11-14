@@ -942,7 +942,7 @@ const CHARS=[
    AS2:{s:4,a:18,r:8,dmg:95,hits:6,multi:3,hs:12,bs:8,hb:B([4,-64,36,42]),kb:0.4,hover:22,pose:'bike',ender:true,air:true},
    cAS:{s:7,a:30,r:8,dmg:105,hs:24,bs:16,hb:B([-4,-40,42,52],1),lvl:'high',kb:2,kd:true,hover:7,dive:7,diveV:[1.6,6.6],pose:'hammer',ender:true,air:true,landQuake:true,landRec:8},
    cAS2:{s:4,a:20,r:8,dmg:90,hits:3,multi:6,hs:16,bs:10,hb:B([-26,-66,62,46],1),kb:1.6,hover:24,pose:'windmill',ender:true,air:true},
-   SU:{s:8,a:36,r:22,dmg:430,hits:12,multi:3,hs:14,bs:8,hb:B([0,-66,36,52]),kb:0.35,vx:2.2,pose:'rush',finPose:'upper',lastKd:true,launch:5},
+   SU:{s:6,a:20,r:24,dmg:620,zFin:190,hs:20,bs:10,hb:B([0,-70,38,62],1),kb:2,vx:8,inv:[0,12],pose:'jab',zanei:true,dashTrail:true},
    cSU:{s:6,a:32,r:22,dmg:420,hits:8,multi:4,hs:18,bs:8,hb:B([-12,-104,48,100],1),kb:0.3,carry:true,vy:7.4,vx:1.2,inv:[0,10],pose:'upkick',flipSpin:true,lastKd:true,launch:6,landRec:16}})},
   {id:'taolin',name:'TAOLIN',arch:'KUNG FU',archCol:'#ff6a1a',hp:960,walk:1.65,dash:4.8,jumpV:6.6,jumpX:2.4,scale:1.17,reach:1,sw:11,hw:8,
   col:{skin:'#e2b080',top:'#e2b080',pants:'#16141c',belt:'#c8202a',hair:'#18121a',band:'#c8202a',glove:'#f0ece4',shoe:'#16141c',accent:'#ff6a1a'},
@@ -1361,6 +1361,7 @@ class Fighter{
     if(m.projs&&t===a0)for(const pr of m.projs)spawnProj(this,pr);
     if(m.beam&&t===a0)spawnBeam(this,m);
     if(m.vanish&&t===m.vanish[0]&&!G.resim){for(let i=0;i<3;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S);this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:16});SFX.whoosh(1)}
+    if(m.dashTrail&&t<=m.s+m.a&&t%2===0&&!G.resim){this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:12,col:'#5a3cff'});if(t%4===0)addFx('dust',this.x-this.facing*10,FLOOR)}
     if(m.slideDust&&t>m.s&&t<=m.s+m.a+4&&t%2===0&&!G.resim){addFx('dust',this.x-this.facing*6,FLOOR);if(t%4===0)addMote(this.x+this.facing*20,FLOOR-2,-this.facing*rnd(0.5,1.5),-rnd(0.3,1),'#ffffff',0.8,10)}
     if(m.kunaiEnd&&t>m.s+m.a&&!this.grabbed){const K=m.kunaiEnd,j=t-(m.s+m.a)-1-(K.delay||0);if(j===-(K.delay||0)){this.vx=-this.facing*2.4}if(j>=0&&j%K.every===0&&j/K.every<K.n){const i=j/K.every;spawnProj(this,Object.assign({},K.proj,{noImpact:true,vy:[-0.5,0.3,-0.2,0.5,-0.35,0.2,0][i]||0,lastKd:i===K.n-1}));if(!G.resim)SFX.whoosh(0)}}
     if(m.tele&&t===m.tele){const x0=this.x;this.teleport(op,m.teleBack,m.teleFwd,m.teleFront);if(m.streak&&!G.resim){G.fx.push({type:'streak',x:x0,x2:this.x,y:this.y-36*this.S,t:0,life:14,col:this.col.accent,s:1});for(let i=0;i<2;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S)}}
@@ -1580,6 +1581,9 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
     B.armorUsed=true;B.hp-=Math.round(per*0.7);B.flash=6;B.flashCol='#ff6060';G.hitstop=10;addFx('spark',px,py,1);addFx('text',B.x,B.y-90*B.S,0,'ARMOR','#ff8080');SFX.block();
     if(B.hp<=0)KO(B,A,dir);return'hit'}
   // clean hit
+  if(m.zanei&&!isProj&&G.mode!=='bonus'){/* Thousand Mantis: shadow-dash connects into a scripted flurry (see stepZanei) */
+    A.grabbed=true;A.move=null;A.state='throw';A.t=0;A.vx=0;A.vy=0;B.move=null;B.state='thrown';B.t=0;B.vx=0;B.vy=0;B.juggle=false;B.facing=-A.facing;
+    G.thr={kind:'zanei',t:0,a:A.side,b:B.side,dmg:m.dmg,fin:m.zFin||130,dir:A.facing,n:0};G.zoomKick=0.2;SFX.hit(2,px);if(!G.resim){addFx('spark',px,py,2);kiBurst(px,py,A.col.accent,16,2.4)}return'hit'}
   const counterHit=B.state==='attack'&&B.t<=B.move.s+B.move.a&&!B.move.counter;
   const sc=m.super?dmgScale(B,true,B.combo-(nth-1)):dmgScale(B,false,B.combo);const dmg=Math.max(1,Math.round(per*sc*(counterHit?1.25:1)));
   B.hp-=dmg;addComboDmg(B,dmg);B.redT=40;B.combo++;B.wasCrouch=B.inp.down&&!B.air;B.tumble=!!(m.tumble&&nth>=hits);
@@ -2529,7 +2533,29 @@ function stepRiver(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c
   if(!G.resim)for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
   const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   if(!G.resim)updFx()}
-function stepThrow(){if(G.thr.kind==='river')return stepRiver();if(G.thr.kind==='izuna')return stepIzuna();if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
+function stepZanei(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24);
+  const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};A.y=FLOOR;B.y=FLOOR;
+  const seq=['jab','palm','kick','elbow','heavy','axe'],per=Math.round((c.dmg-c.fin)/6);
+  const hit=(dmg,big)=>{const v=Math.max(1,Math.round(dmg*dmgScale(B,true,B.combo)));B.hp=Math.max(0,B.hp-v);addComboDmg(B,v);B.redT=80;B.combo++;comboShow(A,B);G.shake=big?8:4;G.zoomKick=big?0.24:0.1;
+    if(G.tick-(B.wfT??-99)>=11||big){B.flash=3;B.flashCol='#ffffff';B.wfT=G.tick}
+    if(!G.resim){const hx=B.x-d*6,hy=FLOOR-50*B.S;SFX.hit(big?3:2,B.x);addFx('spark',hx,hy,big?2:1);kiBurst(hx,hy,A.col.accent,big?18:8,big?2.6:1.6);if(!G.demo)vib(big?40:15)}};
+  if(t<=60){// six blows, both sliding across the screen
+    const i=Math.floor((t-1)/10),ph=(t-1)%10;B.x=cl(B.x+d*0.9);A.x=cl(B.x-d*28*S/1.14);A.facing=d;B.facing=-d;
+    pz(A,ph<6?seq[i]:'stance');pz(B,ph<5?'hit':'chit');if(ph===2)hit(per);
+    if(!G.resim&&t%2===0)A.ghosts.push({x:A.x-d*rnd(6,16),y:A.y,pose:Object.assign({},A.dpose),f:A.facing,t:10,col:'#5a3cff'})}
+  else if(t<=74){pz(A,'upper');pz(B,'hit');A.x=cl(B.x-d*24*S/1.14);if(t===64)hit(c.fin,true)}
+  if(t>=74){G.thr=null;A.state='land';A.t=0;A.landT=16;A.grabbed=false;A.facing=d;
+    Object.assign(B,{state:'hit',t:0,stun:40,juggle:true,juggleInv:true,vy:-6,vx:d*2.6,y:FLOOR-2,facing:-d});
+    if(B.hp<=0&&!G.training){B.hp=0;KO(B,A,d)}else if(B.hp<=0)B.hp=1}
+  if(!G.resim)for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
+  const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
+  if(!G.resim)updFx()}
+// speed-line backdrop behind the Thousand Mantis flurry (smooth, no flashing)
+function drawZaneiBg(g){const c=G.thr;if(!c||c.kind!=='zanei')return;const k=Math.min(1,c.t/6)*(c.t>66?Math.max(0,1-(c.t-66)/8):1),d=c.dir;
+  g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=0.88*k;const gr=g.createLinearGradient(d>0?W:0,0,d>0?0:W,0);gr.addColorStop(0,'#fff4f0');gr.addColorStop(0.45,'#ff8a96');gr.addColorStop(1,'#c4102a');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  for(let i=0;i<26;i++){const y=(i*37)%H,len=40+((i*53)%90),x=(((i*97+c.t*(9+(i%5)*2))%(W+len))-len),xx=d>0?W-x-len:x;g.globalAlpha=k*(0.35+0.4*((i*7)%3)/2);g.fillStyle=i%3?'#ffffff':'#ffd0d6';g.fillRect(xx,y,len,1+(i%2))}
+  g.restore()}
+function stepThrow(){if(G.thr.kind==='zanei')return stepZanei();if(G.thr.kind==='river')return stepRiver();if(G.thr.kind==='izuna')return stepIzuna();if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
   const y0=c.y0??FLOOR;
   if(t<=6){const u=t/6;A.y=y0;pz(A,'grab');pz(B,'hit');B.x=cl(c.bx0+(c.x0+d*22*S/1.3-c.bx0)*u);B.y=c.by0!=null?c.by0+(y0-c.by0)*u:FLOOR}
@@ -2735,7 +2761,7 @@ function renderWorld(g){
   G.zoomKick=(G.zoomKick||0)*0.86;zt+=G.zoomKick;
   G.zoom=lerp(G.zoom||1,zt,0.16);G.zfx=lerp(G.zfx??fx,fx,0.2);G.zfy=lerp(G.zfy??fy,fy,0.2);
   if(G.zoom>1.003){const z=G.zoom,ax=clamp(G.zfx,W/2/z*0.5,W-W/2/z*0.5),ay=clamp(G.zfy,H*0.3,H*0.85);g.translate(ax,ay);g.scale(z,z);g.translate(-ax,-ay)}
-  drawStage(g,camX);
+  drawStage(g,camX);drawZaneiBg(g);
   const L=STAGES[G.stage];g.fillStyle=L.floorGlow;
   if(G.mode==='bonus')drawBonusProps(g,camX);
   for(const f of[p1,p2]){if(f.hidden)continue;const h=FLOOR-f.y,k=clamp(1-h/140,0.3,1);g.fillStyle='rgba(0,0,0,0.38)';g.beginPath();g.ellipse(f.x-camX,FLOOR+1,15*f.S*k,3*k,0,0,7);g.fill()}
