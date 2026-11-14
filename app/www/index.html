@@ -150,7 +150,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 
 /* ============================ SOUND ============================ */
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
-const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'rgb',zoom:'close'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
+const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'rgb'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 /* debug options (offline only - never applied to online matches or the attract demo) */
 const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',boxes:false,info:false,speed:1};
 const DBG=(()=>{let o=JSON.parse(JSON.stringify(DBG_DEF));try{const v=JSON.parse(localStorage.getItem('ss_debug')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
@@ -2787,7 +2787,7 @@ function renderWorld(g){
   const camX=G.camX;
   // cinematic camera: zoom on super startup / KO, punch-in on big impacts
   /* close camera: draws the fight 15% bigger; gameplay is untouched, and it eases back out when the fighters are far apart so both stay on screen */
-  const BZ=SET.zoom==='close'&&(G.mode==='fight')?1.15:1,sep=Math.abs(p1.x-p2.x)+70,bz=Math.max(1,Math.min(BZ,W/sep));
+  const BZ=G.mode==='fight'?1.15:1,sep=Math.abs(p1.x-p2.x)+70,bz=Math.max(1,Math.min(BZ,W/sep));
   let zt=bz,fx=(p1.x+p2.x)/2-camX,fy=bz>1?H*0.74:H*0.62;
   if(G.superFlash){const f=G.superFlash.f;zt=Math.max(1.32,bz);fx=f.x-camX;fy=f.y-40*f.S}
   else if(G.phase==='ko'&&G.slow>0){const l=p1.ko?p1:p2;zt=Math.max(1.2,bz);fx=l.x-camX;fy=l.y-30}
@@ -3039,9 +3039,8 @@ function renderSettings(g){
   txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
   txt(g,'CRT',272,114,8,'#fff');button(g,306,110,74,16,CRT.failed?'N/A':!SET.crt?'OFF':SET.crtMode==='rgb'?'SHARP':SET.crtMode==='rainbow'?'RAINBOW':'BLENDED',()=>{if(CRT.failed)return;if(!SET.crt){SET.crt=true;SET.crtMode='rgb'}else if(SET.crtMode==='rgb')SET.crtMode='comp';else if(SET.crtMode==='comp')SET.crtMode='rainbow';else SET.crt=false;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
   txt(g,'MUSIC STYLE',40,140,8,'#fff');button(g,140,136,110,16,SET.lite?'LITE':'FULL BAND',()=>{SET.lite=!SET.lite;saveSettings();SFX.sel()},{col:SET.lite?'#ff8a3a':'#9dffcf'});txt(g,SET.lite?'(FOR OLDER PHONES)':'',258,140,8,'#8a80b0');
-  button(g,40,162,96,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
-  button(g,262,162,118,18,'ZOOM: '+(SET.zoom==='close'?'CLOSE':'NORMAL'),()=>{SET.zoom=SET.zoom==='close'?'normal':'close';saveSettings();SFX.sel()},{col:SET.zoom==='close'?'#9dffcf':'#b48cff'});
-  button(g,142,162,114,18,dbgAny()?'DEBUG (ON)':'DEBUG MENU',()=>{G.mode='debug';SFX.sel()},{col:dbgAny()?'#ff8aff':'#b48cff'});
+  button(g,40,162,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
+  button(g,196,162,140,18,dbgAny()?'DEBUG MENU (ON)':'DEBUG MENU',()=>{G.mode='debug';SFX.sel()},{col:dbgAny()?'#ff8aff':'#b48cff'});
   button(g,W/2-60,190,120,20,'BACK',()=>{const f=G.setFrom;if(f==='pause'){G.mode='fight'}else if(f==='bonus'){G.mode='bonus'}else go('title')},{def:true});
 }
 function renderDebug(g){
