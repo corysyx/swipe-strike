@@ -1299,6 +1299,7 @@ class Fighter{
     if(nm.spring&&op&&op.air&&op.vy<0){const pk=op.y-Math.max(0,-op.vy)**2/(2*GRAV),h=clamp(this.y-(pk-30*this.S),10,150);this.vy=-Math.min(9.5,Math.sqrt(2*GRAV*h));this.springing=true}}
   faceOpp(op){const d=op.x-this.x;if(Math.abs(d)>2)this.facing=d>0?1:-1}
   update(inp,op){if(this.linkT>0&&(--this.linkT===0||!this.air))this.linkT=0;
+    if(op&&op.syncG&&op.state==='hit'&&op.air&&this.air)op.vy=this.vy;/* synced launch: the opponent rises and falls with the attacker */
     /* combo follow-up starting up: ease the juggled opponent toward the attacker's reach so the follow-up connects */
     if(this.aimDive&&this.state==='attack'&&this.move&&this.move.air&&this.t<=this.move.s&&!this.springing&&op.state==='hit'&&op.air){const k=0.35;op.juggle=true;op.x+=(clamp(this.x+this.facing*20*this.S,20,STAGE_W-20)-op.x)*k;op.y+=(Math.min(FLOOR-24,this.y+12*this.S)-op.y)*k;op.vy*=0.5;op.vx*=0.5}
     this.inp=inp;if(this.aparryT>0)this.aparryT--;
@@ -1327,7 +1328,7 @@ class Fighter{
     else if(st==='ko'||st==='win'){this.vx*=0.85}
     else if(st==='taunt'){this.vx=0;if(this.t>=50){this.state='idle';this.t=0}}
     // physics
-    if(this.y<FLOOR||this.vy<0){this.vy+=(this.state==='attack'&&this.move&&this.move.fastFall&&this.t>this.move.s+this.move.a)?GRAV*this.move.fastFall:((this.state==='hit'&&this.juggle&&!this.ko)||(this.airHits>0&&(this.state==='jump'||this.state==='attack')))?JUGGLE_G:GRAV;this.y+=this.vy;if(this.y>=FLOOR){this.y=FLOOR;const v=this.vy;this.vy=0;this.onLand(v)}}
+    if(this.y<FLOOR||this.vy<0){this.vy+=(this.state==='attack'&&this.move&&this.move.fastFall&&this.t>this.move.s+this.move.a)?GRAV*this.move.fastFall:((this.state==='hit'&&this.juggle&&!this.ko&&!this.syncG)||(this.airHits>0&&(this.state==='jump'||this.state==='attack')))?JUGGLE_G:GRAV;this.y+=this.vy;if(this.y>=FLOOR){this.y=FLOOR;const v=this.vy;this.vy=0;this.onLand(v)}}
     this.x+=this.vx;if(this.ext){this.x+=this.ext;this.ext*=0.86;if(Math.abs(this.ext)<0.2)this.ext=0}if(this.pbCD>0)this.pbCD--;
     for(const gh of this.ghosts)gh.t--;this.ghosts=this.ghosts.filter(g=>g.t>0);
     this.animate();
@@ -1436,7 +1437,7 @@ class Fighter{
     this.x=clamp(nx,20,STAGE_W-20);this.facing=op.x>this.x?1:-1;this.inv=Math.max(this.inv,6);
     addFx('smoke',this.x,this.y-30*this.S);
   }
-  onLand(v){
+  onLand(v){this.syncG=false;
     if(this.state==='jump'){this.chase=false;this.sj=false;this.bounceN=0;this.aparryUsed=false;this.aparryT=0;this.sq=1;this.state='land';this.t=0;this.landT=3;this.vx=0;addFx('dust',this.x,FLOOR);this.flip=false;this.pose.rot=0}
     else if(this.state==='hit'&&this.juggle){this.juggle=false;this.juggleN=0;this.juggleInv=false;this.launchN=0;this.state=this.ko?'ko':'down';this.t=0;this.vx*=0.3;this.sq=0.8;SFX.land(v,this.x);if(v>4)addFx('quake',this.x,FLOOR,1);
       addFx('dust',this.x,FLOOR);addFx('dust',this.x+12,FLOOR);G.shake=Math.max(G.shake,3);SFX.hit(1)}
@@ -1663,7 +1664,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   /* syncLaunch: the launcher sends the opponent up level with the attacker, just in front, so an air-special cancel always connects */
   /* a combo follow-up air special always knocks down on its last hit */
   if(B.hp>0&&B.state==='hit'&&(isProj?(src&&src.comboKd):(A.aimDive&&A.move===m&&nth>=hits))){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=Math.min(B.vy,-2.6)}
-  if(m.syncLaunch&&!isProj&&!finisher&&B.hp>0){B.juggle=true;B.x=clamp(A.x+A.facing*24*A.S,20,STAGE_W-20);B.y=clamp(B.y,A.y-26,A.y-2);B.vy=-(typeof m.syncLaunch==='number'?m.syncLaunch:5);B.vx=A.facing*0.4}
+  B.syncG=false;
+  if(m.syncLaunch&&!isProj&&!finisher&&B.hp>0){B.juggle=true;B.x=clamp(A.x+A.facing*24*A.S,20,STAGE_W-20);B.y=clamp(B.y,A.y-26,A.y-2);B.vy=Math.min(A.vy,-(m.vy||5))-0.3;B.vx=A.facing*0.4;B.syncG=true}/* rises and falls alongside the attacker: same speed, same gravity */
   if(m.carry&&!finisher&&!isProj){B.juggle=true;B.y=Math.min(B.y,A.y-2);B.vy=Math.min(A.vy,-1.5);B.vx=0;B.x=A.x+A.facing*22*A.S}
   if(counterHit)addFx('text',B.x,B.y-95*B.S,0,'COUNTER','#ff5a5a');
   A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);A.canCancel=true;
