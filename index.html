@@ -2864,7 +2864,7 @@ const go=m=>{G.mode=m;SFX.sel()};
 
 /* ============================ RENDER ============================ */
 const SMEAR_LIMB={flykick:'ftF',bikeA:'ftF',bikeB:'ftB',upkick:'ftF',roll:null,dash:null,palm_w:null,skick:'ftF',jab2:'haB',knee:'knF',airknee:'knF',airjab2:'haB',glide:null,press:null,kick:'ftF',sweep:'ftF',slidekick:'ftF',airkick:'ftF',airheavy:'ftF',heavy:'haB',slam:null,grab:null,stance:null,crouch:null};
-const HEAD_ARC=new WeakMap();
+const HEAD_ARC=new WeakMap(),BODY_ARC=new WeakMap();
 function drawFighterWorld(g,f,camX,opt={}){
   if(f.state==='attack'&&f.move&&f.move.vanish&&f.t>=f.move.vanish[0]&&f.t<f.move.vanish[1])return;
   /* stance aura (Shenwu): a breathing glow around his head, green for Mantis, ice blue for Crane, flaring briefly on a swap */
@@ -2878,7 +2878,19 @@ function drawFighterWorld(g,f,camX,opt={}){
       /* plasma sparks: short crackles jumping off the glow, at random moments */if(Math.random()<0.018){const z=addFx('zap',wx+rnd(-10,10)*f.S,wy+rnd(-10,8)*f.S,1,null,Math.random()<0.4?'#ffffff':col);if(z){z.ang=rnd(0,6.283);z.len=rnd(6,12)}}}
     /* plasma arcs: random short bursts (render-only timer, kept outside the game state) */let ab=HEAD_ARC.get(f)||0;if(ab>0)ab--;else if(Math.random()<0.012+br*0.014)ab=2+(Math.random()*4|0);HEAD_ARC.set(f,ab);
     g.save();g.lineCap='round';for(let k=0,n=(ab>0?1+(Math.random()<0.4?1:0):0)+(sw>0?2:0);k<n;k++){const a0=rnd(0,6.283),r0=R*0.45,r1=R*rnd(0.75,1.05);ltnBolt(g,hx+Math.cos(a0)*r0,hy+Math.sin(a0)*r0,hx+Math.cos(a0+rnd(-0.6,0.6))*r1,hy+Math.sin(a0+rnd(-0.6,0.6))*r1,3,1.8,k%2?'#ffffff':col,1,0.75)}g.restore()}
-  if(f.ch.aura&&!opt.flat){const x=f.x-camX,y=f.y-48*f.S,a=0.10+0.05*Math.sin(G.tick*0.08);g.fillStyle=`rgba(255,220,120,${a})`;g.beginPath();g.ellipse(x,y,30*f.S,56*f.S,0,0,7);g.fill()}
+  /* Archon's aura: a breathing golden glow that follows his body, with drifting motes, rising embers and occasional holy plasma */
+  if(f.ch.aura&&!opt.flat&&!f.ko){const Qa=rigPts(f.ch,f.dpose||POSES.stance,f.air),cx=f.x-camX+((Qa.head.x+Qa.hip.x)/2)*f.facing,cy=f.y+(Qa.head.y*0.45+Qa.hip.y*0.55),
+    br=0.5+0.5*Math.sin(G.tick*0.045),ang=Math.atan2(Qa.head.x-Qa.hip.x,-(Qa.head.y-Qa.hip.y))*f.facing,rx=(30+6*br)*f.S,ry=(56+8*br)*f.S,a=0.34+0.26*br;
+    g.save();g.translate(cx,cy);g.rotate(ang);g.scale(1,ry/rx);const gr=g.createRadialGradient(0,0,4,0,0,rx);gr.addColorStop(0,`rgba(255,240,180,${a})`);gr.addColorStop(0.55,`rgba(255,210,100,${a*0.6})`);gr.addColorStop(1,'rgba(255,200,80,0)');
+    g.globalCompositeOperation='lighter';g.fillStyle=gr;g.beginPath();g.arc(0,0,rx,0,7);g.fill();g.restore();
+    const wx=f.x+((Qa.head.x+Qa.hip.x)/2)*f.facing,wy=f.y+(Qa.head.y*0.45+Qa.hip.y*0.55),gold=['#ffe08a','#ffd860','#fff2c0'];
+    if(G.mode==='fight'||G.mode==='bonus'){
+      /* motes */if(G.tick%3===0)for(let k=0;k<2;k++)addMote(wx+rnd(-20,20)*f.S,wy+rnd(-44,40)*f.S,rnd(-0.2,0.2),-rnd(0.3,0.9),Math.random()<0.3?'#ffffff':gold[Math.random()*3|0],0.5,18+(Math.random()*12|0));
+      /* embers */if(G.tick%7===0)addMote(wx+rnd(-16,16)*f.S,wy+rnd(10,44)*f.S,rnd(-0.35,0.35),-rnd(0.6,1.3),gold[Math.random()*3|0],1.1,34+(Math.random()*18|0));
+      /* sparks, at random moments */if(Math.random()<0.016){const z=addFx('zap',wx+rnd(-22,22)*f.S,wy+rnd(-40,36)*f.S,1,null,Math.random()<0.4?'#ffffff':'#ffd860');if(z){z.ang=rnd(0,6.283);z.len=rnd(8,16)}}}
+    /* holy plasma arcs in short random bursts */let ab=BODY_ARC.get(f)||0;if(ab>0)ab--;else if(Math.random()<0.01+br*0.012)ab=2+(Math.random()*4|0);BODY_ARC.set(f,ab);
+    if(ab>0){g.save();g.lineCap='round';for(let k=0,n=1+(Math.random()<0.4?1:0);k<n;k++){const t0=rnd(0,6.283),px=cx+Math.cos(t0)*rx*0.55,py=cy+Math.sin(t0)*ry*0.55,qx=cx+Math.cos(t0+rnd(-0.5,0.5))*rx*rnd(0.9,1.15),qy=cy+Math.sin(t0+rnd(-0.5,0.5))*ry*rnd(0.9,1.1);
+      ltnBolt(g,px,py,qx,qy,4,2.6,'#ffd860',2.2,0.4);ltnBolt(g,px,py,qx,qy,4,2,'#ffffff',0.9,0.9)}g.restore()}}
   let sx=f.x-camX,sy=f.y;if(G.hitstop>0&&f.state==='hit')sx+=(G.tick%2?1.5:-1.5);
   let fc=f.facing;if(f.state==='taunt')fc=-fc;if(f.state==='attack'&&f.move.spin&&f.t>f.move.s&&f.t<=f.move.s+f.move.a)fc=(Math.floor(f.t/5)%2?-1:1)*f.facing;
   const pose=f.dpose||f.pose,air=f.air||(f.state==='attack'&&f.move&&f.move.air);
