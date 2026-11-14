@@ -2457,6 +2457,7 @@ function matchOver(){
 function stepCine(){const c=G.cine,F=[G.p1,G.p2],A=F[c.a],B=F[c.b];c.t++;const N=15,per=Math.round(c.dmg/N);
   if(c.t>=14&&c.t<14+N*5&&(c.t-14)%5===0){const d=Math.max(1,Math.round(per*dmgScale(B,true,B.combo-(c.t-14)/5)));B.hp=Math.max(0,B.hp-d);addComboDmg(B,d);B.combo++;B.redT=80;if(B.combo>=2)G.comboDisp={side:A.side,n:B.combo,t:120,d:B.comboDmg||0};
     if(!G.resim){SFX.hit(((c.t-14)/5)%3===0);G.shake=3;vib(10)}}
+  if(c.t>=86){B.y=FLOOR;B.dpose=Object.assign({},POSES.down);B.pose=Object.assign({},POSES.down);B.pv={}}// already lying on the floor when the darkness lifts
   if(c.t===100){G.cine=null;A.state='taunt';A.t=0;B.combo=0;B.comboDmg=0;B.y=FLOOR;
     addFx('sigil',A.x,A.y-48*A.S);
     if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,c.dir)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8;SFX.land(8,B.x);addFx('quake',B.x,FLOOR,2)}}
