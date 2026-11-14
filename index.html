@@ -1010,9 +1010,9 @@ const CHARS=[
   ai:{aa:'S2',ender:'S4',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'bolt',vx:4.2,dmg:62,hs:20,bs:14,w:16,h:14,kb:2.5,life:200}},
-   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-92,24,72],1),kb:1.5,launch:7,kd:true,inv:[0,8],vy:6.6,vx:1.4,pose:'upper',landRec:14},
+   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-92,24,72],1),kb:1.5,launch:7,kd:true,airCancel:true,inv:[0,8],vy:6.6,vx:1.4,pose:'upper',landRec:14,thunder:true},
    S3:{s:6,a:24,r:14,dmg:96,hits:3,multi:8,hs:16,bs:12,hb:B([-24,-62,48,20],1),kb:2.5,vx:2.8,pose:'kick',spin:true,lastKd:true},
-   S4:{s:8,a:8,r:18,dmg:95,hits:2,multi:5,hs:30,bs:14,hb:B([4,-64,30,36]),kb:2.4,pose:'palm',zap:true},
+   S4:{s:8,a:8,r:18,dmg:95,hits:2,multi:5,hs:30,bs:14,hb:B([4,-64,30,36]),kb:2.4,pose:'palm',zap:true,thunder:true},
    AS:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,proj:{type:'bolt',vx:3.4,vy:2.6,dmg:60,hs:20,bs:14,w:16,h:14,kb:2,life:90,ender:true}},
    AS2:{s:5,a:22,r:10,dmg:105,hits:3,multi:7,hs:16,bs:12,hb:B([-26,-62,52,30],1),kb:1.2,hover:26,vx:1.8,pose:'kick',spin:true,ender:true,air:true},
    SU:{s:10,a:1,r:30,pose:'palm',proj:{type:'bigbolt',vx:3.6,dmg:420,hits:6,multi:4,hs:24,bs:16,w:44,h:36,kb:0.01,lastKd:true,launch:4,life:220}}})},
@@ -1398,6 +1398,7 @@ class Fighter{
       else if(m.key==='jL'||m.key==='jU'){if(b==='L'&&(this.airL||0)<5)nm=this.moves.jL;else if(b==='D')nm=this.moves.jD||this.moves.jH;else if(b==='U')nm=this.moves.jU||this.moves.jH;else if(b==='H')nm=this.moves.jH}
       if(nm){this.buf=null;this.bufT=0;this.startMove(nm);return}}
     if(m.drill&&t>m.s&&t<=m.s+m.a){if(!G.resim&&t>m.s+2)drillFx(this,m,t)}
+    if(m.thunder&&t>=m.s-2&&t<=m.s+m.a+2&&!G.resim)thunderFx(this,m,t);
     if(m.super&&!m.drill&&t%3===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
     if(m.projInv&&t<=m.s+m.a&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
     if(m.tele&&m.teleFwd&&t<=m.s&&t%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:8});
@@ -1655,6 +1656,7 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   addFx('spark',px,py,big?2:1,null,null,dir);SFX.hit((B.hp<=0||(m.super&&finisher)||counterHit)?3:big?2:per<40?0:1,px);if(B.vx&&!B.air&&Math.abs(B.vx)>=3)addFx('dust',B.x,FLOOR);if(!G.demo&&(A===G.p1||B===G.p1))vib(big?30:12);G.excite=Math.min(1,G.excite+(big?0.5:0.2));
   if(m.freeze){B.flash=26;B.flashCol='#a8e4ff';if(!G.resim){SFX.freeze(px);addFx('ring',B.x,B.y-40*B.S);addFx('text',B.x,B.y-96*B.S,0,'FROZEN!','#a8e4ff')}}
   if(m.zap){B.flash=8;B.flashCol=A.col.accent;if(!G.resim)SFX.zap(px);if(!G.resim)addFx('spark',px,py,2)}
+  if((m.thunder||(isProj&&src&&(src.type==='bolt'||src.type==='bigbolt')))&&!G.resim){kiBurst(px,py,A.col.accent,isProj&&src.type==='bigbolt'?10:14,2.2);for(let i=0;i<6;i++){const z=addFx('zap',B.x+rnd(-10,10)*B.S,B.y-rnd(8,80)*B.S,1,null,i%2?'#ffffff':A.col.accent);if(z){z.ang=rnd(0,6.283);z.len=rnd(10,22)}}}
   cornerPush(A,B,dir,m,isProj);comboShow(A,B);
   if(m.bounce&&!isProj&&A.air&&(A.bounceN||0)<2&&B.hp>0){A.bounceN=(A.bounceN||0)+1;A.move=null;A.state='jump';A.t=0;A.vy=-m.bounce;A.vx=-A.facing*0.9;A.airAtk=false;A.airL=0;A.airSp=false;A.flip=false;addFx('dust',A.x,A.y)}
   if(B.hp<=0)KO(B,A,dir);
@@ -1738,6 +1740,29 @@ function drawWings(g,f,sx,sy,o,Q,fc){if(o<=0)return;const S=f.S,bkx=Q?(Q.sh.x*0.
     bx=cx+sd*6*S,by=cy-4*S+u*6*S,ex=bx+Math.cos(an)*len,ey=by+Math.sin(an)*len,mx=(bx+ex)/2+Math.cos(an+sd*1.2)*6*S,my=(by+ey)/2+Math.sin(an+sd*1.2)*6*S;
     g.globalAlpha=(row?0.95:0.9)*o;g.strokeStyle=pass?(row?'#ffffff':'#f2f7ff'):'#5a7ad0';g.lineWidth=(pass?(row?5:6.5):(row?7:8.5))*S*(1-u*0.35);
     g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(mx,my,ex,ey);g.stroke()}
+  g.restore()}
+// ---- lightning helpers (Raiko) ----
+function ltnBolt(g,x0,y0,x1,y1,n,j,col,w,al){g.globalAlpha=al==null?1:al;g.strokeStyle=col;g.lineWidth=w;g.beginPath();g.moveTo(x0,y0);
+  const dx=x1-x0,dy=y1-y0,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;for(let i=1;i<n;i++){const k=i/n,o=rnd(-j,j);g.lineTo(x0+dx*k+nx*o,y0+dy*k+ny*o)}g.lineTo(x1,y1);g.stroke();g.globalAlpha=1}
+/* sim-side sparks for Rising Thunder / Thunder Palm (render-only fx, skipped during rollback resim) */
+function thunderFx(f,m,t){const h=handPos(f),acc=f.col.accent,up=m.key==='S2';
+  for(let i=0;i<2;i++)addMote(h.x+rnd(-4,4),h.y+rnd(-4,4),rnd(-1.8,1.8)+(up?0:f.facing*0.8),up?rnd(-0.6,2.2):rnd(-1.6,1.6),Math.random()<0.5?'#ffffff':acc,0.8,9+(Math.random()*6|0));
+  if(t%2===0){const z=addFx('zap',h.x+rnd(-6,6),h.y+rnd(-6,6),1,null,Math.random()<0.5?'#ffffff':acc);if(z){z.ang=rnd(0,6.283);z.len=rnd(10,20)}}
+  if(up&&t%2===0){const z=addFx('zap',f.x+rnd(-10,10),f.y-rnd(10,70)*f.S,1,null,acc);if(z){z.ang=rnd(0,6.283);z.len=rnd(8,16)}}
+  if(up&&t===m.s+1){addFx('ring',f.x,FLOOR-4);for(let i=0;i<8;i++)addMote(f.x+rnd(-10,10),FLOOR-2,rnd(-2.5,2.5),-rnd(0.5,2),i%2?'#ffffff':acc,0.9,14)}}
+/* drawn on top of the fighter: crackling fist, arcs coiling round the body, and a sky bolt for Rising Thunder */
+function drawThunder(g,f,m,Q,sx,sy,fc){const t=f.t,up=m.key==='S2',acc=f.col.accent,S=f.S;if(t<m.s-2||t>m.s+m.a+(up?6:3))return;
+  const hx=sx+(Q.haF.x+2)*fc,hy=sy+Q.haF.y,act=t>m.s&&t<=m.s+m.a,pu=act?1:0.6;g.save();g.lineCap='round';
+  const gr=g.createRadialGradient(hx,hy,0,hx,hy,16*S*pu);gr.addColorStop(0,'rgba(255,255,255,0.95)');gr.addColorStop(0.4,acc);gr.addColorStop(1,'rgba(0,0,0,0)');g.globalAlpha=0.7;g.fillStyle=gr;g.beginPath();g.arc(hx,hy,16*S*pu,0,7);g.fill();
+  for(let k=0;k<(act?5:3);k++){const a=up?rnd(-2.6,-0.5)+(fc<0?0:0):rnd(0,6.283),l=rnd(10,24)*S*pu,ex=hx+Math.cos(a)*l*(up?fc:1),ey=hy+Math.sin(a)*l;
+    ltnBolt(g,hx,hy,ex,ey,4,3,acc,3,0.45);ltnBolt(g,hx,hy,ex,ey,4,2.4,'#ffffff',1.1,1)}
+  if(act){/* arcs crawling from the fist down her arm and body to her feet */
+    const fx2=sx+((Q.ftF.x+Q.ftB.x)/2)*fc,fy2=sy+(Q.ftF.y+Q.ftB.y)/2;for(let k=0;k<2;k++){const mx=sx+rnd(-8,8)*S,my=sy+Q.hip.y+rnd(-10,10)*S;ltnBolt(g,hx,hy,mx,my,5,4,acc,2.6,0.4);ltnBolt(g,hx,hy,mx,my,5,3,'#ffffff',0.9,0.85);if(up)ltnBolt(g,mx,my,fx2+rnd(-6,6),fy2,4,3,'#ffffff',0.8,0.7)}}
+  if(up&&t>m.s&&t<=m.s+5){/* the sky answers: a bolt from the top of the screen onto her fist */
+    const a=1-(t-m.s-1)/5,tx=hx+rnd(-30,30);g.globalAlpha=0.35*a;g.fillStyle=acc;g.fillRect(hx-10*S,-20,20*S,hy+20);
+    ltnBolt(g,tx,-20,hx,hy,10,9,acc,6,0.55*a);ltnBolt(g,tx,-20,hx,hy,10,7,'#ffffff',2.2,a);ltnBolt(g,tx+rnd(-20,20),-20,hx,hy,8,10,'#ffffff',0.9,0.6*a)}
+  if(!up&&act){/* Thunder Palm: a forward discharge in front of the palm */
+    for(let k=0;k<3;k++){const ex=hx+fc*rnd(16,34)*S,ey=hy+rnd(-16,16)*S;ltnBolt(g,hx,hy,ex,ey,5,4,acc,3.2,0.45);ltnBolt(g,hx,hy,ex,ey,5,3,'#ffffff',1.2,1)}}
   g.restore()}
 // ---- drill / corkscrew effects (Riot) ----
 function drillAxisQ(Q){const tip={x:(Q.ftF.x+Q.ftB.x)/2,y:(Q.ftF.y+Q.ftB.y)/2},bk=Q.head;let ux=tip.x-bk.x,uy=tip.y-bk.y;const L=Math.hypot(ux,uy)||1;ux/=L;uy/=L;return{tip,bk,ux,uy,L}}
@@ -1861,9 +1886,20 @@ function drawProj(g,p,ox){
     for(let i=0;i<14;i++){const xx=x0+d*((i*31+G.tick*9)%L);g.fillStyle=i%2?'#fff':shade(c,0.6);g.fillRect(xx,y-hh-4+((i*7)%(hh*2+8)),6,1)}
     g.fillStyle='#fff';g.beginPath();g.arc(x0,y,hh+4+(fl?2:0),0,7);g.fill();return}
   switch(p.type){
-    case'bolt':case'bigbolt':{const big=p.type==='bigbolt',r=big?15:8;g.fillStyle=c;g.globalAlpha=0.3;g.beginPath();g.arc(x,y,r+5,0,7);g.fill();g.globalAlpha=1;
-      g.fillStyle=shade(c,0.45);g.beginPath();g.arc(x,y,r,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(x,y,r*0.5,0,7);g.fill();
-      g.strokeStyle='#fff';g.lineWidth=1;for(let k=0;k<(big?6:4);k++){const a=((G.tick*7+k*53)%360)*D2R;let px=x,py=y;g.beginPath();g.moveTo(px,py);for(let j=0;j<3;j++){px+=Math.cos(a)*r*0.6+((G.tick*13+k*7+j*5)%7-3);py+=Math.sin(a)*r*0.6+((G.tick*11+k*3+j*9)%7-3);g.lineTo(px,py)}g.stroke()}break}
+    case'bolt':case'bigbolt':{const big=p.type==='bigbolt',r=big?15:8,d=Math.sign(p.vx)||1,pu=1+Math.sin(G.tick*0.9)*0.12;
+      /* electric tail: crackling strands streaming behind the orb */
+      g.lineCap='round';for(let k=0;k<(big?4:3);k++){const tl=(big?52:30)*(0.7+0.3*Math.sin(G.tick*0.6+k*2));
+        ltnBolt(g,x,y+rnd(-r*0.4,r*0.4),x-d*tl,y+rnd(-r*0.9,r*0.9),big?6:5,big?4:3,c,big?4:3,0.35);ltnBolt(g,x,y,x-d*tl*0.9,y+rnd(-r*0.7,r*0.7),big?6:5,big?3:2.4,'#ffffff',1,0.8)}
+      const gr=g.createRadialGradient(x,y,0,x,y,(r+9)*pu);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.35,c);gr.addColorStop(1,'rgba(0,0,0,0)');g.globalAlpha=0.55;g.fillStyle=gr;g.beginPath();g.arc(x,y,(r+9)*pu,0,7);g.fill();g.globalAlpha=1;
+      g.fillStyle=shade(c,0.45);g.beginPath();g.arc(x,y,r*pu,0,7);g.fill();g.fillStyle=c;g.beginPath();g.arc(x,y,r*0.78*pu,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(x+d*r*0.1,y,r*0.48*pu,0,7);g.fill();
+      /* arcs leaping off the surface */
+      for(let k=0;k<(big?7:4);k++){const a=rnd(0,6.283),l=r*(big?rnd(0.9,1.9):rnd(0.8,1.6));ltnBolt(g,x+Math.cos(a)*r*0.4,y+Math.sin(a)*r*0.4,x+Math.cos(a)*(r+l),y+Math.sin(a)*(r+l),3,2.2,k%2?'#ffffff':c,1.2,1)}
+      /* the big bolt grounds itself: forks strike the floor beneath it */
+      if(big&&G.tick%3===0){const fx2=x+rnd(-r,r);ltnBolt(g,x,y+r*0.6,fx2,FLOOR,7,5,c,3,0.45);ltnBolt(g,x,y+r*0.6,fx2,FLOOR,7,4,'#ffffff',1.2,0.95)}
+      g.lineCap='butt';
+      if(G.tick%2===0)addMote(p.x+rnd(-r,r),p.y+rnd(-r,r),-d*rnd(0.4,1.4)+rnd(-0.6,0.6),rnd(-1.2,1.2),Math.random()<0.5?'#ffffff':c,big?0.9:0.6,10+(Math.random()*6|0));
+      if(G.tick%5===0){const f=addFx('zap',p.x-d*rnd(4,r+8),p.y+rnd(-r,r),1,null,Math.random()<0.5?'#ffffff':c);if(f){f.ang=rnd(0,6.283);f.len=rnd(8,big?22:14)}}
+      if(big&&G.tick%6===0)addFx('dust',p.x,FLOOR);break}
     case'pyro':{const d=Math.sign(p.vx)||1;for(let i=4;i>0;i--){g.fillStyle=i%2?'#ff5a14':'#ffb030';g.globalAlpha=0.25*i;g.beginPath();g.arc(x-d*i*6,y+Math.sin(G.tick*0.5+i)*2,11-i*1.5,0,7);g.fill()}g.globalAlpha=1;
       g.fillStyle='#ff6a1a';g.beginPath();g.arc(x,y,10,0,7);g.fill();g.fillStyle='#ffd060';g.beginPath();g.arc(x+d*2,y,6,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(x+d*3,y-1,3,0,7);g.fill();if(G.tick%3===0)addFx('ember',p.x,p.y);break}
     case'cryo':{const d=Math.sign(p.vx)||1,r=p.w>16?10:7;g.fillStyle='rgba(168,228,255,0.35)';g.beginPath();g.arc(x,y,r+5,0,7);g.fill();
@@ -2802,6 +2838,7 @@ function drawFighterWorld(g,f,camX,opt={}){
   const inv=f.isInv()&&f.state!=='down'&&f.state!=='ko'&&G.tick%4<2;if(inv)g.globalAlpha=0.6;
   drawChar(g,f.ch,pose,sx,sy,fc,f,{pal:pal||f.pal,air,flat:!!pal,Q,sq:f.sq});g.globalAlpha=1;
   if(dr)drawDrillHelix(g,f,dr,sx,sy,fc,1);
+  if(m&&m.thunder&&f.state==='attack')drawThunder(g,f,m,Q,sx,sy,fc);
 }
 const IMPG={last:-999,on:false};// render-only: limits how often the full-screen impact flash can fire (photosensitivity)
 function renderWorld(g){
