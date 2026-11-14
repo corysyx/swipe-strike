@@ -15,6 +15,30 @@ so no Mac is needed.
 
 The GitHub Pages web version shows none of this (no shop, no ads).
 
+## In-app products to create in Google Play Console (Monetize > Products > In-app products)
+All are one-time, non-consumable products. Product IDs must match exactly:
+
+| Product ID | What it unlocks |
+|---|---|
+| `swipestrike.removeads` | Removes ads + gold colours forever |
+| `swipestrike.costume.all` | All 13 costumes |
+| `swipestrike.costume.kaito` | Kaito - STREET |
+| `swipestrike.costume.riot` | Riot - PUNK |
+| `swipestrike.costume.sol` | Sol - ASCENDED |
+| `swipestrike.costume.tank` | Tank - CHAMPION |
+| `swipestrike.costume.nyx` | Nyx - KUNOICHI |
+| `swipestrike.costume.genryu` | Genryu - SHADOW SAGE |
+| `swipestrike.costume.magatsu` | Magatsu - BONE DEMON |
+| `swipestrike.costume.shenwu` | Shenwu - CRANE ROBE |
+| `swipestrike.costume.taolin` | Taolin - TEMPLE MONK |
+| `swipestrike.costume.lihua` | Lidia - SAPPHIRE |
+| `swipestrike.costume.drake` | Jack - COMMANDO |
+| `swipestrike.costume.rocco` | Rocco - TITLE BOUT |
+| `swipestrike.costume.raiko` | Raiko - STORM ONI |
+
+Prices are set in Play Console; the game reads and shows them automatically.
+For testing before release: Debug menu > COSTUMES: ALL UNLOCKED (debug never applies online).
+
 ## Before release: swap the test IDs
 Everything currently uses Google's **test** ad IDs, which is safe for testing.
 1. `www/index.html` (and the game source): in `ADCFG` set `testing:false` and put your 4 ad unit IDs

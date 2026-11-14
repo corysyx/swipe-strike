@@ -148,7 +148,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
 const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'rgb'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 /* debug options (offline only - never applied to online matches or the attract demo) */
-const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',me:'normal',boxes:false,info:false,speed:1};
+const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',me:'normal',boxes:false,info:false,speed:1,cosAll:false};
 const DBG=(()=>{let o=JSON.parse(JSON.stringify(DBG_DEF));try{const v=JSON.parse(localStorage.getItem('ss_debug')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 function saveDbg(){try{localStorage.setItem('ss_debug',JSON.stringify(DBG))}catch(e){}}
 const dbgLive=()=>!G.net&&!G.demo;
@@ -689,11 +689,15 @@ const ADS={ok:false,noAds:LS.get('noads',false),goldUntil:LS.get('gold',0),match
   grantNoAds(){this.noAds=true;LS.set('noads',true);this.interReady=false},
   async checkPurchases(){const P=CP('NativePurchases');if(!P)return;
     try{const r=await P.getProduct({productIdentifier:ADCFG.removeAdsId,productType:'inapp'});this.price=r&&r.product&&r.product.priceString||''}catch(e){}
-    try{const r=await P.getPurchases({productType:'inapp'});if((r.purchases||[]).some(t=>t.productIdentifier===ADCFG.removeAdsId&&(!t.purchaseState||t.purchaseState==='PURCHASED'||t.purchaseState==='1')))this.grantNoAds()}catch(e){}},
+    try{const r=await P.getPurchases({productType:'inapp'});const ok=t=>!t.purchaseState||t.purchaseState==='PURCHASED'||t.purchaseState==='1';
+      for(const t of (r.purchases||[]))if(ok(t)){if(t.productIdentifier===ADCFG.removeAdsId)this.grantNoAds();else if(t.productIdentifier===COS_ALL)COS.grant('all');else if((t.productIdentifier||'').startsWith(COS_PREFIX))COS.grant(t.productIdentifier.slice(COS_PREFIX.length))}}catch(e){}
+    try{const ids=[COS_ALL,...Object.keys(COSTUMES).map(k=>COS_PREFIX+k)];const r=await P.getProducts({productIdentifiers:ids,productType:'inapp'});for(const q of (r.products||[]))if(q.identifier)COS.prices[q.identifier]=q.priceString||''}catch(e){}},
   async buy(){const P=CP('NativePurchases');if(!P||this.busy){this.say('STORE NOT AVAILABLE');return}this.busy=true;
     try{await P.purchaseProduct({productIdentifier:ADCFG.removeAdsId,productType:'inapp',quantity:1});this.grantNoAds();this.say('THANK YOU! ADS REMOVED')}catch(e){this.say('PURCHASE CANCELLED')}this.busy=false},
   async restore(){const P=CP('NativePurchases');if(!P){this.say('STORE NOT AVAILABLE');return}
-    try{await P.restorePurchases()}catch(e){}const had=this.noAds;await this.checkPurchases();this.say(this.noAds?(had?'ALREADY AD-FREE':'PURCHASE RESTORED'):'NO PURCHASES FOUND')},
+    try{await P.restorePurchases()}catch(e){}const had=this.noAds,hadC=COS.owned.length;await this.checkPurchases();this.say(this.noAds!==had||COS.owned.length>hadC?'PURCHASES RESTORED':(this.noAds||COS.owned.length?'ALL PURCHASES UP TO DATE':'NO PURCHASES FOUND'))},
+  async buyCostume(id){const P=CP('NativePurchases');if(!P||this.busy){this.say('STORE NOT AVAILABLE IN THIS VERSION');return}this.busy=true;
+    try{await P.purchaseProduct({productIdentifier:id==='all'?COS_ALL:COS_PREFIX+id,productType:'inapp',quantity:1});COS.grant(id);this.say(id==='all'?'ALL COSTUMES UNLOCKED!':'COSTUME UNLOCKED!')}catch(e){this.say('PURCHASE CANCELLED')}this.busy=false},
   privacyForm(){const A=CP('AdMob');A&&A.showPrivacyOptionsForm().catch(()=>{})}};
 
 
@@ -1049,6 +1053,29 @@ for(const c of CHARS){c.cols=COLOR_VARIANTS.map(([d,sa,li],i)=>{if(!i)return Obj
     if(i===3)o.accent='#ffd23f';return o});
   c.pals=c.cols.map(makePal);c.pal=c.pals[0]}
 for(const c of CHARS)CH[c.id]=c;
+/* ===== Paid costumes: one per character. A costume is the character with its own style + colours (same moves/stats).
+   It occupies colour slot COS_CI, so it travels online and in rematches exactly like a colour choice. ===== */
+const COS_CI=10,COS_PREFIX='swipestrike.costume.',COS_ALL='swipestrike.costume.all';
+const COSTUMES={
+  kaito:{name:'STREET',style:{hair:'spiky',band:true,sleeve:'upper',tail:'band',boots:true,beltTail:false},col:{top:'#1a1a1e',pants:'#3a4a6a',belt:'#8a6a3a',band:'#e8202a',glove:'#e8202a',shoe:'#f0f0f0',accent:'#ff4a4a'}},
+  riot:{name:'PUNK',style:{hair:'pony',tail:'hair',boots:true,sleeve:'none',gloves:true},col:{top:'#141418',pants:'#c8203a',belt:'#c0c0c8',hair:'#40e0ff',band:'#40e0ff',glove:'#141418',shoe:'#141418',accent:'#40e0ff'}},
+  sol:{name:'ASCENDED',style:{hair:'bald',robe:true,sleeve:'full',beads:true,sash:true,beltTail:true,eyeGlow:true,eyeGlowCol:'#ffd860'},col:{top:'#f0ece4',pants:'#f0ece4',belt:'#d4a017',band:'#d4a017',accent:'#ffd860'}},
+  tank:{name:'CHAMPION',style:{hair:'mohawk',sleeve:'none',boots:true,stache:true},col:{top:'#1a3ac8',pants:'#1a3ac8',belt:'#ffd23f',band:'#ffd23f',glove:'#1a1a1e',shoe:'#f0f0f0',hair:'#ffd23f',accent:'#4a8aff'}},
+  nyx:{name:'KUNOICHI',style:{hair:'mask',sleeve:'upper',tail:'scarf',boots:true,beltTail:true,lashes:true},col:{top:'#141418',pants:'#141418',belt:'#e0263f',hair:'#1e1e26',band:'#e0263f',glove:'#2a2a34',shoe:'#2a2a34',accent:'#ff3a5a'}},
+  genryu:{name:'SHADOW SAGE',style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true,eyeGlow:true,eyeGlowCol:'#9dffcf'},col:{top:'#141418',pants:'#141418',belt:'#2a8a5a',hair:'#d8d8e0',band:'#2a8a5a',accent:'#9dffcf'}},
+  magatsu:{name:'BONE DEMON',style:{hair:'wild',gi:true,sleeve:'full',beads:true,tail:'hair',beltTail:true,eyeGlow:true,eyeGlowCol:'#ff3030'},col:{top:'#e8e4dc',pants:'#7a1020',belt:'#141018',hair:'#ff3030',band:'#141018',glove:'#e8e4dc',accent:'#ff3030'}},
+  shenwu:{name:'CRANE ROBE',style:{hair:'braid',robe:true,sleeve:'full',tail:'hair',beltTail:true,boots:true},col:{top:'#f0ece4',pants:'#1e3a6a',belt:'#3a7ac8',band:'#3a7ac8',shoe:'#1e3a6a',accent:'#7fd8ff'}},
+  taolin:{name:'TEMPLE MONK',style:{hair:'mop',robe:true,sleeve:'none',beads:true,boots:true,beltTail:true},col:{top:'#e87a1a',pants:'#e87a1a',belt:'#8a2a1a',band:'#8a2a1a',shoe:'#5a3a1a',accent:'#ffb030'}},
+  lihua:{name:'SAPPHIRE',style:{hair:'lihua',tail:'hair',sleeve:'full',boots:true,sash:true},col:{top:'#1e3a8a',pants:'#1e3a8a',belt:'#e8c060',band:'#e8c060',glove:'#e8c060',shoe:'#f0ece4',accent:'#7fb0ff'}},
+  drake:{name:'COMMANDO',style:{hair:'buzz',sleeve:'none',boots:true,band:true,tail:'band',gloves:true},col:{top:'#4a5a2a',pants:'#5a5a3a',belt:'#2a2a1e',band:'#2a3a1a',glove:'#2a2a1e',shoe:'#2a2a1e',accent:'#c8e060'}},
+  rocco:{name:'TITLE BOUT',style:{hair:'fade',goatee:true,robe:true,sleeve:'full',boots:true,gloves:true},col:{top:'#c81e2a',pants:'#c81e2a',belt:'#ffd23f',band:'#ffd23f',glove:'#ffd23f',shoe:'#f0f0f0',accent:'#ffd23f'}},
+  raiko:{name:'STORM ONI',style:{hair:'pony',tail:'hair',band:true,sleeve:'none',boots:true,eyeGlow:true,eyeGlowCol:'#ffe060'},col:{top:'#1a1a2a',pants:'#1a1a2a',belt:'#ffd23f',band:'#ffd23f',glove:'#ffd23f',shoe:'#1a1a2a',accent:'#ffe060'}}};
+const COS_VAR={};
+function costumeChar(c){const cs=COSTUMES[c.id];if(!cs)return c;if(COS_VAR[c.id])return COS_VAR[c.id];
+  const col=Object.assign({},c.col,cs.col),pal=makePal(col);
+  return COS_VAR[c.id]=Object.assign(Object.create(c),{style:Object.assign({},cs.style),col,cols:[col],pals:[pal],pal,costume:cs.name})}
+/* what a colour slot looks like: the character (or its costume), its colours and palette */
+function skinOf(c,ci){if(ci===COS_CI&&COSTUMES[c.id]){const v=costumeChar(c);return{ch:v,col:v.col,pal:v.pal}}return{ch:c,col:c.cols[ci]||c.col,pal:c.pals[ci]||c.pal}}
 const BOSS_ID='archon';CHARS.splice(CHARS.findIndex(c=>c.id===BOSS_ID),1);// the final boss is never on the select screen
 const flatPal=col=>new Proxy({},{get:()=>col});
 
@@ -1269,7 +1296,7 @@ function drawChar(g,ch,pose,sx,sy,facing,obj,opt={}){
 /* ============================ FIGHTER ============================ */
 let PID=0;
 class Fighter{
-  constructor(ch,side,ci=0){this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
+  constructor(ch,side,ci=0){if(ci===COS_CI&&typeof COSTUMES!=='undefined'&&COSTUMES[ch.id])ch=costumeChar(ch);this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
     hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,lHits:0,comboDmg:0,bounceN:0,capN:0,akN:0,aparryT:0,aparryUsed:false,gL:0,enderH:false,rushT:0,rushN:0,stance:0});
@@ -2526,6 +2553,13 @@ function banner(text,life=60,size=24){G.banner={text,t:0,life,size}}
 function newDemo(){G.tag=null;const a=pick(CHARS),b=pick(CHARS.filter(c=>c!==a));G.p1=new Fighter(a,0);G.p2=new Fighter(b,1);G.me=G.p1;if(G.net&&!G.net.connected)G.net=null;G.ai1=makeAI(2);G.ai=makeAI(2);G.demo=true;G.training=false;
   G.stage=randFightStage();G.wins=[0,0];G.round=1;startRound()}
 const NCOL=()=>ADS.gold()?5:4;
+/* costume ownership: bought costumes (or the all-costumes bundle) are remembered on the device and re-checked with Google Play */
+const COS={owned:LS.get('cos',[]),prices:{},
+  has(id){return!!COSTUMES[id]&&(DBG.cosAll||this.owned.includes('all')||this.owned.includes(id))},
+  grant(id){if(!this.owned.includes(id)){this.owned.push(id);LS.set('cos',this.owned)}}};
+/* the colour slots a fighter can cycle through on the select screen: the normal colours, then the costume if owned */
+const colOpts=c=>{const o=[];for(let k=0;k<NCOL();k++)o.push(k);if(c&&COS.has(c.id))o.push(COS_CI);return o};
+const nextCi=(c,ci)=>{const o=colOpts(c),i=o.indexOf(ci);return o[(i+1)%o.length]};
 /* ============================ TAG BATTLE ============================
    Each side has a team of two. Only the active fighter is simulated and drawn; the partner waits off-screen, slowly
    recovering some lost health. Tagging (TAG button / T key) works from neutral on the ground and the partner leaps in
@@ -3035,11 +3069,38 @@ function renderShop(g){
   if(!ADS.noAds){const left=ADS.goldUntil-Date.now();
     if(left>0)txt(g,'GOLD COLOURS: '+Math.ceil(left/3600e3)+'H LEFT',W/2,y+5,8,'#ffd23f','center'),y+=24;
     else b('WATCH AD: GOLD COLOURS 24H',()=>ADS.watchForGold(),{col:'#ffd23f'})}
+  b('COSTUMES',()=>{G.cosSel=G.cosSel||'kaito';go('costumes')},{col:'#ff8a3a'});
   b('RESTORE PURCHASES',()=>ADS.restore(),{col:'#7fd8ff'});
   if(ADS.privacy)b('PRIVACY SETTINGS',()=>ADS.privacyForm(),{col:'#b48cff'});
   txt(g,'GOLD COLOURS: TAP YOUR FIGHTER AGAIN ON SELECT',W/2,H-30,8,'#8a80b0','center');
   if(ADS.msgT>0){ADS.msgT--;txt(g,ADS.msg,W/2,H-46,8,'#fff','center')}
   button(g,4,2,24,13,'<',()=>go('title'),{def:true});
+}
+const cosCardObj={};
+function renderCostumes(g){
+  g.fillStyle='rgba(8,4,20,0.85)';g.fillRect(0,0,W,H);bigTxt(g,'COSTUMES',W/2,14,16,'#fff6a0','#ff7a1a');
+  const ids=Object.keys(COSTUMES),sel=G.cosSel||ids[0];
+  /* grid of mini previews */
+  ids.forEach((id,i)=>{const col=i%7,row=Math.floor(i/7),x=6+col*38,y=34+row*60,cw=36,chh=56,own=COS.has(id),v=costumeChar(CH[id]);
+    g.fillStyle=id===sel?'#ffd23f':'#2a1a4a';g.fillRect(x,y,cw,chh);g.fillStyle=shade(outfit(v,v.col),-0.45);g.fillRect(x+1,y+1,cw-2,chh-2);
+    g.save();g.beginPath();g.rect(x+1,y+1,cw-2,chh-2);g.clip();g.translate(x+cw/2-2,y+chh-3);g.scale(0.36,0.36);drawChar(g,v,POSES.idle,0,0,1,cosCardObj[id]||(cosCardObj[id]={}),{pal:v.pal});g.restore();
+    if(own){g.fillStyle='#2a8a4a';g.fillRect(x+cw-9,y+2,7,7);txt(g,'+',x+cw-8,y+1,8,'#fff','left',false)}
+    BTN.push({x,y,w:cw,h:chh,cb:()=>{G.cosSel=id;SFX.sel()}})});
+  /* big preview of the selected costume */
+  const v=costumeChar(CH[sel]),own=COS.has(sel),px=276;
+  g.fillStyle='#1a1030';g.fillRect(px,34,104,118);g.save();g.beginPath();g.rect(px,34,104,118);g.clip();g.translate(px+50,148);g.scale(0.95,0.95);
+  const pz=Object.assign({},POSES.idle),bb=Math.sin(G.tick*0.08);pz.lean+=bb*1.5;pz.fa1+=bb*3;drawChar(g,v,pz,0,0,1,cosCardObj['big_'+sel]||(cosCardObj['big_'+sel]={}),{pal:v.pal});g.restore();
+  txt(g,CH[sel].name,px+52,158,8,'#fff','center');txt(g,COSTUMES[sel].name,px+52,168,8,'#ffd23f','center');
+  const price=COS.prices[COS_PREFIX+sel];
+  if(own)txt(g,'OWNED - TAP YOUR FIGHTER',px+52,182,8,'#9dffcf','center'),txt(g,'ON SELECT TO WEAR IT',px+52,191,8,'#9dffcf','center');
+  else button(g,px,180,104,16,'BUY'+(price?' '+price:''),()=>ADS.buyCostume(sel),{def:true});
+  /* bundle + restore */
+  const all=COS.owned.includes('all')||ids.every(id=>COS.has(id)),pa=COS.prices[COS_ALL];
+  if(!all)button(g,6,158,264,16,'ALL 13 COSTUMES'+(pa?'  '+pa:''),()=>ADS.buyCostume('all'),{col:'#ff8a3a'});else txt(g,'ALL COSTUMES OWNED - THANK YOU!',138,163,8,'#9dffcf','center');
+  button(g,6,180,128,16,'RESTORE',()=>ADS.restore(),{col:'#7fd8ff'});
+  if(!NATIVE)txt(g,'PURCHASES: IN THE APP ONLY',204,206,8,'#8a80b0','center');
+  if(ADS.msgT>0){ADS.msgT--;txt(g,ADS.msg,W/2,H-12,8,'#fff','center')}
+  button(g,4,2,24,13,'<',()=>go('shop'),{def:true});
 }
 function gestIcon(g,type,x,y){
   g.strokeStyle='#ffd23f';g.fillStyle='#ffd23f';g.lineWidth=1.5;g.lineCap='round';
@@ -3089,14 +3150,14 @@ function drawRoster(g,opt){
       BTN.push({x,y,w:cw,h:chh,cb:()=>opt.tap(null,-1,true)});return}
     const t=opt.tag(c)||{},ci=t.ci||0;
     g.fillStyle=t.sel||'#2a1a4a';g.fillRect(x,y,cw,chh);
-    const gr=g.createLinearGradient(0,y,0,y+chh);gr.addColorStop(0,shade(outfit(c,c.cols[ci]),-0.2));gr.addColorStop(1,'#0e0820');g.fillStyle=gr;g.fillRect(x+1,y+1,cw-2,chh-2);
+    const gr=g.createLinearGradient(0,y,0,y+chh);const sk=skinOf(c,ci);gr.addColorStop(0,shade(outfit(sk.ch,sk.col),-0.2));gr.addColorStop(1,'#0e0820');g.fillStyle=gr;g.fillRect(x+1,y+1,cw-2,chh-2);
     g.save();g.beginPath();g.rect(x+1,y+1,cw-2,chh-2);g.clip();const o=cardObjs[c.id]||(cardObjs[c.id]={});const b=Math.sin(G.tick*0.09+i);
     const pz=Object.assign({},t.sel?POSES.win:POSES.idle);if(!t.sel){pz.lean+=b*1.5;pz.fa1+=b*3}
-    g.translate(x+cw/2-3,y+chh-13);g.scale(0.5,0.5);drawChar(g,c,pz,0,0,1,o,{pal:c.pals[ci]});g.restore();
+    g.translate(x+cw/2-3,y+chh-13);g.scale(0.5,0.5);drawChar(g,sk.ch,pz,0,0,1,o,{pal:sk.pal});g.restore();
     g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(x+1,y+chh-13,cw-2,12);txt(g,c.name,x+cw/2,y+chh-11,8,'#fff','center');
     if(t.l){g.fillStyle=t.lc;g.fillRect(x+2,y+2,t.l.length*8+4,10);txt(g,t.l,x+4,y+3,8,'#fff','left',false)}
     if(t.r){g.fillStyle=t.rc;g.fillRect(x+cw-t.r.length*8-6,y+2,t.r.length*8+4,10);txt(g,t.r,x+cw-t.r.length*8-4,y+3,8,'#fff','left',false)}
-    if(t.sw!=null)for(let k=0;k<NCOL();k++){g.fillStyle=k===t.sw?'#fff':'#120a16';g.fillRect(x+cw-11,y+14+k*9,9,8);g.fillStyle=outfit(c,c.cols[k]);g.fillRect(x+cw-10,y+15+k*9,7,6)}
+    if(t.sw!=null)colOpts(c).forEach((k,j)=>{const sk2=skinOf(c,k);g.fillStyle=k===t.sw?'#fff':(k===COS_CI?'#ffd23f':'#120a16');g.fillRect(x+cw-11,y+14+j*9,9,8);g.fillStyle=outfit(sk2.ch,sk2.col);g.fillRect(x+cw-10,y+15+j*9,7,6)})
     BTN.push({x,y,w:cw,h:chh,cb:()=>opt.tap(c,i)})});
 }
 function drawInfo(g,c){g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(4,157,376,38);if(!c){txt(g,'RANDOM',8,160,8,'#fff');txt(g,'???',64,160,8,'#b48cff');txt(g,'A SECRET FIGHTER HAS BEEN CHOSEN.',8,172,8,'#d8d0ff');txt(g,'REVEALED WHEN THE FIGHT STARTS!',8,182,8,'#d8d0ff');return}txt(g,c.name,8,160,8,'#fff');txt(g,c.arch,8+(c.name.length+1)*8,160,8,c.archCol);
@@ -3111,7 +3172,7 @@ function renderTagSelect(g){
   drawRoster(g,{tag:c=>{const a=s.p1===c.id&&!s.h1,b=s.p1b===c.id&&!s.h1b;if(!a&&!b)return null;return{sel:a?'#4aa0ff':'#7fd8ff',ci:a?s.c1:s.c1b,l:a?'1':'2',lc:'#4aa0ff',sw:a?s.c1:s.c1b}},
     rtag:()=>s.h1||s.h1b?{sel:'#4aa0ff',l:s.h1&&s.h1b?'1+2':s.h1?'1':'2',lc:'#4aa0ff'}:null,
     tap:(c,i,h)=>{SFX.sel();s.info=i;
-      if(!h&&s.p1===c.id&&!s.h1)s.c1=(s.c1+1)%NCOL();else if(!h&&s.p1b===c.id&&!s.h1b)s.c1b=(s.c1b+1)%NCOL();
+      if(!h&&s.p1===c.id&&!s.h1)s.c1=nextCi(c,s.c1);else if(!h&&s.p1b===c.id&&!s.h1b)s.c1b=nextCi(c,s.c1b);
       else if(!s.p1){s.p1=h?rndPick(s.p1b):c.id;s.c1=h?rndCol():0;s.h1=!!h}else{s.p1b=h?rndPick(s.p1):c.id;s.c1b=h?rndCol():0;s.h1b=!!h}s.p2=null;s.p2b=null}});
   drawInfo(g,s.info<0?null:CHARS[s.info]||CHARS[0]);if(DBG.me==='archon'&&G.selMode!=='bonus')txt(g,'DEBUG: PLAYING AS ARCHON',W-8,160,8,'#ff8aff','right');
   const dn=['EASY','NORMAL','HARD'],ready=!!(s.p1&&s.p1b);
@@ -3129,10 +3190,10 @@ function renderSelect(g){
     tag:c=>{const isP1=s.p1===c.id&&!s.h1,isP2=s.p2===c.id&&!s.h2;if(!isP1&&!isP2)return null;
       return{sel:isP1?'#4aa0ff':'#ff4a4a',ci:isP1?s.c1:s.c2,l:isP1?'1P':null,lc:'#4aa0ff',r:isP2&&G.training?'DUMMY':null,rc:'#ff4a4a',sw:isP1?s.c1:s.c2}},
     tap:(c,i,h)=>{SFX.sel();s.info=i;
-      if(solo){if(!h&&s.p1===c.id&&!s.h1)s.c1=(s.c1+1)%NCOL();else{s.p1=h?rndPick():c.id;s.c1=h?rndCol():0;s.h1=!!h}s.p2=null;s.h2=false;return}
+      if(solo){if(!h&&s.p1===c.id&&!s.h1)s.c1=nextCi(c,s.c1);else{s.p1=h?rndPick():c.id;s.c1=h?rndCol():0;s.h1=!!h}s.p2=null;s.h2=false;return}
       if(!s.p1){s.p1=h?rndPick():c.id;s.c1=h?rndCol():0;s.h1=!!h;s.p2=rndPick(s.p1);s.c2=0;s.h2=false;return}
       if(h){s.p2=rndPick(s.p1);s.c2=rndCol();s.h2=true;return}
-      if(s.p2===c.id&&!s.h2&&s.p1!==c.id){s.c2=(s.c2+1)%NCOL()}else if(s.p1===c.id&&!s.h1){s.c1=(s.c1+1)%NCOL()}else{s.p2=c.id;s.c2=s.p1===c.id?1:0;s.h2=false}}});
+      if(s.p2===c.id&&!s.h2&&s.p1!==c.id){s.c2=nextCi(c,s.c2)}else if(s.p1===c.id&&!s.h1){s.c1=nextCi(c,s.c1)}else{s.p2=c.id;s.c2=s.p1===c.id?1:0;s.h2=false}}});
   drawInfo(g,s.info<0?null:CHARS[s.info]||CHARS[0]);if(DBG.me==='archon'&&G.selMode!=='bonus')txt(g,'DEBUG: PLAYING AS ARCHON',W-8,160,8,'#ff8aff','right');
   const dn=['EASY','NORMAL','HARD'];
   if(G.selMode==='bonus'){button(g,6,198,244,20,'BONUS: '+(G.bonusType==='car'?'CAR CRUSH':'BARREL BREAK'),()=>{G.bonusType=G.bonusType==='car'?'barrels':'car'},{col:'#ffd23f'});
@@ -3199,6 +3260,7 @@ function renderDebug(g){
   row(x1,128,'GAME SPEED: '+Math.round(100/DBG.speed)+'%',DBG.speed,1,()=>DBG.speed=DBG.speed===1?2:DBG.speed===2?4:1);
   row(x2,128,'OPPONENT: '+(DBG.opp==='archon'?'ARCHON (BOSS)':'NORMAL'),DBG.opp,'normal',()=>DBG.opp=DBG.opp==='archon'?'normal':'archon');
   row(x1,150,'PLAY AS: '+(DBG.me==='archon'?'ARCHON (BOSS)':'YOUR PICK'),DBG.me,'normal',()=>DBG.me=DBG.me==='archon'?'normal':'archon');
+  row(x2,150,'COSTUMES: '+(DBG.cosAll?'ALL UNLOCKED':'OWNED ONLY'),DBG.cosAll,false,()=>DBG.cosAll=!DBG.cosAll);
   txt(g,'DRAIN: DOWN TO 1 HP. LOW/1HP: AT ROUND START',W/2,172,8,'#8a80b0','center');
   txt(g,'BOXES: GREEN BODY, RED ATTACK, YELLOW SHOT',W/2,182,8,'#8a80b0','center');
   button(g,x1,194,bw,18,'RESET ALL',()=>{Object.assign(DBG,JSON.parse(JSON.stringify(DBG_DEF)));ch()},{col:'#ffd23f'});
@@ -3264,6 +3326,7 @@ function render(){
   switch(G.mode){
     case'title':renderWorld(cx);BTN=[];renderTitle(cx);break;
     case'shop':renderWorld(cx);BTN=[];renderShop(cx);break;
+    case'costumes':renderWorld(cx);BTN=[];renderCostumes(cx);break;
     case'howto':renderHowto(cx);break;
     case'settings':renderSettings(cx);break;
     case'debug':renderDebug(cx);break;
@@ -3279,7 +3342,7 @@ function render(){
 function step(){
   G.tick++;pollTouch();
   setTrack(G.mode==='fight'?'s'+G.stage:(G.mode==='bonus'?'bonus':'menu'));
-  if(G.mode==='title'||G.mode==='shop'){stepFight()}
+  if(G.mode==='title'||G.mode==='shop'||G.mode==='costumes'){stepFight()}
   else if(G.mode==='vs'){G.vsT++;if(G.vsT>=110){G.mode='fight';G.hint=IN.touch?G.hint:0;startRound();if(G.net)G.net.live=true}}
   else if(G.mode==='fight'&&G.net&&G.net.live){netTick();G.hint++}
   else if(G.mode==='fight'&&!G.paused&&!G.result){stepFight();G.hint++}
@@ -3684,7 +3747,8 @@ function renderNetSel(g){const N=G.net;
     tag:c=>{const me=N.pick===c.id&&!N.h1,me2=N.tagMode&&N.pick2===c.id&&!N.h2,them=(N.rpick===c.id&&!N.rh1)||(N.tagMode&&N.rpick2===c.id&&!N.rh2);if(!me&&!me2&&!them)return null;
       return{sel:me||me2?'#4aa0ff':'#ff4a4a',ci:me?N.pc:me2?N.pc2:(N.rpick===c.id?N.rpc:N.rpc2),l:me?(N.tagMode?'YOU 1':'YOU'):me2?'YOU 2':null,lc:'#4aa0ff',r:them?'RIVAL':null,rc:'#ff4a4a',sw:me?N.pc:me2?N.pc2:null}},
     tap:(c,i,h)=>{if(N.ready)return;N.pc2=N.pc2|0;
-      if(!h&&N.pick===c.id&&!N.h1)N.pc=(N.pc+1)%4;else if(!h&&N.tagMode&&N.pick2===c.id&&!N.h2)N.pc2=(N.pc2+1)%4;
+      const nx=ci=>{const o=[0,1,2,3];if(COS.has(c.id))o.push(COS_CI);return o[(o.indexOf(ci)+1)%o.length]};/* online: the 4 colours plus an owned costume */
+      if(!h&&N.pick===c.id&&!N.h1)N.pc=nx(N.pc);else if(!h&&N.tagMode&&N.pick2===c.id&&!N.h2)N.pc2=nx(N.pc2);
       else if(!N.tagMode||!N.pick){N.pick=h?rndPick(N.tagMode?N.pick2:null):c.id;N.pc=h?rndCol(4):0;N.h1=!!h}else{N.pick2=h?rndPick(N.pick):c.id;N.pc2=h?rndCol(4):0;N.h2=!!h}
       NX.ctrlSend({t:'pick',id:N.pick,c:N.pc,id2:N.tagMode?N.pick2:null,c2:N.pc2,h1:!!N.h1,h2:!!N.h2});SFX.sel()}});
   g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(4,157,376,38);if(N.pick){const c=CH[N.pick];if(N.h1)txt(g,'RANDOM - ???',8,160,8,'#b48cff');else txt(g,c.name+' - '+c.arch,8,160,8,c.archCol)}
