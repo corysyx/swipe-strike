@@ -1308,7 +1308,9 @@ class Fighter{
       if(this.t>=dur){this.state='idle';this.t=0;this.vx=0}}
     else if(st==='attack')this.updMove(op);
     else if(st==='hit'){if(!this.juggle){this.vx*=0.86;if(this.t>=this.stun){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0;this.capN=0}}else this.vx*=0.995}
-    else if(st==='block'){this.vx*=0.85;if(this.buf==='H'&&this.pbCD<=0){this.buf=null;this.bufT=0;this.pushblock(op)}if(this.t>=this.stun){this.state='idle';this.t=0}}
+    else if(st==='block'){this.vx*=0.85;if(this.buf==='H'&&this.pbCD<=0){this.buf=null;this.bufT=0;this.pushblock(op)}
+      /* guard parry: a back swipe while blocking parries the next hit of a string (e.g. a light combo) */
+      else if(this.buf==='P'&&!this.air){this.buf=null;this.bufT=0;this.state='parry';this.t=0;this.vx=0;SFX.whoosh(0)}if(this.t>=this.stun){this.state='idle';this.t=0}}
     else if(st==='down'){this.vx*=0.8;if(this.t>=34&&!this.ko){this.state='getup';this.t=0}}
     else if(st==='getup'){if(this.t>=14){this.state='idle';this.t=0;this.combo=0;this.launchN=0;this.lHits=0;this.comboDmg=0;this.capN=0}}
     else if(st==='parry'){if(this.t>=20){this.state='idle';this.t=0}}
