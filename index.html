@@ -2704,6 +2704,8 @@ function stepFight(netIn){
   updateProjs();
   checkHits(p1,p2);checkHits(p2,p1);
   for(let k=0;k<2;k++)separate(p1,p2);
+  /* safety: health never below zero (hits landing on the KO frame) and nobody left under the floor outside scripted throws */
+  for(const f of [p1,p2]){if(f.hp<0)f.hp=0;if(f.y>FLOOR)f.y=FLOOR}
   const tgt=clamp((p1.x+p2.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   for(const f of[p1,p2]){if(f.redT>0)f.redT--;else if(f.redHp>f.hp)f.redHp=Math.max(f.hp,f.redHp-6);if(f.hp>f.redHp)f.redHp=f.hp}
   if(G.training){for(const f of[p2,p1])if(f.state!=='hit'&&f.state!=='down'&&f.combo===0&&f.hp<f.ch.hp&&G.tick%2===0){f.hp=Math.min(f.ch.hp,f.hp+8);f.redHp=Math.max(f.redHp,f.hp)}p1.meter=Math.max(p1.meter,G.tick%120===0?100:p1.meter)}
