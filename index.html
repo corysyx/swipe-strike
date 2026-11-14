@@ -3297,15 +3297,18 @@ function bonusHit(tg,d){const B=G.bonus;tg.hp-=d;tg.flash=4;tg.shake=6;
     else if(Math.random()<.35)carDebris(tg,'bits',2)}
   if(tg.kind==='car'){if(!G.resim){addFx('spark',tg.x+rnd(-40,40),tg.y-rnd(10,40),1);if(Math.random()<.4)addFx('dust',tg.x+rnd(-50,50),FLOOR)}
     if(tg.hp<=0&&!tg.dead){tg.dead=true;B.broken=1;carExplode(tg);banner('DESTROYED!',100,24);B.phase='end';B.t=0}}
-  else{if(!tg.dead){tg.dead=true;B.broken++;B.debris=B.debris||[];for(let i=0;i<7;i++){const a=i/7*Math.PI*2;B.debris.push({type:'panel',w:4,h:14,col:i%2?'#9a6630':'#7a4a22',x:tg.x+Math.cos(a)*10,y:tg.y-16+Math.sin(a)*10,vx:Math.cos(a)*rnd(1.5,3.5),vy:-rnd(3,6),r:a,vr:rnd(-0.4,0.4),life:0,rest:0})}
-      for(let i=0;i<2;i++)B.debris.push({type:'hoop',w:24,h:24,col:'#3a3a42',x:tg.x,y:tg.y-16,vx:(i?1:-1)*rnd(1,2.5),vy:-rnd(4,6),r:0,vr:(i?1:-1)*0.3,life:0,rest:0});addFx('spark',tg.x,tg.y-12,2);addFx('dust',tg.x,FLOOR);addFx('text',tg.x,tg.y-36,0,'+1','#ffd23f');SFX.hit(1)}}}
+  else{if(!tg.dead){tg.dead=true;B.broken++;B.debris=B.debris||[];const SH=['#a8723a','#9a6630','#86562a','#7a4a22','#6a3e1c'],n=6+(Math.random()*4|0);for(let i=0;i<n;i++){const a=i/n*Math.PI*2+rnd(-0.3,0.3),h=rnd(7,19),w=rnd(3,6);
+        /* staves: random length, width, shade, bow and splintered ends; they settle lying at a random tilt */
+        B.debris.push({type:'stave',w,h,col:SH[Math.random()*SH.length|0],bow:rnd(-1.2,1.2),jt:[rnd(0,3),rnd(0,3),rnd(0,3)],jb:[rnd(0,3),rnd(0,3),rnd(0,3)],ra:Math.PI/2+rnd(-0.5,0.5)+(Math.random()<0.5?Math.PI:0),x:tg.x+Math.cos(a)*10,y:tg.y-16+Math.sin(a)*10,vx:Math.cos(a)*rnd(1,4)+rnd(-0.5,0.5),vy:-rnd(2.5,7),r:a,vr:rnd(-0.5,0.5),life:0,rest:0})}
+      for(let i=0,ns=3+(Math.random()*4|0);i<ns;i++)B.debris.push({type:'stave',w:rnd(1.5,2.5),h:rnd(3,6),col:SH[Math.random()*SH.length|0],bow:0,jt:[rnd(0,1.5),0,rnd(0,1.5)],jb:[0,rnd(0,1.5),0],ra:rnd(0,6.28),x:tg.x+rnd(-8,8),y:tg.y-rnd(8,26),vx:rnd(-3,3),vy:-rnd(3,8),r:rnd(0,6),vr:rnd(-0.6,0.6),life:0,rest:0});/* splinters */
+      for(let i=0,nh=1+(Math.random()<0.7?1:0);i<nh;i++){const hw=rnd(19,27);B.debris.push({type:'hoop',w:hw,h:hw,sq:rnd(3.5,6.5),col:Math.random()<0.5?'#3a3a42':'#4a4248',ra:rnd(-0.35,0.35),x:tg.x+rnd(-4,4),y:tg.y-rnd(10,22),vx:(i?1:-1)*rnd(0.6,3),vy:-rnd(3.5,7),r:rnd(-0.3,0.3),vr:(i?1:-1)*rnd(0.15,0.4),life:0,rest:0})}addFx('spark',tg.x,tg.y-12,2);addFx('dust',tg.x,FLOOR);addFx('text',tg.x,tg.y-36,0,'+1','#ffd23f');SFX.hit(1)}}}
 function stepBonus(){const B=G.bonus,P=G.p1,X=G.p2;
   if(G.superFlash){if(--G.superFlash.t<=0)G.superFlash=null;updFx();return}
   if(G.cine){const tg=B.cineT&&!B.cineT.dead?B.cineT:null;if(tg)placeProxy(X,tg);const h=X.hp;stepCine();if(tg&&X.hp<h)bonusHit(tg,h-X.hp);X.hp=99999;if(!G.cine){resetProxy(X);P.state='idle';P.t=0;B.cineT=null}return}
   if(G.hitstop>0){G.hitstop--;updFx();return}
   B.t++;
   if(B.debris)for(const d of B.debris){d.life++;if(d.rest>1)continue;d.vy+=0.32;d.x+=d.vx;d.y+=d.vy;d.r+=d.vr;
-    if(d.y>FLOOR-d.h/2){d.y=FLOOR-d.h/2;if(Math.abs(d.vy)>1.5){d.vy*=-0.38;d.vx*=0.6;d.vr*=0.6;d.rest=0}else{d.vy=0;d.vx*=0.8;d.vr*=0.7;d.rest++;if(d.type!=='wheel')d.r=Math.round(d.r/Math.PI)*Math.PI}}}
+    if(d.y>FLOOR-d.h/2){d.y=FLOOR-d.h/2;if(Math.abs(d.vy)>1.5){d.vy*=-0.38;d.vx*=0.6;d.vr*=0.6;d.rest=0}else{d.vy=0;d.vx*=0.8;d.vr*=0.7;d.rest++;if(d.ra!=null)d.r=d.ra;else if(d.type!=='wheel')d.r=Math.round(d.r/Math.PI)*Math.PI}}}
   if(B.boom){B.boom.t++;if(B.boom.t%4===0&&B.boom.t<160)addFx('csmoke',B.boom.x+rnd(-30,30),B.boom.y-rnd(0,20));if(B.boom.t%7===0&&B.boom.t<120)addFx('ember',B.boom.x+rnd(-40,40),B.boom.y-rnd(0,10))}
   if(B.phase==='intro'){if(B.t===2){banner('BONUS STAGE',70,24);SFX.bell()}if(B.t===74)banner(B.type==='car'?'SMASH THE CAR!':'BREAK THE BARRELS!',50,16);if(B.t>=124){B.phase='go';B.t=0}}
   const live=B.phase==='go';
@@ -3369,7 +3372,8 @@ function drawBonusProps(g,camX){const B=G.bonus;if(!B)return;
       g.restore()}}}
 function drawBonusFront(g,camX){const B=G.bonus;if(!B)return;
   if(B.debris)for(const d of B.debris){const x=d.x-camX;if(x<-40||x>W+40)continue;g.save();g.translate(x,d.y);g.rotate(d.r);
-    if(d.type==='hoop'){g.strokeStyle='#120a08';g.lineWidth=4;g.beginPath();g.ellipse(0,0,d.w/2,d.h/5,0,0,7);g.stroke();g.strokeStyle=d.col;g.lineWidth=2;g.stroke()}
+    if(d.type==='hoop'){g.strokeStyle='#120a08';g.lineWidth=4;g.beginPath();g.ellipse(0,0,d.w/2,d.h/(d.sq||5),0,0,7);g.stroke();g.strokeStyle=d.col;g.lineWidth=2;g.stroke()}
+    else if(d.type==='stave'){/* a bowed wooden stave with splintered ends */const w2=d.w/2,h2=d.h/2,b=d.bow;g.beginPath();g.moveTo(-w2+b,-h2+d.jt[0]);g.lineTo(0+b,-h2+d.jt[1]);g.lineTo(w2+b,-h2+d.jt[2]);g.quadraticCurveTo(w2+b*1.6,0,w2+b,h2-d.jb[2]);g.lineTo(0+b,h2-d.jb[1]);g.lineTo(-w2+b,h2-d.jb[0]);g.quadraticCurveTo(-w2+b*1.6,0,-w2+b,-h2+d.jt[0]);g.closePath();g.fillStyle=d.col;g.fill();g.strokeStyle='#120a0a';g.lineWidth=1;g.stroke();if(d.w>3){g.fillStyle='rgba(255,255,255,0.18)';g.fillRect(-w2+1+b*0.6,-h2+2,1,d.h-4)}}
     else if(d.type==='wheel'){g.fillStyle=d.col;g.beginPath();g.arc(0,0,d.w/2,0,7);g.fill();if(d.w>8){g.fillStyle='#8a8a92';g.beginPath();g.arc(0,0,d.w/4,0,7);g.fill();g.fillStyle='#1a1a1e';g.fillRect(-1,-d.w/4,2,d.w/2)}}
     else{g.fillStyle='#120a0a';g.fillRect(-d.w/2-1,-d.h/2-1,d.w+2,d.h+2);g.fillStyle=d.col;g.fillRect(-d.w/2,-d.h/2,d.w,d.h);if(d.w>20){g.fillStyle='rgba(255,255,255,0.25)';g.fillRect(-d.w/2+2,-d.h/2+1,d.w-4,1)}}
     g.restore()}
