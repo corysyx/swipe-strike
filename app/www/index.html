@@ -2794,7 +2794,7 @@ function renderWorld(g){
   G.zoomKick=(G.zoomKick||0)*0.86;zt+=G.zoomKick;
   G.zoom=lerp(G.zoom||1,zt,0.16);G.zfx=lerp(G.zfx??fx,fx,0.2);G.zfy=lerp(G.zfy??fy,fy,0.2);
   if(G.zoom>1.003){const z=G.zoom;let ax=clamp(G.zfx,W/2/z*0.5,W-W/2/z*0.5);const ay=clamp(G.zfy,H*0.3,H*0.85);
-    if(!G.superFlash){const xl=Math.min(p1.x,p2.x)-camX,xr=Math.max(p1.x,p2.x)-camX,hiA=(xl*z-22)/(z-1),loA=(xr*z-(W-22))/(z-1);if(loA<=hiA)ax=clamp(ax,loA,hiA)}/* keep both fighters inside the zoomed view */g.translate(ax,ay);g.scale(z,z);g.translate(-ax,-ay)}
+    if(!G.superFlash){const xl=Math.min(p1.x,p2.x)-camX,xr=Math.max(p1.x,p2.x)-camX,hiA=(xl*z-22)/(z-1),loA=(xr*z-(W-22))/(z-1);if(loA<=hiA)ax=clamp(ax,loA,hiA)}/* keep both fighters inside the zoomed view */ax=clamp(ax,0,W);/* never zoom past the stage edges */g.translate(ax,ay);g.scale(z,z);g.translate(-ax,-ay)}
   drawStage(g,camX);drawSuperBg(g);
   const L=STAGES[G.stage];g.fillStyle=L.floorGlow;
   if(G.mode==='bonus')drawBonusProps(g,camX);
