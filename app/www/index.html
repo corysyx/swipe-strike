@@ -1545,7 +1545,7 @@ function updateProjs(){
   }
   /* Jack: a Sonic Cutter thrown through his own Sonic Blade absorbs it and becomes a bigger, faster, multi-hit cutter that knocks down */
   for(const a of G.projs)if(a.type==='boom'&&!a.pw&&!a.dead)for(const b of G.projs)if(b.type==='blade'&&!b.dead&&b.owner===a.owner&&overlap(projBox(a),projBox(b))){
-    b.dead=true;a.pw=true;a.vx*=1.35;a.w=Math.round(a.w*1.6);a.h=Math.round(a.h*1.9);a.dmg=150;a.hits=3;a.hitsLeft=3;a.multi=7;a.kb=1;a.lastKd=true;a.life=a.t+140;a.hs=18;a.bs=12;
+    b.dead=true;a.pw=true;a.vx*=1.35;a.w=Math.round(a.w*1.6);a.h=Math.round(a.h*1.9);a.dmg=150;a.hits=2;a.hitsLeft=2;a.multi=9;a.kb=1;a.lastKd=true;a.life=a.t+140;a.hs=18;a.bs=12;
     if(!G.resim){kiBurst(b.x,b.y,a.owner.col.accent,14,2.6);addFx('ring',b.x,b.y);addFx('text',b.x,b.y-26,0,'POWER!',a.owner.col.accent);SFX.zap?SFX.zap(b.x):SFX.whoosh(1)}break}
   // proj vs proj
   for(let i=0;i<G.projs.length;i++)for(let j=i+1;j<G.projs.length;j++){const a=G.projs[i],b=G.projs[j];
@@ -1784,6 +1784,12 @@ function drawWings(g,f,sx,sy,o,Q,fc){if(o<=0)return;const S=f.S,bkx=Q?(Q.sh.x*0.
     g.globalAlpha=(row?0.95:0.9)*o;g.strokeStyle=pass?(row?'#ffffff':'#f2f7ff'):'#5a7ad0';g.lineWidth=(pass?(row?5:6.5):(row?7:8.5))*S*(1-u*0.35);
     g.beginPath();g.moveTo(bx,by);g.quadraticCurveTo(mx,my,ex,ey);g.stroke()}
   g.restore()}
+// ---- plasma helper (Jack's blades): a hot glow underneath, crackling arcs and flying sparks ----
+function plasmaFx(g,p,x,y,r,c,arcs,sparks){const pu=1+Math.sin(G.tick*0.7+p.t*0.3)*0.1,d=Math.sign(p.vx)||1;
+  const gr=g.createRadialGradient(x,y,0,x,y,r*1.9*pu);gr.addColorStop(0,'rgba(255,255,255,0.75)');gr.addColorStop(0.3,c);gr.addColorStop(1,'rgba(0,0,0,0)');g.globalAlpha=0.5;g.fillStyle=gr;g.beginPath();g.arc(x,y,r*1.9*pu,0,7);g.fill();g.globalAlpha=1;
+  g.lineCap='round';for(let k=0;k<arcs;k++){const a=rnd(0,6.283),l=r*rnd(1.0,1.7);ltnBolt(g,x+Math.cos(a)*r*0.3,y+Math.sin(a)*r*0.3,x+Math.cos(a)*l,y+Math.sin(a)*l,3,2.2,k%2?'#ffffff':c,1.2,0.9)}g.lineCap='butt';
+  if(G.tick%2===0)for(let k=0;k<sparks;k++){const a=rnd(0,6.283);addMote(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r,Math.cos(a)*rnd(0.6,1.8)-d*0.6,Math.sin(a)*rnd(0.6,1.8),Math.random()<0.5?'#ffffff':c,0.7,8+(Math.random()*6|0))}
+  if(G.tick%6===0){const z=addFx('zap',p.x+rnd(-r,r),p.y+rnd(-r,r),1,null,Math.random()<0.5?'#ffffff':c);if(z){z.ang=rnd(0,6.283);z.len=rnd(6,r*0.9)}}}
 // ---- lightning helpers (Raiko) ----
 function ltnBolt(g,x0,y0,x1,y1,n,j,col,w,al){g.globalAlpha=al==null?1:al;g.strokeStyle=col;g.lineWidth=w;g.beginPath();g.moveTo(x0,y0);
   const dx=x1-x0,dy=y1-y0,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;for(let i=1;i<n;i++){const k=i/n,o=rnd(-j,j);g.lineTo(x0+dx*k+nx*o,y0+dy*k+ny*o)}g.lineTo(x1,y1);g.stroke();g.globalAlpha=1}
@@ -1947,7 +1953,7 @@ function drawProj(g,p,ox){
       for(let i=0;i<3;i++){g.fillStyle='#fff';g.fillRect(x-d*(r+4+i*5),y-3+((G.tick+i*3)%7),2,2)}break}
     case'meteor':{for(let i=4;i>0;i--){g.fillStyle=i%2?'#fff2a0':'#ffb030';g.globalAlpha=0.2*i;g.beginPath();g.arc(x-p.vx*i*2,y-p.vy*i*2.2,9-i,0,7);g.fill()}g.globalAlpha=1;
       g.fillStyle='#ffd860';g.beginPath();g.arc(x,y,9,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(x,y+1,5,0,7);g.fill();if(G.tick%2===0)addFx('ember',p.x,p.y-6);break}
-    case'boom':{const d=Math.sign(p.vx)||1,sp=G.tick*0.5;
+    case'boom':{const d=Math.sign(p.vx)||1,sp=G.tick*0.5;plasmaFx(g,p,x,y,p.pw?20:11,c,p.pw?6:3,p.pw?2:1);
       if(p.pw){/* powered cutter: blade-energy aura, spinning blade arcs and sparks, drawn 1.6x */g.globalAlpha=0.3+0.1*Math.sin(G.tick*0.8);g.fillStyle=c;g.beginPath();g.ellipse(x,y,22,26,0,0,7);g.fill();g.globalAlpha=1;
         for(let k=0;k<4;k++){const a=G.tick*0.7+k*Math.PI/2;g.strokeStyle=k%2?'#fff':shade(c,0.4);g.lineWidth=3;g.beginPath();g.arc(x,y,24,a,a+0.8);g.stroke()}
         if(G.tick%2===0)addMote(p.x-d*rnd(6,16),p.y+rnd(-14,14),-d*rnd(0.5,1.5),rnd(-0.8,0.8),Math.random()<0.5?'#fff':c,0.8,10);
@@ -1956,10 +1962,10 @@ function drawProj(g,p,ox){
       g.strokeStyle=shade(c,0.5);g.lineWidth=5;g.beginPath();g.ellipse(x,y,8,12,0,d>0?-1.4:1.74,d>0?1.4:4.54);g.stroke();
       g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.ellipse(x+d,y,8,12,0,d>0?-1.2:1.94,d>0?1.2:4.34);g.stroke();
       g.strokeStyle=c;g.lineWidth=1;g.beginPath();g.ellipse(x,y,12,4,Math.sin(sp)*0.2,0,7);g.stroke();if(p.pw)g.restore();break}
-    case'blade':{const r=13+(fl?1:0),a0=G.tick*0.6;g.globalAlpha=0.35;g.fillStyle=c;g.beginPath();g.arc(x,y,r+5,0,7);g.fill();g.globalAlpha=1;
+    case'blade':{const r=13+(fl?1:0),a0=G.tick*0.6;plasmaFx(g,p,x,y,15,c,4,1);g.globalAlpha=0.35;g.fillStyle=c;g.beginPath();g.arc(x,y,r+5,0,7);g.fill();g.globalAlpha=1;
       for(let k=0;k<4;k++){const a=a0+k*Math.PI/2;g.strokeStyle=k%2?'#fff':shade(c,0.4);g.lineWidth=3;g.beginPath();g.arc(x,y,r,a,a+1.0);g.stroke()}
       g.fillStyle='#fff';g.beginPath();g.arc(x,y,3,0,7);g.fill();break}
-    case'hurricane':{const a0=G.tick*0.35;g.globalAlpha=0.3;g.fillStyle=c;g.beginPath();g.ellipse(x,y,28,30,0,0,7);g.fill();g.globalAlpha=1;
+    case'hurricane':{const a0=G.tick*0.35;plasmaFx(g,p,x,y,26,c,7,2);g.globalAlpha=0.3;g.fillStyle=c;g.beginPath();g.ellipse(x,y,28,30,0,0,7);g.fill();g.globalAlpha=1;
       for(let k=0;k<6;k++){const a=a0+k*Math.PI/3,rr=12+k*3;g.strokeStyle=k%2?'#fff':shade(c,0.45);g.lineWidth=k%2?2:4;g.beginPath();g.ellipse(x,y,rr,rr*1.08,0,a,a+2.1);g.stroke()}
       g.fillStyle='#fff';g.beginPath();g.arc(x,y,5+(fl?2:0),0,7);g.fill();break}
     case'ki':case'bigki':{const big=p.type==='bigki',r=big?15:8,d=Math.sign(p.vx)||1,T=G.tick;
