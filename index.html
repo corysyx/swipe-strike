@@ -3161,7 +3161,7 @@ function drawRoster(g,opt){
     g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(x+1,y+chh-13,cw-2,12);txt(g,c.name,x+cw/2,y+chh-11,8,'#fff','center');
     if(t.l){g.fillStyle=t.lc;g.fillRect(x+2,y+2,t.l.length*5+3,7);txt(g,t.l,x+3,y+2,6,'#fff','left',false)}
     if(t.r){g.fillStyle=t.rc;g.fillRect(x+cw-t.r.length*8-6,y+2,t.r.length*8+4,10);txt(g,t.r,x+cw-t.r.length*8-4,y+3,8,'#fff','left',false)}
-    if(t.sw!=null){let jr=0,jl=0;colOpts(c).forEach(k=>{const sk2=skinOf(c,k),L=isCos(k),sx=L?x+2:x+cw-11,sy=L?y+11+(jl++)*9:y+14+(jr++)*9;/* colours on the right, costumes on the left (gold frame) */
+    if(t.sw!=null){let jr=0,jl=0;colOpts(c).forEach(k=>{const sk2=skinOf(c,k),L=isCos(k),sx=L?x+2:x+cw-11,sy=y+14+(L?jl++:jr++)*9;/* colours on the right, costumes on the left (gold frame) */
       g.fillStyle=k===t.sw?'#fff':(L?'#ffd23f':'#120a16');g.fillRect(sx,sy,9,8);g.fillStyle=outfit(sk2.ch,sk2.col);g.fillRect(sx+1,sy+1,7,6);if(L){g.fillStyle=sk2.col.accent;g.fillRect(sx+1,sy+5,7,2)}})}
     BTN.push({x,y,w:cw,h:chh,cb:()=>opt.tap(c,i)})});
 }
