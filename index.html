@@ -146,7 +146,7 @@ const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.cei
 
 /* ============================ SOUND ============================ */
 let AC=null,master=null,musicGain=null,sfxGain=null,NB=null,musicOn=true;
-const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'comp'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
+const SET=(()=>{let o={music:7,sfx:7,vib:true,lite:false,crt:true,crtMode:'rgb'};try{const v=JSON.parse(localStorage.getItem('ss_settings')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
 /* debug options (offline only - never applied to online matches or the attract demo) */
 const DBG_DEF={life:['normal','normal'],meter:['normal','normal'],timer:'on',cpu:'normal',opp:'normal',boxes:false,info:false,speed:1};
 const DBG=(()=>{let o=JSON.parse(JSON.stringify(DBG_DEF));try{const v=JSON.parse(localStorage.getItem('ss_debug')||'null');if(v)o=Object.assign(o,v)}catch(e){}return o})();
@@ -3012,7 +3012,7 @@ function renderSettings(g){
   slider(50,'MUSIC','music',()=>{initAudio();applyVolumes()});
   slider(80,'SOUND FX','sfx',()=>{initAudio();applyVolumes()});
   txt(g,'VIBRATION',40,114,8,'#fff');button(g,126,110,80,16,SET.vib?'ON':'OFF',()=>{SET.vib=!SET.vib;saveSettings();if(SET.vib)vib(30);SFX.sel()},{col:SET.vib?'#9dffcf':'#ff4a4a'});
-  txt(g,'CRT',272,114,8,'#fff');button(g,306,110,74,16,CRT.failed?'N/A':!SET.crt?'OFF':SET.crtMode==='rgb'?'SHARP':SET.crtMode==='rainbow'?'RAINBOW':'BLENDED',()=>{if(CRT.failed)return;if(!SET.crt){SET.crt=true;SET.crtMode='comp'}else if(SET.crtMode==='comp')SET.crtMode='rainbow';else if(SET.crtMode==='rainbow')SET.crtMode='rgb';else SET.crt=false;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
+  txt(g,'CRT',272,114,8,'#fff');button(g,306,110,74,16,CRT.failed?'N/A':!SET.crt?'OFF':SET.crtMode==='rgb'?'SHARP':SET.crtMode==='rainbow'?'RAINBOW':'BLENDED',()=>{if(CRT.failed)return;if(!SET.crt){SET.crt=true;SET.crtMode='rgb'}else if(SET.crtMode==='rgb')SET.crtMode='comp';else if(SET.crtMode==='comp')SET.crtMode='rainbow';else SET.crt=false;saveSettings();CRT.apply();SFX.sel()},{col:CRT.failed?'#555':SET.crt?'#9dffcf':'#ff4a4a'});
   txt(g,'MUSIC STYLE',40,140,8,'#fff');button(g,140,136,110,16,SET.lite?'LITE':'FULL BAND',()=>{SET.lite=!SET.lite;saveSettings();SFX.sel()},{col:SET.lite?'#ff8a3a':'#9dffcf'});txt(g,SET.lite?'(FOR OLDER PHONES)':'',258,140,8,'#8a80b0');
   button(g,40,162,140,18,'TEST SOUND',()=>{initAudio();SFX.hit(1)},{col:'#ffd23f'});
   button(g,196,162,140,18,dbgAny()?'DEBUG MENU (ON)':'DEBUG MENU',()=>{G.mode='debug';SFX.sel()},{col:dbgAny()?'#ff8aff':'#b48cff'});
