@@ -1023,12 +1023,12 @@ const CHARS=[
   col:{skin:'#dcb898',top:'#dcb898',pants:'#f2eee2',belt:'#d4a017',hair:'#f2dc9a',band:'#d4a017',glove:'#d4a017',shoe:'#d4a017',accent:'#ffd860'},
   style:{hair:'long',tail:'hair',shirtless:true,boots:true,sash:true,eyeGlow:true,eyeGlowCol:'#ffd860'},stats:[5,3,5],hPose:'heavy',
   desc:'The final boss. Commands fire and ice, rains meteors from the sky, and rises again once he falls.',
-  specials:{S1:'PYRO ORB',S2:'SOVEREIGN LARIAT',S3:'MOONSAULT DROP',S4:'CRYO ORB',AS:'METEOR DIVE',AS2:'FROST SHARDS',SU:'SERAPHIC STORM',aSU:'SERAPHIC WINGS'},quote:'Kneel. The new world has no place for you.',
+  specials:{S1:'PYRO ORB',S2:'SOVEREIGN LARIAT',S3:'HEAVEN CRASH',S4:'CRYO ORB',AS:'METEOR DIVE',AS2:'FROST SHARDS',SU:'SERAPHIC STORM',aSU:'SERAPHIC WINGS'},quote:'Kneel. The new world has no place for you.',
   ai:{aa:'S2',ender:'S2',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:12,a:1,r:20,pose:'palm',proj:{type:'pyro',vx:4.4,dmg:75,hs:22,bs:14,w:20,h:18,kb:3,life:200}},
    S2:{s:8,a:26,r:20,dmg:130,hits:3,multi:9,hs:18,bs:12,hb:B([-30,-64,60,24],1),armor:true,vx:1.6,pose:'lariat',spin:true,kb:3,lastKd:true},
-   S3:{s:12,a:30,r:10,dmg:115,hs:22,bs:14,hb:B([0,-40,36,42],1),lvl:'high',kb:2,hop:[7.6,2.8],dive:18,diveV:[2.2,7],pose:'press',landRec:10,landQuake:true},
+   S3:{s:12,a:40,r:10,dmg:120,hs:24,bs:14,hb:B([-16,-34,50,44],1),lvl:'high',kb:2.5,kd:true,hop:[0.01,0],hover:11,skyDrop:true,ender:true,vanish:[3,12],inv:[0,12],pose:'skystomp',landRec:14,landQuake:true,crashRing:true},
    S4:{s:14,a:1,r:22,pose:'palm',proj:{type:'cryo',vx:3.4,dmg:70,hs:34,bs:14,w:20,h:18,kb:1.5,life:200,freeze:true}},
    AS:{s:5,a:26,r:8,dmg:100,hs:22,bs:14,hb:B([8,-54,36,34],1),kb:5,hover:5,dive:5,diveV:[5,4.6],pose:'flykick',ender:true,air:true,landRec:8,trail:'fire'},
    AS2:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,projs:[{type:'cryo',vx:3.2,vy:3,dmg:40,hs:24,bs:12,w:14,h:14,kb:1.5,life:90,freeze:true},{type:'cryo',vx:2,vy:4,dmg:40,hs:24,bs:12,w:14,h:14,kb:1.5,life:90,freeze:true}]},
@@ -1371,6 +1371,9 @@ class Fighter{
     if(m.vanish&&t===m.vanish[0]&&!G.resim){for(let i=0;i<3;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S);this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:16});SFX.whoosh(1)}
     if(m.dashTrail&&t<=m.s+m.a&&t%2===0&&!G.resim){this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:12,col:'#5a3cff'});if(t%4===0)addFx('dust',this.x-this.facing*10,FLOOR)}
     if(m.wings&&t>m.s-4&&t<=m.s+m.a&&!G.resim){const cy=this.y-60*this.S;if(t%6===0)addFx('rainbowring',this.x,cy,1);if(t%2===0)addMote(this.x+rnd(-20,20),cy+rnd(-20,20),rnd(-2.4,2.4),rnd(-2.4,2.4),['#ff7ab0','#ffd36a','#9dffcf','#7fd8ff','#c89cff'][t%5],1,18)}
+    /* sky drop: vanish, reappear high above the opponent and crash straight down on them */
+    if(m.skyDrop&&t===m.s){this.faceOpp(op);this.x=clamp(op.x-this.facing*6,20,STAGE_W-20);this.y=FLOOR-150;this.vy=12;this.vx=0;if(!G.resim){addFx('ring',this.x,this.y-40*this.S);SFX.whoosh(1)}}
+    if(m.skyDrop&&t>m.s&&this.air&&t%2===0&&!G.resim)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:10,col:'#ff4a3a'});
     if(m.slideDust&&t>m.s&&t<=m.s+m.a+4&&t%2===0&&!G.resim){addFx('dust',this.x-this.facing*6,FLOOR);if(t%4===0)addMote(this.x+this.facing*20,FLOOR-2,-this.facing*rnd(0.5,1.5),-rnd(0.3,1),'#ffffff',0.8,10)}
     if(m.kunaiEnd&&t>m.s+m.a&&!this.grabbed){const K=m.kunaiEnd,j=t-(m.s+m.a)-1-(K.delay||0);if(j===-(K.delay||0)){this.vx=-this.facing*2.4}if(j>=0&&j%K.every===0&&j/K.every<K.n){const i=j/K.every;spawnProj(this,Object.assign({},K.proj,{noImpact:true,vy:[-0.5,0.3,-0.2,0.5,-0.35,0.2,0][i]||0,lastKd:i===K.n-1}));if(!G.resim)SFX.whoosh(0)}}
     if(m.tele&&t===m.tele){const x0=this.x;this.teleport(op,m.teleBack,m.teleFwd,m.teleFront);if(m.streak&&!G.resim){G.fx.push({type:'streak',x:x0,x2:this.x,y:this.y-36*this.S,t:0,life:14,col:this.col.accent,s:1});for(let i=0;i<2;i++)addFx('smoke',this.x+rnd(-8,8),this.y-rnd(14,48)*this.S);addFx('ring',this.x,this.y-34*this.S)}}
@@ -1427,7 +1430,7 @@ class Fighter{
     if(this.state==='jump'){this.chase=false;this.sj=false;this.bounceN=0;this.aparryUsed=false;this.aparryT=0;this.sq=1;this.state='land';this.t=0;this.landT=3;this.vx=0;addFx('dust',this.x,FLOOR);this.flip=false;this.pose.rot=0}
     else if(this.state==='hit'&&this.juggle){this.juggle=false;this.juggleN=0;this.juggleInv=false;this.launchN=0;this.state=this.ko?'ko':'down';this.t=0;this.vx*=0.3;this.sq=0.8;SFX.land(v,this.x);if(v>4)addFx('quake',this.x,FLOOR,1);
       addFx('dust',this.x,FLOOR);addFx('dust',this.x+12,FLOOR);G.shake=Math.max(G.shake,3);SFX.hit(1)}
-    else if(this.state==='attack'){const m=this.move;this.move=null;this.bounceN=0;if(m.landQuake){addFx('quake',this.x+this.facing*10,FLOOR,2);G.shake=Math.max(G.shake,6)}this.state='land';this.t=0;this.landT=m.landRec||3;this.vx=0;this.sq=1;addFx('dust',this.x,FLOOR)}
+    else if(this.state==='attack'){const m=this.move;this.move=null;this.bounceN=0;if(m.landQuake){addFx('quake',this.x+this.facing*10,FLOOR,2);G.shake=Math.max(G.shake,6)}if(m.crashRing&&!G.resim){addFx('ring',this.x,FLOOR-4);addFx('vring',this.x,FLOOR-2,1.4,null,'#ffffff').ux=0;for(let i=0;i<4;i++)addFx('dust',this.x+rnd(-24,24),FLOOR)}this.state='land';this.t=0;this.landT=m.landRec||3;this.vx=0;this.sq=1;addFx('dust',this.x,FLOOR)}
     else if(this.state==='ko'){}
     else{this.vx=0}
   }
@@ -1453,6 +1456,7 @@ class Fighter{
       case 'taunt':case 'cine':return POSES.reaper;
       case 'attack':{const m=this.move;let pn=m.pose;
         if(pn==='rush'){const rp=this.ch.rushPoses||['jab','heavy'];if(t<=m.s)pn='palm';else{const mu=m.multi||4,k=Math.floor((t-m.s-1+2)/mu);pn=(m.finPose&&k>=(m.hits||1)-1)?m.finPose:rp[k%2]}}
+        if(pn==='skystomp')pn=t<m.s?'crouch':'airdkick';
         if(pn==='fallkicks'){if(t<=m.s)pn='airheavy';else{const b=Object.assign({},POSES[Math.floor((t-m.s)/3)%2?'airkick':'flykick']);b.rot=32;return b}}
         if(m.kunaiEnd&&t>m.s+m.a)pn=t-m.s-m.a-1<(m.kunaiEnd.delay||0)?'crouch':(Math.floor((t-m.s-m.a-1)/3)%2)?'palm':'jab';
         if(m.key==='jL')pn=AIR_SEQ[((this.airL||1)-1)%AIR_SEQ.length];
