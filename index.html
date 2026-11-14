@@ -978,13 +978,13 @@ const CHARS=[
   style:{hair:'buzz',sleeve:'none',boots:true},stats:[4,2,4],hPose:'heavy',
   alts:[{top:'#3a4a2a',pants:'#8a7a5a',accent:'#ffe060'},{top:'#1a1a1e',pants:'#2a2a30',belt:'#c83030',band:'#c83030',glove:'#c83030',accent:'#ff4a4a'},{top:'#e8e4dc',pants:'#4a5a7a',glove:'#e8e4dc',accent:'#60d0ff'}],
   desc:'Defensive wall. A fast Sonic Cutter, an invincible Flash Somersault and a trap blade. Hard to approach.',
-  specials:{S1:'SONIC CUTTER',S2:'FLASH SOMERSAULT',S3:'KNEE STRIKE',S4:'SONIC BLADE',AS:'AIR CUTTER',AS2:'SKY SOMERSAULT',SU:'SONIC HURRICANE'},quote:'Go home and train. You are not ready.',
-  ai:{aa:'S2',ender:'S3',zone:'S1'},
+  specials:{S1:'SONIC CUTTER',S2:'FLASH SOMERSAULT',S3:'SONIC BLADE',S4:'KNEE STRIKE',AS:'AIR CUTTER',AS2:'SKY SOMERSAULT',SU:'SONIC HURRICANE'},quote:'Go home and train. You are not ready.',
+  ai:{aa:'S2',ender:'S4',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:9,a:1,r:14,pose:'cutter',proj:{type:'boom',vx:5,dmg:60,hs:18,bs:12,w:22,h:12,kb:2.5,life:200}},
    S2:{s:3,a:12,r:22,dmg:115,hits:2,multi:6,hs:24,bs:14,hb:B([-10,-104,46,100],1),kb:1,launch:6.8,lastKd:true,inv:[0,8],vy:7,vx:0.6,pose:'upkick',flipSpin:true,landRec:16},
-   S3:{s:5,a:12,r:16,dmg:80,hs:20,bs:14,hb:B([4,-58,26,28]),kb:3.5,vx:5.4,pose:'knee'},
-   S4:{s:12,a:1,r:20,pose:'cutter',proj:{type:'blade',vx:0.02,dmg:80,hits:4,multi:10,hs:16,bs:10,w:26,h:30,kb:0.6,lastKd:true,life:72}},
+   S4:{s:5,a:12,r:16,dmg:80,hs:20,bs:14,hb:B([4,-58,26,28]),kb:3.5,vx:5.4,pose:'knee'},
+   S3:{s:12,a:1,r:20,pose:'cutter',proj:{type:'blade',vx:0.02,dmg:80,hits:4,multi:10,hs:16,bs:10,w:26,h:30,kb:0.6,lastKd:true,life:72}},
    AS:{s:7,a:1,r:14,hover:16,pose:'cutter',air:true,proj:{type:'boom',vx:4.6,vy:0,dmg:55,hs:18,bs:12,w:22,h:12,kb:2,life:120,ender:true}},
    AS2:{s:3,a:12,r:10,dmg:95,hits:2,multi:5,hs:22,bs:14,hb:B([-10,-84,46,84],1),kb:3,hover:12,vx:0.4,pose:'upkick',flipSpin:true,ender:true,air:true,lastKd:true},
    SU:{s:12,a:1,r:28,pose:'cutter',proj:{type:'hurricane',vx:1.4,dmg:420,hits:8,multi:6,hs:20,bs:12,w:50,h:56,kb:0.3,lastKd:true,launch:5,life:150}}})},
@@ -1707,9 +1707,10 @@ function KO(B,A,dir){
   if(G.phase!=='fight')return;
   if(G.tag){if(B.ko)return;const P=tagPartner(B.side);if(!P.ko&&P.hp>0){B.hp=0;B.ko=true;Object.assign(B,{state:'hit',juggle:true,vy:-5.4,vx:dir*2.4,y:Math.min(B.y,FLOOR-1),move:null});
     G.tag.ho[B.side]=100;G.slow=24;banner(B.ch.name+' DOWN!',80,16);if(!G.resim){SFX.hit(3);vib(60)}return}}
-  if(B.ch.resurrect&&!G.resUsed&&!G.demo&&!G.net){G.resUsed=true;B.hp=Math.round(B.ch.hp*0.45);B.redHp=B.hp;
+  /* Resurrection is Archon's super: with a full super bar it spends the bar and revives him, once per round */
+  if(B.ch.resurrect&&!B.resUsed&&B.meter>=100&&!G.demo&&!G.net){B.resUsed=true;B.meter=0;B.hp=Math.round(B.ch.hp*0.45);B.redHp=B.hp;
     Object.assign(B,{state:'getup',t:0,juggle:false,juggleInv:false,vx:0,vy:0,y:FLOOR,move:null,combo:0,launchN:0,capN:0,lHits:0,comboDmg:0,inv:110});
-    G.superFlash={f:B,t:60,name:'RESURRECTION'};B.flash=30;B.flashCol='#fff2a0';addFx('ring',B.x,B.y-50*B.S);addFx('sigil',B.x,B.y-48*B.S);G.slow=30;SFX.super();banner('HE RISES AGAIN!',110,16);return}
+    G.superFlash={f:B,t:60,name:'RESURRECTION'};B.flash=30;B.flashCol='#fff2a0';addFx('ring',B.x,B.y-50*B.S);addFx('sigil',B.x,B.y-48*B.S);G.slow=30;SFX.super();return}
   B.hp=0;B.ko=true;Object.assign(B,{state:'hit',juggle:true,vy:-5.4,vx:dir*2.4,y:Math.min(B.y,FLOOR-1),move:null});
   G.phase='ko';G.phaseT=0;G.slow=70;G.koFlash=14;G.koWinner=A;banner('K.O.',120,32);SFX.ko();if(!G.demo)vib(120);G.excite=1;
   if(B.hp<=0&&A.hp===A.ch.hp)G.perfect=true;
@@ -2562,7 +2563,7 @@ function startTagMatch(keep){const s=G.sel;if(!keep||!s.p2||!s.p2b){const pool=C
   G.net=null;G.demo=false;G.training=false;G.wins=[0,0];G.round=1;G.ai=makeAI(G.diff);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
 function startMatch(){if(G.selMode==='tag'&&G.sel&&G.sel.p1b)return startTagMatch(true);G.tag=null;G.resUsed=false;const a=(DBG.me==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p1],b=(DBG.opp==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=(c2+1)%4;G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
   const lv=G.training?1:(b.boss?2:clamp(G.diff+(G.ladderIdx>=4?1:0),0,2));G.ai=makeAI(lv);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
-function startRound(){if(G.tag)tagRoundReset();G.p1.reset(STAGE_W/2-70);G.p2.reset(STAGE_W/2+70);if(G.bonusReward&&G.round===1&&!G.net){G.p1.meter=100;G.bonusReward=false}G.projs=[];G.fx=[];G.timer=99;G.timerF=0;if(dbgLive()&&G.mode!=='bonus')[G.p1,G.p2].forEach((f,i)=>{const L=DBG.life[i];if(L==='low')f.hp=Math.round(f.ch.hp*0.1);else if(L==='one')f.hp=1;f.redHp=f.hp});G.phase='intro';G.phaseT=0;
+function startRound(){if(G.tag)tagRoundReset();G.p1.reset(STAGE_W/2-70);G.p2.reset(STAGE_W/2+70);G.p1.resUsed=false;G.p2.resUsed=false;if(G.bonusReward&&G.round===1&&!G.net){G.p1.meter=100;G.bonusReward=false}G.projs=[];G.fx=[];G.timer=99;G.timerF=0;if(dbgLive()&&G.mode!=='bonus')[G.p1,G.p2].forEach((f,i)=>{const L=DBG.life[i];if(L==='low')f.hp=Math.round(f.ch.hp*0.1);else if(L==='one')f.hp=1;f.redHp=f.hp});G.phase='intro';G.phaseT=0;
   G.camX=(STAGE_W-W)/2;G.superFlash=null;G.cine=null;G.thr=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.perfect=false;G.koWinner=null;if(G.training){G.p1.meter=100;G.phase='fight';banner('TRAINING',60,16)}}
 function endRound(winner){
   if(winner)G.wins[winner===G.p1?0:1]++;
