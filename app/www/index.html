@@ -1016,7 +1016,7 @@ const CHARS=[
   ai:{aa:'S2',ender:'S4',zone:'S1'},
   moves:(B,S)=>({
    S1:{s:11,a:1,r:22,pose:'palm',proj:{type:'bolt',vx:4.2,dmg:62,hs:20,bs:14,w:16,h:14,kb:2.5,life:200}},
-   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-92,24,72],1),kb:1.5,launch:7,kd:true,airCancel:true,inv:[0,8],vy:6.6,vx:1.4,pose:'upper',landRec:14,thunder:true},
+   S2:{s:3,a:14,r:20,dmg:100,hs:30,bs:18,hb:B([2,-92,24,72],1),kb:1.5,launch:7,kd:true,airCancel:true,syncLaunch:5.2,inv:[0,8],vy:6.6,vx:1.4,pose:'upper',landRec:14,thunder:true},
    S3:{s:6,a:24,r:14,dmg:96,hits:3,multi:8,hs:16,bs:12,hb:B([-24,-62,48,20],1),kb:2.5,vx:2.8,pose:'kick',spin:true,lastKd:true},
    S4:{s:8,a:8,r:18,dmg:95,hits:2,multi:5,hs:30,bs:14,hb:B([4,-64,30,36]),kb:2.4,pose:'palm',zap:true,thunder:true},
    AS:{s:7,a:1,r:14,hover:16,pose:'palm',air:true,proj:{type:'bolt',vx:3.4,vy:2.6,dmg:60,hs:20,bs:14,w:16,h:14,kb:2,life:90,ender:true}},
@@ -1505,7 +1505,9 @@ const EMPTY=()=>({sj:false,h:0,down:false,jump:false,dash:0,guard:false,act:null
 /* ============================ PROJECTILES ============================ */
 function handPos(f){const m=f.move;let pn=m&&m.pose||'palm';if(pn==='rush')pn='palm';const Q=rigPts(f.ch,POSES[pn]||POSES.palm,f.air);return{x:Math.round((f.x+(Q.haF.x+3)*f.facing)*100)/100,y:Math.round((f.y+Q.haF.y)*100)/100}}
 function spawnProj(f,pr){const hp=handPos(f);G.projs.push(Object.assign({},pr,{id:++PID,owner:f,x:pr.ground?f.x+f.facing*24*f.S:hp.x,y:pr.ground?f.y+pr.y:hp.y,vx:pr.vx*f.facing,vy:pr.vy||0,
-  hits:pr.hits||1,hitsLeft:pr.hits||1,lastHit:-99,t:0,special:true,sup:!!(f.move&&f.move.super),lvl:pr.lvl||'mid',key:'proj',fromAir:!!f.air}));const q=G.projs[G.projs.length-1];if(!pr.ground)q.reach=Math.max(0,Math.abs(hp.x-f.x)-12*f.S);if(pr.at){q.x=f.x+f.facing*pr.at;if(!pr.noQuake)addFx('quake',q.x,FLOOR,1)}if(pr.atOpp!=null){const op=f===G.p1?G.p2:G.p1;q.x=op.x+pr.atOpp*f.facing;q.vx=pr.vx*f.facing}}
+  hits:pr.hits||1,hitsLeft:pr.hits||1,lastHit:-99,t:0,special:true,sup:!!(f.move&&f.move.super),lvl:pr.lvl||'mid',key:'proj',fromAir:!!f.air}));const q=G.projs[G.projs.length-1];if(!pr.ground)q.reach=Math.max(0,Math.abs(hp.x-f.x)-12*f.S);if(pr.at){q.x=f.x+f.facing*pr.at;if(!pr.noQuake)addFx('quake',q.x,FLOOR,1)}if(pr.atOpp!=null){const op=f===G.p1?G.p2:G.p1;q.x=op.x+pr.atOpp*f.facing;q.vx=pr.vx*f.facing}
+  /* an air projectile cancelled out of a launcher is aimed at the juggled opponent, a little faster, so the combo connects */
+  if(f.aimDive&&!pr.ground){const op=f===G.p1?G.p2:G.p1;if(op.air&&op.state==='hit'){const sp=Math.max(5.5,Math.hypot(pr.vx,pr.vy||0)),tx=op.x+op.vx*6,ty=op.y-36*op.S+op.vy*6,dx=tx-q.x,dy=ty-q.y,L=Math.hypot(dx,dy)||1;q.vx=dx/L*sp;q.vy=dy/L*sp}}}
 function spawnBeam(f,m){const hp=handPos(f);G.projs.push(Object.assign({},m.beam,{id:++PID,owner:f,beam:true,t:0,life:m.a,hitsLeft:m.beam.hits,lastHit:-99,special:true,super:true,lvl:'mid',
   x:hp.x,y:hp.y,y0:hp.y-f.y,x0:(hp.x-f.x)*f.facing,w:420,vx:f.facing}));G.shake=4}
 function projBox(p){if(p.beam){const o=p.owner,sx=o.x+o.facing*6*o.S,x=p.vx>0?sx:sx-p.w;return{x,y:p.y-p.h/2,w:p.w,h:p.h}}if(p.reach&&p.t<=3){const d=Math.sign(p.vx)||1,x0=p.x-p.w/2-(d>0?p.reach:0);return{x:x0,y:p.y-p.h/2,w:p.w+p.reach,h:p.h}}return{x:p.x-p.w/2,y:p.y-p.h/2,w:p.w,h:p.h}}
@@ -1656,6 +1658,8 @@ function resolveHit(A,B,m,hb,hu,isProj,src,nth){
   else if(!isProj&&A.air&&!m.ender&&!m.airGrab&&B.air){A.vy=B.vy+0.2;A.y=lerp(A.y,B.y+4,0.5)}// keep air combos level
   /* pull: a pillar drags them into its centre and holds them up so every hit lands */
   if(isProj&&src&&src.pull&&nth<hits){B.juggle=true;B.y=Math.min(B.y,FLOOR-1);B.vy=-2.6;B.vx=clamp((src.x-B.x)*0.12,-2.5,2.5)}
+  /* syncLaunch: the launcher sends the opponent up level with the attacker, just in front, so an air-special cancel always connects */
+  if(m.syncLaunch&&!isProj&&!finisher&&B.hp>0){B.juggle=true;B.x=clamp(A.x+A.facing*24*A.S,20,STAGE_W-20);B.y=clamp(B.y,A.y-26,A.y-2);B.vy=-(typeof m.syncLaunch==='number'?m.syncLaunch:5);B.vx=A.facing*0.4}
   if(m.carry&&!finisher&&!isProj){B.juggle=true;B.y=Math.min(B.y,A.y-2);B.vy=Math.min(A.vy,-1.5);B.vx=0;B.x=A.x+A.facing*22*A.S}
   if(counterHit)addFx('text',B.x,B.y-95*B.S,0,'COUNTER','#ff5a5a');
   A.meter=Math.min(100,A.meter+dmg*0.1);B.meter=Math.min(100,B.meter+dmg*0.05);A.canCancel=true;
