@@ -1335,10 +1335,15 @@ class Fighter{
   }
   updRush(op){const m=this.move,R=m.rush;this.rushT++;this.t=m.s+1;
     const wall=op.x<22||op.x>STAGE_W-22||Math.abs(op.x-(G.camX+W/2))>W/2-20;this.vx=wall?0:this.facing*2.6;
-    Object.assign(op,{state:'hit',juggle:false,stun:30,t:0,vx:0,vy:0,y:FLOOR,move:null});op.x=this.x+this.facing*30*this.S;
+    if(!this.rushDef)Object.assign(op,{state:'hit',juggle:false,stun:30,t:0,vx:0,vy:0,y:FLOOR,move:null});op.x=this.x+this.facing*30*this.S;
     if(this.rushT%2===0)this.ghosts.push({x:this.x,y:this.y,pose:Object.assign({},this.dpose),f:this.facing,t:9});
     if(this.rushT%R.every!==0)return;
     const px=(this.x+op.x)/2,py=op.y-46*op.S;
+    /* the opener was parried/blocked: every following blow must be parried or blocked as well */
+    if(this.rushDef){const away=Math.sign(op.x-this.x)||-op.facing,fin=this.rushN>=R.hits;
+      if(op.state==='parry'&&op.t<=10){op.state='idle';op.t=0;op.meter=Math.min(100,op.meter+3);op.flash=6;op.flashCol='#8fe0ff';G.hitstop=Math.max(G.hitstop,8);if(!G.resim){addFx('parry',px,py);addFx('text',op.x,op.y-90*op.S,0,'PARRY!','#8fe0ff')}SFX.parry();this.rushN++;if(fin){this.rushT=0;this.t=m.s+m.a+1;this.vx=0;this.rushDef=false}return}
+      if(op.state==='block'||(op.canBlock()&&(op.inp.guard||op.inp.h===away))){op.state='block';op.t=0;op.stun=12;op.vx=0;op.hp=Math.max(1,op.hp-Math.round((fin?R.fin:R.dmg/R.hits)*0.25));G.hitstop=Math.max(G.hitstop,3);if(!G.resim)addFx('block',px,py,0,null,null,this.facing);SFX.block(fin,px);this.rushN++;if(fin){this.rushT=0;this.t=m.s+m.a+1;this.vx=0;this.rushDef=false;op.vx=this.facing*3}return}
+      this.rushDef=false;Object.assign(op,{state:'hit',juggle:false,stun:30,t:0,vx:0,vy:0,y:FLOOR,move:null})}
     if(this.rushN<R.hits){const d=Math.max(1,Math.round(R.dmg/R.hits*dmgScale(op,!!m.super,op.combo-this.rushN)));this.rushN++;op.hp=Math.max(1,op.hp-d);addComboDmg(op,d);op.combo++;op.redT=60;op.flash=2;op.flashCol='#ffffff';
       this.meter=Math.min(100,this.meter);addFx('spark',px+rnd(-6,6),py+rnd(-14,14),1,null,null,this.facing);SFX.hit(this.rushN%3===0?2:1,px);G.hitstop=Math.max(G.hitstop,2);G.shake=Math.max(G.shake,2);comboShow(this,op);return}
     // finisher
@@ -1503,7 +1508,7 @@ function updateProjs(){
   for(const p of G.projs){if(p.dead)continue;const B=p.owner===G.p1?G.p2:G.p1;
     if(p.persist&&p.hitsLeft<=0)continue;if(p.t-p.lastHit<(p.multi||0))continue;if((p.from&&p.t<p.from)||(p.until&&p.t>p.until))continue;const box=projBox(p),hu=B.hurt();if(!overlap(box,hu))continue;
     const nth=p.hits-p.hitsLeft+1;const r=resolveHit(p.owner,B,p,box,hu,true,p,nth);
-    if(r!=='none'){if((p.type==='ki'||p.type==='bigki')&&r!=='parry')kiBurst(p.x,p.y,p.owner.col.accent,p.type==='bigki'?(p.hitsLeft<=1?34:10):16,p.type==='bigki'?(p.hitsLeft<=1?3.2:1.8):2);p.hitsLeft--;p.lastHit=p.t;if(p.hits>1)p.hold=(p.multi||4)+1;if(r==='parry'&&!p.beam)p.dead=true;if(p.hitsLeft<=0&&!p.persist)p.dead=true}}
+    if(r!=='none'){if((p.type==='ki'||p.type==='bigki')&&r!=='parry')kiBurst(p.x,p.y,p.owner.col.accent,p.type==='bigki'?(p.hitsLeft<=1?34:10):16,p.type==='bigki'?(p.hitsLeft<=1?3.2:1.8):2);p.hitsLeft--;p.lastHit=p.t;if(p.hits>1)p.hold=(p.multi||4)+1;if(r==='parry'&&!p.beam&&!(p.hits>1&&p.hitsLeft>0))p.dead=true;if(p.hitsLeft<=0&&!p.persist)p.dead=true}}
   G.projs=G.projs.filter(p=>!p.dead);
 }
 
@@ -1518,7 +1523,8 @@ function checkHits(A,B){
   if(m.reflect)for(const p of G.projs)if(p.owner!==A&&!p.beam&&overlap(hb,projBox(p))){p.dead=true;addFx('ring',p.x,p.y);addFx('text',p.x,p.y-10,0,'SWAT!','#9dffcf');SFX.parry()}
   const hu=B.hurt();if(!overlap(hb,hu))return;
   const r=resolveHit(A,B,m,hb,hu,false,null,A.hitCount+1);
-  if(r==='hit'&&m.rush&&!A.rushT&&B.hp>0){A.rushT=1;A.rushN=0;B.y=FLOOR;B.vy=0;B.juggle=false;if(!G.resim){G.zoomKick=0.12;addFx('ring',B.x,B.y-40)}}
+  if((r==='parry'||r==='block')&&m.rush&&!A.rushT&&B.hp>0){A.rushT=1;A.rushN=0;A.rushDef=true}
+  if(r==='hit'&&m.rush&&!A.rushT&&B.hp>0){A.rushT=1;A.rushN=0;A.rushDef=false;B.y=FLOOR;B.vy=0;B.juggle=false;if(!G.resim){G.zoomKick=0.12;addFx('ring',B.x,B.y-40)}}
   /* sustain: once a multi-hit move connects, keep it active long enough for the remaining hits */
   if(r==='hit'&&m.sustain&&A.hitCount+1<hits){const need=m.s+m.a-m.multi*(hits-A.hitCount-1);if(A.t>need)A.t=need}
   if(r!=='none'){A.lastHit=A.t;if(r!=='parry'||true)A.hitCount++}
@@ -2622,11 +2628,12 @@ function stepFight(netIn){
 function dummyInput(me,op){const inp=EMPTY();if(G.dummy==='cpu')return aiInput(G.ai,me,op);
   const m=op.move,atk=op.state==='attack'&&m,pj=G.projs.find(p=>p.owner===op&&!p.dead&&Math.abs(p.x-me.x)<120&&Math.sign(me.x-p.x)===Math.sign(p.vx||0));
   if(G.dummy==='block'){/* only holds back while something is actually coming, so it no longer walks away */
-    const threat=(atk&&op.t<=m.s+m.a+2)||pj||(op.air&&Math.abs(op.x-me.x)<90);
+    const threat=(atk&&(op.t<=m.s+m.a+2||m.kunaiEnd))||pj||(op.air&&Math.abs(op.x-me.x)<90);
     if(threat){const dir=Math.sign(op.x-me.x)||1;inp.h=-dir;inp.guard=true;inp.down=(atk&&m.lvl==='low')||(pj&&pj.lvl==='low');if(atk&&m.lvl==='high')inp.down=false}}
   if(G.dummy==='crouch')inp.down=true;
   if(G.dummy==='parry'){/* taps parry just before each blow (or projectile) arrives */
-    const soon=(atk&&!m.grab&&op.t>=m.s-4&&op.t<=m.s+m.a&&Math.abs(op.x-me.x)<110)||(pj&&Math.abs(pj.x-me.x)<40);
+    const K=atk&&m.kunaiEnd,kj=K?op.t-(m.s+m.a)-1-(K.delay||0):-99;
+    const soon=(atk&&!m.grab&&op.t>=m.s-4&&op.t<=m.s+m.a-(m.kunaiEnd?6:0)&&Math.abs(op.x-me.x)<110)||(pj&&Math.abs(pj.x-me.x)<40)||(K&&kj>=-1&&kj<K.n*K.every&&(kj+1)%K.every===0);
     if(soon&&me.state!=='parry'&&['idle','walk','crouch'].includes(me.state))inp.act='P'}
   if(G.dummy==='jump'&&me.state==='idle')inp.jump=true;
   return inp}
