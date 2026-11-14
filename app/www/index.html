@@ -2550,10 +2550,20 @@ function stepZanei(){const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c
   if(!G.resim)for(const f of[A,B]){for(const gh of f.ghosts)gh.t--;f.ghosts=f.ghosts.filter(g=>g.t>0)}
   const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   if(!G.resim)updFx()}
-// speed-line backdrop behind the Thousand Mantis flurry (smooth, no flashing)
-function drawZaneiBg(g){const c=G.thr;if(!c||c.kind!=='zanei')return;const k=Math.min(1,c.t/6)*(c.t>66?Math.max(0,1-(c.t-66)/8):1),d=c.dir;
-  g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=0.88*k;const gr=g.createLinearGradient(d>0?W:0,0,d>0?0:W,0);gr.addColorStop(0,'#fff4f0');gr.addColorStop(0.45,'#ff8a96');gr.addColorStop(1,'#c4102a');g.fillStyle=gr;g.fillRect(0,0,W,H);
-  for(let i=0;i<26;i++){const y=(i*37)%H,len=40+((i*53)%90),x=(((i*97+c.t*(9+(i%5)*2))%(W+len))-len),xx=d>0?W-x-len:x;g.globalAlpha=k*(0.35+0.4*((i*7)%3)/2);g.fillStyle=i%3?'#ffffff':'#ffd0d6';g.fillRect(xx,y,len,1+(i%2))}
+// speed-line backdrop during every super, tinted with the attacker's colour (smooth, no flashing)
+const SBG={a:0,col:'#ff3040',dir:1,ph:0};
+function mixHex(h,t,k){const n=parseInt(h.slice(1),16),r=n>>16,g2=(n>>8)&255,b=n&255;return`rgb(${Math.round(r+(t[0]-r)*k)},${Math.round(g2+(t[1]-g2)*k)},${Math.round(b+(t[2]-b)*k)})`}
+function drawSuperBg(g){let f=null,c=G.thr;
+  if(c&&(c.kind==='zanei'||c.kind==='buster')){f=[G.p1,G.p2][c.a];if(c.kind==='zanei'&&c.t>66)f=null}
+  else if(G.cine)f=[G.p1,G.p2][G.cine.a];
+  else for(const q of [G.p1,G.p2])if(q.state==='attack'&&q.move&&q.move.super&&q.t>q.move.s&&q.t<=q.move.s+q.move.a+6)f=q;
+  if(G.superFlash)f=null;
+  if(f){SBG.col=f.col.accent;SBG.dir=f.facing;SBG.a=Math.min(1,SBG.a+0.18)}else SBG.a=Math.max(0,SBG.a-0.08);
+  if(SBG.a<=0)return;SBG.ph++;const k=SBG.a,d=SBG.dir,ac=SBG.col;
+  g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=0.86*k;const gr=g.createLinearGradient(d>0?W:0,0,d>0?0:W,0);
+  gr.addColorStop(0,mixHex(ac,[255,255,255],0.88));gr.addColorStop(0.45,mixHex(ac,[255,255,255],0.3));gr.addColorStop(1,mixHex(ac,[0,0,0],0.45));g.fillStyle=gr;g.fillRect(0,0,W,H);
+  const lc=mixHex(ac,[255,255,255],0.7);
+  for(let i=0;i<26;i++){const y=(i*37)%H,len=40+((i*53)%90),x=(((i*97+SBG.ph*(9+(i%5)*2))%(W+len))-len),xx=d>0?W-x-len:x;g.globalAlpha=k*(0.35+0.4*((i*7)%3)/2);g.fillStyle=i%3?'#ffffff':lc;g.fillRect(xx,y,len,1+(i%2))}
   g.restore()}
 function stepThrow(){if(G.thr.kind==='zanei')return stepZanei();if(G.thr.kind==='river')return stepRiver();if(G.thr.kind==='izuna')return stepIzuna();if(G.thr.kind==='buster')return stepBuster();const c=G.thr,F=[G.p1,G.p2],A=F[c.a],B=F[c.b],d=c.dir,t=++c.t,S=A.S,cl=v=>clamp(v,24,STAGE_W-24),H=(u,h)=>4*h*u*(1-u);
   const pz=(f,name,ex)=>{f.dpose=Object.assign({},POSES[name],ex||{})};
@@ -2761,7 +2771,7 @@ function renderWorld(g){
   G.zoomKick=(G.zoomKick||0)*0.86;zt+=G.zoomKick;
   G.zoom=lerp(G.zoom||1,zt,0.16);G.zfx=lerp(G.zfx??fx,fx,0.2);G.zfy=lerp(G.zfy??fy,fy,0.2);
   if(G.zoom>1.003){const z=G.zoom,ax=clamp(G.zfx,W/2/z*0.5,W-W/2/z*0.5),ay=clamp(G.zfy,H*0.3,H*0.85);g.translate(ax,ay);g.scale(z,z);g.translate(-ax,-ay)}
-  drawStage(g,camX);drawZaneiBg(g);
+  drawStage(g,camX);drawSuperBg(g);
   const L=STAGES[G.stage];g.fillStyle=L.floorGlow;
   if(G.mode==='bonus')drawBonusProps(g,camX);
   for(const f of[p1,p2]){if(f.hidden)continue;const h=FLOOR-f.y,k=clamp(1-h/140,0.3,1);g.fillStyle='rgba(0,0,0,0.38)';g.beginPath();g.ellipse(f.x-camX,FLOOR+1,15*f.S*k,3*k,0,0,7);g.fill()}
