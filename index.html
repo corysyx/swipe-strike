@@ -797,6 +797,8 @@ POSES.bikeB=P({lean:-30,head:4,fl1:40,fl2:-105,bl1:104,bl2:-8,fa1:100,fa2:40,ba1
 POSES.lkA=P({lean:-24,head:4,fl1:128,fl2:-4,bl1:-6,bl2:-4,fa1:40,fa2:100,ba1:-20,ba2:90});POSES.lkA_w=POSES.lkA;
 POSES.lkB=P({lean:-14,head:2,fl1:96,fl2:-16,bl1:-8,bl2:-4,fa1:55,fa2:95,ba1:-10,ba2:90});POSES.lkB_w=POSES.lkB;
 POSES.bird=P({rot:180,lean:0,head:0,fl1:96,fl2:0,bl1:-96,bl2:0,fa1:172,fa2:6,ba1:168,ba2:10,dy:-30});POSES.bird_w=POSES.crouch;POSES.birdA=Object.assign({},POSES.bird,{dy:-4});POSES.birdA_w=POSES.jump;
+/* low whirlwind: hands on the floor, body tilted, legs splayed flat at knee height */
+POSES.birdL=Object.assign({},POSES.bird,{dy:0,rot:118,fl1:34,bl1:-158,fa1:120,fa2:100,ba1:116,ba2:100});POSES.birdL_w=POSES.crouch;
 POSES.stomp=P({lean:4,head:6,fl1:-4,fl2:0,bl1:70,bl2:-115,fa1:120,fa2:30,ba1:95,ba2:45});POSES.stomp_w=POSES.jump;
 POSES.cutter=P({lean:12,head:2,fa1:96,fa2:-6,ba1:-35,ba2:25,fl1:42,fl2:-12,bl1:-32,bl2:0,dx:4});POSES.cutter_w=P({lean:-6,fa1:15,fa2:145,ba1:35,ba2:125,fl1:26,fl2:-20,bl1:-22,bl2:-8,dx:-2});
 POSES.lowblow=P({lean:36,head:-4,fl1:82,fl2:-122,bl1:10,bl2:-122,fa1:62,fa2:-8,ba1:40,ba2:105,dx:3});POSES.lowblow_w=POSES.crouch;
@@ -966,7 +968,7 @@ const CHARS=[
   moves:(B,S)=>({
    S1:{s:12,a:1,r:18,pose:'palm',proj:{type:'ki',vx:3.4,dmg:60,hs:20,bs:14,w:16,h:14,kb:2.5,life:64}},
    S2:{s:3,a:20,r:20,dmg:105,hits:3,multi:6,hs:22,bs:14,hb:B([0,-96,30,80],1),kb:1,launch:6.4,lastKd:true,inv:[0,6],vy:6.4,vx:1.2,pose:'upkick',landRec:14},
-   S3:{s:8,a:34,r:14,dmg:120,hits:5,multi:6,hs:16,bs:10,hb:B([-30,-62,60,30],1),kb:0.6,hop:[3.2,0],hover:34,vx:3.2,pose:'bird',spin:true,lastKd:true,landRec:10},
+   S3:{s:8,a:34,r:14,dmg:120,hits:5,multi:6,hs:16,bs:10,hb:B([-38,-36,76,28],1),kb:0.6,vx:2.1,pose:'birdL',spin:true,lastKd:true},
    S4:{s:4,a:26,r:16,dmg:150,hits:8,multi:3,hs:14,bs:8,hb:B([8,-72,36,40]),kb:0.4,pose:'rush',finPose:'lkA',lastKd:true},
    AS:{s:4,a:22,r:6,dmg:80,hs:20,bs:14,hb:B([-6,-22,28,26],1),lvl:'high',kb:1.5,hover:4,dive:4,diveV:[1.2,6.4],pose:'stomp',air:true,bounce:5.8,landRec:6},
    AS2:{s:5,a:26,r:10,dmg:100,hits:4,multi:6,hs:14,bs:10,hb:B([-28,-62,58,30],1),kb:0.6,hover:26,vx:2.8,pose:'birdA',spin:true,ender:true,air:true,lastKd:true},
