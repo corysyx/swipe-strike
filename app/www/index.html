@@ -2624,8 +2624,14 @@ function stepFight(netIn){
   if(!G.resim)updFx();
 }
 function dummyInput(me,op){const inp=EMPTY();if(G.dummy==='cpu')return aiInput(G.ai,me,op);
-  if(G.dummy==='block'){const dir=Math.sign(op.x-me.x)||1;inp.h=-dir;const m=op.move;const pj=G.projs.find(p=>p.owner===op);
-    inp.down=(op.state==='attack'&&m&&m.lvl==='low')||(pj&&pj.lvl==='low');if(op.state==='attack'&&m&&m.lvl==='high')inp.down=false}
+  const m=op.move,atk=op.state==='attack'&&m,pj=G.projs.find(p=>p.owner===op&&!p.dead&&Math.abs(p.x-me.x)<120&&Math.sign(me.x-p.x)===Math.sign(p.vx||0));
+  if(G.dummy==='block'){/* only holds back while something is actually coming, so it no longer walks away */
+    const threat=(atk&&op.t<=m.s+m.a+2)||pj||(op.air&&Math.abs(op.x-me.x)<90);
+    if(threat){const dir=Math.sign(op.x-me.x)||1;inp.h=-dir;inp.guard=true;inp.down=(atk&&m.lvl==='low')||(pj&&pj.lvl==='low');if(atk&&m.lvl==='high')inp.down=false}}
+  if(G.dummy==='crouch')inp.down=true;
+  if(G.dummy==='parry'){/* taps parry just before each blow (or projectile) arrives */
+    const soon=(atk&&!m.grab&&op.t>=m.s-4&&op.t<=m.s+m.a&&Math.abs(op.x-me.x)<110)||(pj&&Math.abs(pj.x-me.x)<40);
+    if(soon&&me.state!=='parry'&&['idle','walk','crouch'].includes(me.state))inp.act='P'}
   if(G.dummy==='jump'&&me.state==='idle')inp.jump=true;
   return inp}
 function separate(a,b){
@@ -3055,7 +3061,7 @@ function renderPause(g){
   const bx=W/2-70,bw=140;let y=50;const b=(l,cb,o)=>{button(g,bx,y,bw,17,l,cb,o);y+=20};
   b('RESUME',()=>{G.paused=false},{def:true});
   b('RESTART',()=>{G.paused=false;G.wins=[0,0];G.round=1;G.p1.meter=0;G.p2.meter=0;startRound()});
-  if(G.training)b('DUMMY: '+G.dummy.toUpperCase(),()=>{const o=['stand','block','jump','cpu'];G.dummy=o[(o.indexOf(G.dummy)+1)%o.length]},{col:'#9dffcf'});
+  if(G.training)b('DUMMY: '+G.dummy.toUpperCase(),()=>{const o=['stand','block','crouch','parry','jump','cpu'];G.dummy=o[(o.indexOf(G.dummy)+1)%o.length]},{col:'#9dffcf'});
   b('HOW TO PLAY',()=>{G.howFrom='pause';G.mode='howto'},{col:'#7fd8ff'});
   if(dbgAny())b('DEBUG: RESET ALL',()=>{Object.assign(DBG,JSON.parse(JSON.stringify(DBG_DEF)));saveDbg()},{col:'#ff8aff'});
   b('CHARACTER SELECT',()=>{G.paused=false;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#ff8a3a'});
