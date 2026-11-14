@@ -1055,27 +1055,31 @@ for(const c of CHARS){c.cols=COLOR_VARIANTS.map(([d,sa,li],i)=>{if(!i)return Obj
 for(const c of CHARS)CH[c.id]=c;
 /* ===== Paid costumes: one per character. A costume is the character with its own style + colours (same moves/stats).
    It occupies colour slot COS_CI, so it travels online and in rematches exactly like a colour choice. ===== */
-const COS_CI=10,COS_PREFIX='swipestrike.costume.',COS_ALL='swipestrike.costume.all';
+const COS_CI=10,COS_CI2=11,COS_PREFIX='swipestrike.costume.',COS_ALL='swipestrike.costume.all';
 const COSTUMES={
-  kaito:{name:'STREET',style:{hair:'spiky',band:true,sleeve:'upper',tail:'band',boots:true,beltTail:false},col:{top:'#1a1a1e',pants:'#3a4a6a',belt:'#8a6a3a',band:'#e8202a',glove:'#e8202a',shoe:'#f0f0f0',accent:'#ff4a4a'}},
-  riot:{name:'PUNK',style:{hair:'pony',tail:'hair',boots:true,sleeve:'none',gloves:true},col:{top:'#141418',pants:'#c8203a',belt:'#c0c0c8',hair:'#40e0ff',band:'#40e0ff',glove:'#141418',shoe:'#141418',accent:'#40e0ff'}},
-  sol:{name:'ASCENDED',style:{hair:'bald',robe:true,sleeve:'full',beads:true,sash:true,beltTail:true,eyeGlow:true,eyeGlowCol:'#ffd860'},col:{top:'#f0ece4',pants:'#f0ece4',belt:'#d4a017',band:'#d4a017',accent:'#ffd860'}},
-  tank:{name:'CHAMPION',style:{hair:'mohawk',sleeve:'none',boots:true,stache:true},col:{top:'#1a3ac8',pants:'#1a3ac8',belt:'#ffd23f',band:'#ffd23f',glove:'#1a1a1e',shoe:'#f0f0f0',hair:'#ffd23f',accent:'#4a8aff'}},
-  nyx:{name:'KUNOICHI',style:{hair:'mask',sleeve:'upper',tail:'scarf',boots:true,beltTail:true,lashes:true},col:{top:'#141418',pants:'#141418',belt:'#e0263f',hair:'#1e1e26',band:'#e0263f',glove:'#2a2a34',shoe:'#2a2a34',accent:'#ff3a5a'}},
-  genryu:{name:'SHADOW SAGE',style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true,eyeGlow:true,eyeGlowCol:'#9dffcf'},col:{top:'#141418',pants:'#141418',belt:'#2a8a5a',hair:'#d8d8e0',band:'#2a8a5a',accent:'#9dffcf'}},
-  magatsu:{name:'BONE DEMON',style:{hair:'wild',gi:true,sleeve:'full',beads:true,tail:'hair',beltTail:true,eyeGlow:true,eyeGlowCol:'#ff3030'},col:{top:'#e8e4dc',pants:'#7a1020',belt:'#141018',hair:'#ff3030',band:'#141018',glove:'#e8e4dc',accent:'#ff3030'}},
-  shenwu:{name:'CRANE ROBE',style:{hair:'braid',robe:true,sleeve:'full',tail:'hair',beltTail:true,boots:true},col:{top:'#f0ece4',pants:'#1e3a6a',belt:'#3a7ac8',band:'#3a7ac8',shoe:'#1e3a6a',accent:'#7fd8ff'}},
-  taolin:{name:'TEMPLE MONK',style:{hair:'mop',robe:true,sleeve:'none',beads:true,boots:true,beltTail:true},col:{top:'#e87a1a',pants:'#e87a1a',belt:'#8a2a1a',band:'#8a2a1a',shoe:'#5a3a1a',accent:'#ffb030'}},
-  lihua:{name:'SAPPHIRE',style:{hair:'lihua',tail:'hair',sleeve:'full',boots:true,sash:true},col:{top:'#1e3a8a',pants:'#1e3a8a',belt:'#e8c060',band:'#e8c060',glove:'#e8c060',shoe:'#f0ece4',accent:'#7fb0ff'}},
-  drake:{name:'COMMANDO',style:{hair:'buzz',sleeve:'none',boots:true,band:true,tail:'band',gloves:true},col:{top:'#4a5a2a',pants:'#5a5a3a',belt:'#2a2a1e',band:'#2a3a1a',glove:'#2a2a1e',shoe:'#2a2a1e',accent:'#c8e060'}},
-  rocco:{name:'TITLE BOUT',style:{hair:'fade',goatee:true,robe:true,sleeve:'full',boots:true,gloves:true},col:{top:'#c81e2a',pants:'#c81e2a',belt:'#ffd23f',band:'#ffd23f',glove:'#ffd23f',shoe:'#f0f0f0',accent:'#ffd23f'}},
-  raiko:{name:'STORM ONI',style:{hair:'pony',tail:'hair',band:true,sleeve:'none',boots:true,eyeGlow:true,eyeGlowCol:'#ffe060'},col:{top:'#1a1a2a',pants:'#1a1a2a',belt:'#ffd23f',band:'#ffd23f',glove:'#ffd23f',shoe:'#1a1a2a',accent:'#ffe060'}}};
+  kaito:{name:'STREET',style:{hair:'spiky',band:true,sleeve:'upper',tail:'band',boots:true,beltTail:false},col:{top:'#1a1a1e',pants:'#3a4a6a',belt:'#8a6a3a',band:'#e8202a',glove:'#e8202a',shoe:'#f0f0f0',accent:'#ff4a4a'},alt:{top:'#e8e8ee',pants:'#1a1a1e',band:'#2a6aff',glove:'#2a6aff',accent:'#4a9aff'}},
+  riot:{name:'PUNK',style:{hair:'pony',tail:'hair',boots:true,sleeve:'none',gloves:true},col:{top:'#141418',pants:'#c8203a',belt:'#c0c0c8',hair:'#40e0ff',band:'#40e0ff',glove:'#141418',shoe:'#141418',accent:'#40e0ff'},alt:{top:'#f0f0f0',pants:'#1a1a1e',hair:'#ff3a3a',band:'#ff3a3a',accent:'#ff3a3a'}},
+  sol:{name:'ASCENDED',style:{hair:'bald',robe:true,sleeve:'full',beads:true,sash:true,beltTail:true,eyeGlow:true,eyeGlowCol:'#ffd860'},col:{top:'#f0ece4',pants:'#f0ece4',belt:'#d4a017',band:'#d4a017',accent:'#ffd860'},alt:{top:'#1a1a24',pants:'#1a1a24',belt:'#b040ff',band:'#b040ff',accent:'#c86bff'}},
+  tank:{name:'CHAMPION',style:{hair:'mohawk',sleeve:'none',boots:true,stache:true},col:{top:'#1a3ac8',pants:'#1a3ac8',belt:'#ffd23f',band:'#ffd23f',glove:'#1a1a1e',shoe:'#f0f0f0',hair:'#ffd23f',accent:'#4a8aff'},alt:{top:'#c81e2a',pants:'#c81e2a',belt:'#f0f0f0',band:'#f0f0f0',hair:'#f0f0f0',accent:'#ff5a5a'}},
+  nyx:{name:'KUNOICHI',style:{hair:'mask',sleeve:'upper',tail:'scarf',boots:true,beltTail:true,lashes:true},col:{top:'#141418',pants:'#141418',belt:'#e0263f',hair:'#1e1e26',band:'#e0263f',glove:'#2a2a34',shoe:'#2a2a34',accent:'#ff3a5a'},alt:{top:'#f0f0f4',pants:'#f0f0f4',belt:'#2a6aff',band:'#2a6aff',hair:'#d8d8e0',glove:'#c8c8d0',shoe:'#c8c8d0',accent:'#4a8aff'}},
+  genryu:{name:'SHADOW SAGE',style:{hair:'master',robe:true,sleeve:'full',beard:true,beltTail:true,eyeGlow:true,eyeGlowCol:'#9dffcf'},col:{top:'#141418',pants:'#141418',belt:'#2a8a5a',hair:'#d8d8e0',band:'#2a8a5a',accent:'#9dffcf'},alt:{top:'#f0ece4',pants:'#f0ece4',belt:'#c81e2a',band:'#c81e2a',accent:'#ff4a4a'}},
+  magatsu:{name:'BONE DEMON',style:{hair:'wild',gi:true,sleeve:'full',beads:true,tail:'hair',beltTail:true,eyeGlow:true,eyeGlowCol:'#ff3030'},col:{top:'#e8e4dc',pants:'#7a1020',belt:'#141018',hair:'#ff3030',band:'#141018',glove:'#e8e4dc',accent:'#ff3030'},alt:{top:'#1a1a1e',pants:'#3a3a44',hair:'#7fd8ff',glove:'#1a1a1e',accent:'#40c0ff'}},
+  shenwu:{name:'CRANE ROBE',style:{hair:'braid',robe:true,sleeve:'full',tail:'hair',beltTail:true,boots:true},col:{top:'#f0ece4',pants:'#1e3a6a',belt:'#3a7ac8',band:'#3a7ac8',shoe:'#1e3a6a',accent:'#7fd8ff'},alt:{top:'#1a1a1e',pants:'#8a1c24',belt:'#e8c060',band:'#e8c060',shoe:'#1a1a1e',accent:'#ffd860'}},
+  taolin:{name:'TEMPLE MONK',style:{hair:'mop',robe:true,sleeve:'none',beads:true,boots:true,beltTail:true},col:{top:'#e87a1a',pants:'#e87a1a',belt:'#8a2a1a',band:'#8a2a1a',shoe:'#5a3a1a',accent:'#ffb030'},alt:{top:'#6a2a9a',pants:'#6a2a9a',belt:'#e8c060',band:'#e8c060',accent:'#c89cff'}},
+  lihua:{name:'SAPPHIRE',style:{hair:'lihua',tail:'hair',sleeve:'full',boots:true,sash:true},col:{top:'#1e3a8a',pants:'#1e3a8a',belt:'#e8c060',band:'#e8c060',glove:'#e8c060',shoe:'#f0ece4',accent:'#7fb0ff'},alt:{top:'#1e6a3a',pants:'#1e6a3a',accent:'#9dffcf'}},
+  drake:{name:'COMMANDO',style:{hair:'buzz',sleeve:'none',boots:true,band:true,tail:'band',gloves:true},col:{top:'#4a5a2a',pants:'#5a5a3a',belt:'#2a2a1e',band:'#2a3a1a',glove:'#2a2a1e',shoe:'#2a2a1e',accent:'#c8e060'},alt:{top:'#c8b890',pants:'#a89870',belt:'#5a4a2a',band:'#5a4a2a',glove:'#5a4a2a',shoe:'#5a4a2a',accent:'#ffe0a0'}},
+  rocco:{name:'TITLE BOUT',style:{hair:'fade',goatee:true,robe:true,sleeve:'full',boots:true,gloves:true},col:{top:'#c81e2a',pants:'#c81e2a',belt:'#ffd23f',band:'#ffd23f',glove:'#ffd23f',shoe:'#f0f0f0',accent:'#ffd23f'},alt:{top:'#1a1a1e',pants:'#1a1a1e',belt:'#c0c0c8',glove:'#e8e8ee',band:'#c0c0c8',accent:'#e8e8ee'}},
+  raiko:{name:'STORM ONI',style:{hair:'pony',tail:'hair',band:true,sleeve:'none',boots:true,eyeGlow:true,eyeGlowCol:'#ffe060'},col:{top:'#1a1a2a',pants:'#1a1a2a',belt:'#ffd23f',band:'#ffd23f',glove:'#ffd23f',shoe:'#1a1a2a',accent:'#ffe060'},alt:{top:'#f0f0f4',pants:'#f0f0f4',belt:'#2a6aff',band:'#2a6aff',glove:'#2a6aff',shoe:'#f0f0f4',accent:'#4a9aff'}}};
 const COS_VAR={};
-function costumeChar(c){const cs=COSTUMES[c.id];if(!cs)return c;if(COS_VAR[c.id])return COS_VAR[c.id];
-  const col=Object.assign({},c.col,cs.col),pal=makePal(col);
-  return COS_VAR[c.id]=Object.assign(Object.create(c),{style:Object.assign({},cs.style),col,cols:[col],pals:[pal],pal,costume:cs.name})}
+/* alt=true: the costume's second palette, used so a costume mirror match shows two different colourways */
+function costumeChar(c,alt){const cs=COSTUMES[c.id];if(!cs)return c;const key=c.id+(alt?'_alt':'');if(COS_VAR[key])return COS_VAR[key];
+  const col=Object.assign({},c.col,cs.col,alt?cs.alt:{}),pal=makePal(col);
+  return COS_VAR[key]=Object.assign(Object.create(c),{style:Object.assign({},cs.style),col,cols:[col],pals:[pal],pal,costume:cs.name})}
 /* what a colour slot looks like: the character (or its costume), its colours and palette */
-function skinOf(c,ci){if(ci===COS_CI&&COSTUMES[c.id]){const v=costumeChar(c);return{ch:v,col:v.col,pal:v.pal}}return{ch:c,col:c.cols[ci]||c.col,pal:c.pals[ci]||c.pal}}
+const isCos=ci=>ci===COS_CI||ci===COS_CI2;
+/* the colour a second player gets when both pick the same fighter and colour */
+const altCi=ci=>ci===COS_CI?COS_CI2:ci===COS_CI2?COS_CI:((ci||0)+1)%4;
+function skinOf(c,ci){if(isCos(ci)&&COSTUMES[c.id]){const v=costumeChar(c,ci===COS_CI2);return{ch:v,col:v.col,pal:v.pal}}return{ch:c,col:c.cols[ci]||c.col,pal:c.pals[ci]||c.pal}}
 const BOSS_ID='archon';CHARS.splice(CHARS.findIndex(c=>c.id===BOSS_ID),1);// the final boss is never on the select screen
 const flatPal=col=>new Proxy({},{get:()=>col});
 
@@ -1296,7 +1300,7 @@ function drawChar(g,ch,pose,sx,sy,facing,obj,opt={}){
 /* ============================ FIGHTER ============================ */
 let PID=0;
 class Fighter{
-  constructor(ch,side,ci=0){if(ci===COS_CI&&typeof COSTUMES!=='undefined'&&COSTUMES[ch.id])ch=costumeChar(ch);this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
+  constructor(ch,side,ci=0){if((ci===10||ci===11)&&typeof COSTUMES!=='undefined'&&COSTUMES[ch.id])ch=costumeChar(ch,ci===11);this.ch=ch;this.side=side;this.ci=ci;this.col=ch.cols[ci]||ch.col;this.pal=ch.pals[ci]||ch.pal;this.moves=buildMoves(ch);this.meter=0;this.jumpId=0;this.moveId=0;this.reset(STAGE_W/2)}
   reset(x){Object.assign(this,{x,y:FLOOR,vx:0,vy:0,facing:this.side?-1:1,hp:this.ch.hp,redHp:this.ch.hp,redT:0,state:'idle',t:0,move:null,
     combo:0,inv:0,juggle:false,juggleN:0,juggleInv:false,ko:false,buf:null,bufT:0,airAtk:false,flip:false,flash:0,flashCol:null,
     hitCount:0,lastHit:-99,canCancel:false,armorUsed:false,stun:0,landT:0,walkPh:0,ghosts:[],inp:EMPTY(),crouchBlk:false,wasCrouch:false,head:null,belt:null,sq:0,smear:[],pn:'idle',ext:0,pbCD:0,launchN:0,lHits:0,comboDmg:0,bounceN:0,capN:0,akN:0,aparryT:0,aparryUsed:false,gL:0,enderH:false,rushT:0,rushN:0,stance:0});
@@ -2558,7 +2562,7 @@ const COS={owned:LS.get('cos',[]),prices:{},
   has(id){return!!COSTUMES[id]&&(DBG.cosAll||this.owned.includes('all')||this.owned.includes(id))},
   grant(id){if(!this.owned.includes(id)){this.owned.push(id);LS.set('cos',this.owned)}}};
 /* the colour slots a fighter can cycle through on the select screen: the normal colours, then the costume if owned */
-const colOpts=c=>{const o=[];for(let k=0;k<NCOL();k++)o.push(k);if(c&&COS.has(c.id))o.push(COS_CI);return o};
+const colOpts=c=>{const o=[];for(let k=0;k<NCOL();k++)o.push(k);if(c&&COS.has(c.id))o.push(COS_CI,COS_CI2);return o};
 const nextCi=(c,ci)=>{const o=colOpts(c),i=o.indexOf(ci);return o[(i+1)%o.length]};
 /* ============================ TAG BATTLE ============================
    Each side has a team of two. Only the active fighter is simulated and drawn; the partner waits off-screen, slowly
@@ -2567,8 +2571,8 @@ const nextCi=(c,ci)=>{const o=colOpts(c),i=o.indexOf(ci);return o[(i+1)%o.length
    automatically; the round is lost only when both are down. All tag state lives in G.tag and is saved for rollback. */
 const TAG_CD=240;
 function tagMake(ids,cols){const mk=s=>[0,1].map(i=>new Fighter(CH[ids[s][i]],s,cols[s][i]||0));
-  for(let s=0;s<2;s++)if(ids[s][0]===ids[s][1]&&(cols[s][0]||0)===(cols[s][1]||0))cols[s][1]=((cols[s][1]||0)+1)%4;
-  for(let i=0;i<2;i++)for(let j=0;j<2;j++)if(ids[0][i]===ids[1][j]&&(cols[0][i]||0)===(cols[1][j]||0))cols[1][j]=((cols[1][j]||0)+1)%4;
+  for(let s=0;s<2;s++)if(ids[s][0]===ids[s][1]&&(cols[s][0]||0)===(cols[s][1]||0))cols[s][1]=altCi(cols[s][1]||0);
+  for(let i=0;i<2;i++)for(let j=0;j<2;j++)if(ids[0][i]===ids[1][j]&&(cols[0][i]||0)===(cols[1][j]||0))cols[1][j]=altCi(cols[1][j]||0);
   return{teams:[mk(0),mk(1)],act:[0,0],cd:[0,0],ho:[0,0],k:0}}
 function tagSetActive(){const T=G.tag,meS=G.me?G.me.side:0;G.p1=T.teams[0][T.act[0]];G.p2=T.teams[1][T.act[1]];G.me=meS?G.p2:G.p1}
 function tagRoundReset(){const T=G.tag;for(let s=0;s<2;s++){const meter=T.teams[s][T.act[s]].meter;T.act[s]=0;T.cd[s]=0;T.ho[s]=0;
@@ -2595,7 +2599,7 @@ function aiTag(s){const T=G.tag,A=T.teams[s][T.act[s]],B=tagPartner(s);if(!tagCa
 function startTagMatch(keep){const s=G.sel;if(!keep||!s.p2||!s.p2b){const pool=CHARS.filter(q=>q.id!==s.p1&&q.id!==s.p1b).map(q=>q.id).sort(()=>Math.random()-.5);s.p2=pool[0];s.p2b=pool[1];s.c2=0;s.c2b=0}
   G.tag=tagMake([[s.p1,s.p1b],[s.p2,s.p2b]],[[s.c1||0,s.c1b||0],[s.c2||0,s.c2b||0]]);G.resUsed=false;G.me=null;tagSetActive();G.me=G.p1;
   G.net=null;G.demo=false;G.training=false;G.wins=[0,0];G.round=1;G.ai=makeAI(G.diff);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
-function startMatch(){if(G.selMode==='tag'&&G.sel&&G.sel.p1b)return startTagMatch(true);G.tag=null;G.resUsed=false;const a=(DBG.me==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p1],b=(DBG.opp==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=(c2+1)%4;G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
+function startMatch(){if(G.selMode==='tag'&&G.sel&&G.sel.p1b)return startTagMatch(true);G.tag=null;G.resUsed=false;const a=(DBG.me==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p1],b=(DBG.opp==='archon'&&G.selMode!=='bonus')?CH[BOSS_ID]:CH[G.sel.p2];let c1=G.sel.c1||0,c2=G.sel.c2||0;if(a===b&&c1===c2)c2=altCi(c2);G.p1=new Fighter(a,0,c1);G.p2=new Fighter(b,1,c2);G.me=G.p1;G.net=null;G.demo=false;G.wins=[0,0];G.round=1;
   const lv=G.training?1:(b.boss?2:clamp(G.diff+(G.ladderIdx>=4?1:0),0,2));G.ai=makeAI(lv);G.mode='vs';G.vsT=0;G.paused=false;G.result=null;SFX.ok()}
 function startRound(){if(G.tag)tagRoundReset();G.p1.reset(STAGE_W/2-70);G.p2.reset(STAGE_W/2+70);G.p1.resUsed=false;G.p2.resUsed=false;if(G.bonusReward&&G.round===1&&!G.net){G.p1.meter=100;G.bonusReward=false}G.projs=[];G.fx=[];G.timer=99;G.timerF=0;if(dbgLive()&&G.mode!=='bonus')[G.p1,G.p2].forEach((f,i)=>{const L=DBG.life[i];if(L==='low')f.hp=Math.round(f.ch.hp*0.1);else if(L==='one')f.hp=1;f.redHp=f.hp});G.phase='intro';G.phaseT=0;
   G.camX=(STAGE_W-W)/2;G.superFlash=null;G.cine=null;G.thr=null;G.hitstop=0;G.slow=0;G.comboDisp=null;G.perfect=false;G.koWinner=null;if(G.training){G.p1.meter=100;G.phase='fight';banner('TRAINING',60,16)}}
@@ -3155,9 +3159,10 @@ function drawRoster(g,opt){
     const pz=Object.assign({},t.sel?POSES.win:POSES.idle);if(!t.sel){pz.lean+=b*1.5;pz.fa1+=b*3}
     g.translate(x+cw/2-3,y+chh-13);g.scale(0.5,0.5);drawChar(g,sk.ch,pz,0,0,1,o,{pal:sk.pal});g.restore();
     g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(x+1,y+chh-13,cw-2,12);txt(g,c.name,x+cw/2,y+chh-11,8,'#fff','center');
-    if(t.l){g.fillStyle=t.lc;g.fillRect(x+2,y+2,t.l.length*8+4,10);txt(g,t.l,x+4,y+3,8,'#fff','left',false)}
+    if(t.l){g.fillStyle=t.lc;g.fillRect(x+2,y+2,t.l.length*5+3,7);txt(g,t.l,x+3,y+2,6,'#fff','left',false)}
     if(t.r){g.fillStyle=t.rc;g.fillRect(x+cw-t.r.length*8-6,y+2,t.r.length*8+4,10);txt(g,t.r,x+cw-t.r.length*8-4,y+3,8,'#fff','left',false)}
-    if(t.sw!=null)colOpts(c).forEach((k,j)=>{const sk2=skinOf(c,k);g.fillStyle=k===t.sw?'#fff':(k===COS_CI?'#ffd23f':'#120a16');g.fillRect(x+cw-11,y+14+j*9,9,8);g.fillStyle=outfit(sk2.ch,sk2.col);g.fillRect(x+cw-10,y+15+j*9,7,6)})
+    if(t.sw!=null){let jr=0,jl=0;colOpts(c).forEach(k=>{const sk2=skinOf(c,k),L=isCos(k),sx=L?x+2:x+cw-11,sy=L?y+11+(jl++)*9:y+14+(jr++)*9;/* colours on the right, costumes on the left (gold frame) */
+      g.fillStyle=k===t.sw?'#fff':(L?'#ffd23f':'#120a16');g.fillRect(sx,sy,9,8);g.fillStyle=outfit(sk2.ch,sk2.col);g.fillRect(sx+1,sy+1,7,6);if(L){g.fillStyle=sk2.col.accent;g.fillRect(sx+1,sy+5,7,2)}})}
     BTN.push({x,y,w:cw,h:chh,cb:()=>opt.tap(c,i)})});
 }
 function drawInfo(g,c){g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(4,157,376,38);if(!c){txt(g,'RANDOM',8,160,8,'#fff');txt(g,'???',64,160,8,'#b48cff');txt(g,'A SECRET FIGHTER HAS BEEN CHOSEN.',8,172,8,'#d8d0ff');txt(g,'REVEALED WHEN THE FIGHT STARTS!',8,182,8,'#d8d0ff');return}txt(g,c.name,8,160,8,'#fff');txt(g,c.arch,8+(c.name.length+1)*8,160,8,c.archCol);
@@ -3650,7 +3655,7 @@ function onNet(o){const N=G.net;if(!N||!o)return;
     case'back':NDIAG.oppAway=false;break;
   }}
 function netMaybeStart(){const N=G.net;if(!N||N.side!==0||!N.ready||!N.rready||!N.pick||!N.rpick)return;if(N.tagMode&&(!N.pick2||!N.rpick2))return;
-  const mid=(N.mid||0)+1;let c1=N.pc|0,c2=N.rpc|0;if(N.pick===N.rpick&&c1===c2)c2=(c2+1)%4;
+  const mid=(N.mid||0)+1;let c1=N.pc|0,c2=N.rpc|0;if(N.pick===N.rpick&&c1===c2)c2=altCi(c2);
   const tg=N.tagMode?{ids:[[N.pick,N.pick2],[N.rpick,N.rpick2]],cols:[[c1,N.pc2|0],[c2,N.rpc2|0]]}:null;
   stageResolve();NX.ctrlSend({t:'start',p1:N.pick,p2:N.rpick,c1,c2,stage:G.stage,mid,tg});startNetMatch(N.pick,N.rpick,G.stage,mid,c1,c2,tg)}
 function startNetMatch(p1,p2,stage,mid,c1=0,c2=0,tg=null){const N=G.net;
@@ -3747,7 +3752,7 @@ function renderNetSel(g){const N=G.net;
     tag:c=>{const me=N.pick===c.id&&!N.h1,me2=N.tagMode&&N.pick2===c.id&&!N.h2,them=(N.rpick===c.id&&!N.rh1)||(N.tagMode&&N.rpick2===c.id&&!N.rh2);if(!me&&!me2&&!them)return null;
       return{sel:me||me2?'#4aa0ff':'#ff4a4a',ci:me?N.pc:me2?N.pc2:(N.rpick===c.id?N.rpc:N.rpc2),l:me?(N.tagMode?'YOU 1':'YOU'):me2?'YOU 2':null,lc:'#4aa0ff',r:them?'RIVAL':null,rc:'#ff4a4a',sw:me?N.pc:me2?N.pc2:null}},
     tap:(c,i,h)=>{if(N.ready)return;N.pc2=N.pc2|0;
-      const nx=ci=>{const o=[0,1,2,3];if(COS.has(c.id))o.push(COS_CI);return o[(o.indexOf(ci)+1)%o.length]};/* online: the 4 colours plus an owned costume */
+      const nx=ci=>{const o=[0,1,2,3];if(COS.has(c.id))o.push(COS_CI,COS_CI2);return o[(o.indexOf(ci)+1)%o.length]};/* online: the 4 colours plus an owned costume */
       if(!h&&N.pick===c.id&&!N.h1)N.pc=nx(N.pc);else if(!h&&N.tagMode&&N.pick2===c.id&&!N.h2)N.pc2=nx(N.pc2);
       else if(!N.tagMode||!N.pick){N.pick=h?rndPick(N.tagMode?N.pick2:null):c.id;N.pc=h?rndCol(4):0;N.h1=!!h}else{N.pick2=h?rndPick(N.pick):c.id;N.pc2=h?rndCol(4):0;N.h2=!!h}
       NX.ctrlSend({t:'pick',id:N.pick,c:N.pc,id2:N.tagMode?N.pick2:null,c2:N.pc2,h1:!!N.h1,h2:!!N.h2});SFX.sel()}});
