@@ -2795,10 +2795,6 @@ function renderWorld(g){
   G.zoom=lerp(G.zoom||1,zt,0.16);G.zfx=lerp(G.zfx??fx,fx,0.2);G.zfy=lerp(G.zfy??fy,fy,0.2);
   if(G.zoom>1.003){const z=G.zoom;let ax=clamp(G.zfx,W/2/z*0.5,W-W/2/z*0.5);const ay=clamp(G.zfy,H*0.3,H*0.85);
     if(!G.superFlash){const xl=Math.min(p1.x,p2.x)-camX,xr=Math.max(p1.x,p2.x)-camX,hiA=(xl*z-22)/(z-1),loA=(xr*z-(W-22))/(z-1);if(loA<=hiA)ax=clamp(ax,loA,hiA)}/* keep both fighters inside the zoomed view */g.translate(ax,ay);g.scale(z,z);g.translate(-ax,-ay)}
-  /* vertical follow: when both fighters are high in the air together, the camera rises with them (render only) */
-  {const lowY=Math.max(p1.y,p2.y),topY=Math.min(p1.y-96*p1.S,p2.y-96*p2.S),both=p1.air&&p2.air&&FLOOR-lowY>36&&!G.superFlash;
-   const ty=both?clamp(40-topY,0,90):0;G.camY=lerp(G.camY||0,ty,0.14);if(G.camY<0.3)G.camY=0}
-  if(G.camY>0){const cy=Math.round(G.camY),L0=STAGES[G.stage]||STAGES[0];g.translate(0,cy);g.drawImage(L0.sky,Math.round(camX*PARA[0]),0,W,1,0,-cy-2,W,cy+3)}
   drawStage(g,camX);drawSuperBg(g);
   const L=STAGES[G.stage];g.fillStyle=L.floorGlow;
   if(G.mode==='bonus')drawBonusProps(g,camX);
