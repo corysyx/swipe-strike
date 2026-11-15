@@ -660,6 +660,9 @@ function vib(ms){if(G.resim||!SET.vib)return;if(NATIVE){try{const H=CP('Haptics'
 // ===== Native app layer (App Store / Google Play builds only; the web version never shows ads) =====
 const NATIVE=(()=>{try{return!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){return false}})();
 const CP=n=>{try{return window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins[n]}catch(e){return null}};
+const PRIVACY_URL='https://corysyx.github.io/swipe-strike/privacy.html';
+/* opens a web page in the phone's browser (the app's web view hands external links to the system browser) */
+function openURL(u){let w=null;try{w=window.open(u,'_blank')}catch(e){}if(!w&&NATIVE)location.href=u}
 // Replace the test IDs with your own AdMob unit IDs and set testing:false before release (see the App Store guide / app/README.md)
 const ADCFG={testing:true,
   ios:{inter:'ca-app-pub-3940256099942544/4411468910',reward:'ca-app-pub-3940256099942544/1712485313'},
@@ -3081,6 +3084,7 @@ function renderShop(g){
   b('COSTUMES',()=>{G.cosSel=G.cosSel||'kaito';G.cosFrom=null;go('costumes')},{col:'#ff8a3a'});
   b('RESTORE PURCHASES',()=>ADS.restore(),{col:'#7fd8ff'});
   if(ADS.privacy)b('PRIVACY SETTINGS',()=>ADS.privacyForm(),{col:'#b48cff'});
+  button(g,W-96,2,92,13,'PRIVACY POLICY',()=>openURL(PRIVACY_URL),{col:'#7fd8ff'});
   txt(g,'GOLD COLOURS: TAP YOUR FIGHTER AGAIN ON SELECT',W/2,H-30,8,'#8a80b0','center');
   if(ADS.msgT>0){ADS.msgT--;txt(g,ADS.msg,W/2,H-46,8,'#fff','center')}
   button(g,4,2,24,13,'<',()=>go('title'),{def:true});
