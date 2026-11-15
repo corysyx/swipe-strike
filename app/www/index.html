@@ -663,10 +663,10 @@ const CP=n=>{try{return window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins[n
 const PRIVACY_URL='https://corysyx.github.io/swipe-strike/privacy.html';
 /* opens a web page in the phone's browser (the app's web view hands external links to the system browser) */
 function openURL(u){let w=null;try{w=window.open(u,'_blank')}catch(e){}if(!w&&NATIVE)location.href=u}
-// Replace the test IDs with your own AdMob unit IDs and set testing:false before release (see the App Store guide / app/README.md)
-const ADCFG={testing:true,
+// Android uses the real AdMob units (app ca-app-pub-9255692835537961~7261525764). iOS still uses Google's test IDs (see the App Store guide / app/README.md)
+const ADCFG={testing:false,
   ios:{inter:'ca-app-pub-3940256099942544/4411468910',reward:'ca-app-pub-3940256099942544/1712485313'},
-  android:{inter:'ca-app-pub-3940256099942544/1033173712',reward:'ca-app-pub-3940256099942544/5224354917'},
+  android:{inter:'ca-app-pub-9255692835537961/1696152553',reward:'ca-app-pub-9255692835537961/5771128935'},
   removeAdsId:'swipestrike.removeads',every:3,minGapMs:180000,goldMs:24*3600e3};
 const LS={get(k,d){try{const v=localStorage.getItem('ss_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('ss_'+k,JSON.stringify(v))}catch(e){}}};
 const ADS={ok:false,noAds:LS.get('noads',false),goldUntil:LS.get('gold',0),matches:0,lastAd:Date.now(),interReady:false,rewardReady:false,busy:false,msg:'',msgT:0,price:'',privacy:false,
