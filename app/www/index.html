@@ -172,7 +172,7 @@ function env(g,t,a,d,v){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampTo
 function osc(type,f0,f1,dur,vol,delay=0,out,at){if(!AC||G.resim)return;const t=at??AC.currentTime+delay;const o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f0,t);if(f1&&f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+dur);env(g,t,0.004,dur,vol);
   o.connect(g).connect(out||sfxGain||master);o.start(t);o.stop(t+dur+0.05)}
-function noise(dur,vol,fq,type='lowpass',delay=0,fq2,out,at){if(!AC||G.resim)return;const t=at??AC.currentTime+delay;const s=AC.createBufferSource();s.buffer=NB;
+function noise(dur,vol,fq,type='lowpass',delay=0,fq2,out,at){if(!AC||G.resim||SFX_MUTE)return;const t=at??AC.currentTime+delay;const s=AC.createBufferSource();s.buffer=NB;
   const f=AC.createBiquadFilter();f.type=type;f.frequency.setValueAtTime(fq,t);if(fq2)f.frequency.exponentialRampToValueAtTime(fq2,t+dur);
   const g=AC.createGain();env(g,t,0.003,dur,vol);s.connect(f).connect(g).connect(out||sfxGain||master);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05)}
 /* ===================== SFX v2: layered, pre-rendered impact sounds =====================
@@ -301,7 +301,7 @@ async function bakeSfx(){if(sfxBaked||!AC||typeof OfflineAudioContext==='undefin
       const tgt=Math.min(pk,SFX_PEAK[k]||1);if(pk>0&&tgt<pk){const m=tgt/pk;for(let i=0;i<d.length;i++)d[i]*=m}SFXB[k]=buf}catch(e){}}}
 const SFX_PEAK={superA:0.95,superB:0.95,superC:0.95,hitL:0.72,hitM:0.86,hitH:1,hitX:1,ko:1,super:0.9,fight:0.9,land:0.8,blockH:0.8};
 function sfxPan(x){return x==null?0:clamp((x-(G.camX+W/2))/(W/2),-1,1)*0.55}
-function play(name,vol=1,o={}){if(!AC||G.resim)return false;if(!sfxBus)sfxFx();const b=SFXB[name];if(!b)return false;
+function play(name,vol=1,o={}){if(!AC||G.resim||SFX_MUTE)return true;if(!sfxBus)sfxFx();const b=SFXB[name];if(!b)return false;
   const s=AC.createBufferSource();s.buffer=b;s.playbackRate.value=(o.rate||1)*(1+(Math.random()*2-1)*(o.vary??0.035));
   const g=AC.createGain();g.gain.value=vol;s.connect(g);let n=g;
   if(o.pan&&AC.createStereoPanner){const p=AC.createStereoPanner();p.pan.value=o.pan;g.connect(p);n=p}
@@ -395,7 +395,7 @@ function voice(t,f,dur,vol,o){
     os.start(t);os.stop(end+r+0.05)}}
 function nz(t,dur,vol,fq,type,fq2,q){vol*=2;const s=AC.createBufferSource();s.buffer=NB;const f=AC.createBiquadFilter();f.type=type||'highpass';f.frequency.setValueAtTime(fq,t);if(fq2)f.frequency.exponentialRampToValueAtTime(fq2,t+dur);if(q)f.Q.value=q;
   const g=AC.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);s.connect(f).connect(g).connect(mBus);s.start(t,Math.random()*0.5);s.stop(t+dur+0.05)}
-function tone(t,f0,f1,dur,vol,type){vol*=2;const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(mBus);o.start(t);o.stop(t+dur+0.05)}
+function tone(t,f0,f1,dur,vol,type){if(SFX_MUTE)return;vol*=2;const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(mBus);o.start(t);o.stop(t+dur+0.05)}
 const KIT={
   kick:(t,v)=>tone(t,160,42,0.22,1.0*v),
   snare:(t,v)=>{nz(t,0.17,0.62*v,1900,'bandpass',1400,0.6);tone(t,200,150,0.08,0.3*v,'triangle')},
@@ -2750,7 +2750,10 @@ function stepThrow(){if(G.thr.kind==='zanei')return stepZanei();if(G.thr.kind===
     if(B.hp<=0&&!G.training){B.hp=1;B.state='idle';B.hp=0;KO(B,A,d)}else{if(B.hp<=0)B.hp=1;B.state='down';B.t=0;B.juggle=false;B.sq=0.8}}
   const tgt=clamp((A.x+B.x)/2-W/2,0,STAGE_W-W);G.camX+=(tgt-G.camX)*0.2;
   if(!G.resim)updFx()}
-function stepFight(netIn){
+/* the menu's background demo fight plays silently: sounds made while it steps are muted (menu clicks still play) */
+let SFX_MUTE=false;
+function stepFight(netIn){SFX_MUTE=!!G.demo&&G.mode!=='fight';try{return stepFightCore(netIn)}finally{SFX_MUTE=false}}
+function stepFightCore(netIn){
   let p1=G.p1,p2=G.p2;
   if(G.superFlash){if(--G.superFlash.t<=0)G.superFlash=null;updFx();return}
   if(G.cine){stepCine();return}
