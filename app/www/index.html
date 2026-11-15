@@ -3058,15 +3058,16 @@ function renderHUD(g){
 function renderTitle(g){
   g.fillStyle='rgba(8,4,20,0.55)';g.fillRect(0,0,W,H);
   const y=30+Math.sin(G.tick*0.05)*2;bigTxt(g,'SWIPE',W/2,y,24,'#ffffff','#ff4fa3');bigTxt(g,'STRIKE',W/2,y+28,24,'#fff6a0','#ff7a1a');
-  const mb=(i,l,cb,o)=>button(g,W/2-66,86+i*20,132,17,l,cb,o);
+  const sh=NATIVE,mb=sh?(i,l,cb,o)=>button(g,W/2-66,84+i*18,132,15,l,cb,o):(i,l,cb,o)=>button(g,W/2-66,86+i*20,132,17,l,cb,o);
   mb(0,'ARCADE',()=>{G.training=false;G.stageSel=-1;G.selMode='arcade';G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{def:true});
   mb(1,'TAG BATTLE',()=>{G.training=false;G.stageSel=-1;G.selMode='tag';G.sel={p1:null,p1b:null,p2:null,p2b:null,c1:0,c1b:0,c2:0,c2b:0,info:0};go('select')},{col:'#7fd8ff'});
   mb(2,'TRAINING',()=>{G.training=true;G.selMode='training';G.stage=TRAIN_STAGE;G.stageSel=TRAIN_STAGE;G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#9dffcf'});
   mb(3,'BONUS STAGES',()=>{G.training=false;G.selMode='bonus';G.bonusType=G.bonusType||'car';G.sel={p1:null,p2:null,c1:0,c2:0,info:0};go('select')},{col:'#ffd23f'});
-  mb(4,'VS ONLINE',()=>{NU.err='';NU.status='';go('net')},{col:'#ff4fa3'});
-  mb(5,'HOW TO PLAY',()=>{G.howFrom='title';go('howto')},{col:'#7fd8ff'});
+  if(sh){mb(4,'SHOP',()=>{ADS.checkPurchases();LS.set('shopSeen',true);go('shop')},{col:'#ff8a3a'});
+    if(!LS.get('shopSeen',false)&&G.tick%40<28){g.fillStyle='#ff3a5a';g.fillRect(W/2+44,84+4*18-4,24,9);txt(g,'NEW',W/2+56,84+4*18-3,6,'#fff','center',false)}}
+  mb(sh?5:4,'VS ONLINE',()=>{NU.err='';NU.status='';go('net')},{col:'#ff4fa3'});
+  mb(sh?6:5,'HOW TO PLAY',()=>{G.howFrom='title';go('howto')},{col:'#7fd8ff'});
   button(g,W-78,H-22,70,16,'SETTINGS',()=>{G.setFrom='title';go('settings')},{col:'#b48cff'});
-  if(NATIVE)button(g,6,6,54,16,'SHOP',()=>{ADS.checkPurchases();go('shop')},{col:'#ffd23f'});
   if(G.tick%60<40)txt(g,'TAP TO PLAY',8,H-18,8,'#ffd23f');
 }
 function renderShop(g){
@@ -3077,7 +3078,7 @@ function renderShop(g){
   if(!ADS.noAds){const left=ADS.goldUntil-Date.now();
     if(left>0)txt(g,'GOLD COLOURS: '+Math.ceil(left/3600e3)+'H LEFT',W/2,y+5,8,'#ffd23f','center'),y+=24;
     else b('WATCH AD: GOLD COLOURS 24H',()=>ADS.watchForGold(),{col:'#ffd23f'})}
-  b('COSTUMES',()=>{G.cosSel=G.cosSel||'kaito';go('costumes')},{col:'#ff8a3a'});
+  b('COSTUMES',()=>{G.cosSel=G.cosSel||'kaito';G.cosFrom=null;go('costumes')},{col:'#ff8a3a'});
   b('RESTORE PURCHASES',()=>ADS.restore(),{col:'#7fd8ff'});
   if(ADS.privacy)b('PRIVACY SETTINGS',()=>ADS.privacyForm(),{col:'#b48cff'});
   txt(g,'GOLD COLOURS: TAP YOUR FIGHTER AGAIN ON SELECT',W/2,H-30,8,'#8a80b0','center');
@@ -3108,7 +3109,7 @@ function renderCostumes(g){
   button(g,6,180,128,16,'RESTORE',()=>ADS.restore(),{col:'#7fd8ff'});
   if(!NATIVE)txt(g,'PURCHASES: IN THE APP ONLY',204,206,8,'#8a80b0','center');
   if(ADS.msgT>0){ADS.msgT--;txt(g,ADS.msg,W/2,H-12,8,'#fff','center')}
-  button(g,4,2,24,13,'<',()=>go('shop'),{def:true});
+  button(g,4,2,24,13,'<',()=>{const f=G.cosFrom;G.cosFrom=null;go(f||'shop')},{def:true});
 }
 function gestIcon(g,type,x,y){
   g.strokeStyle='#ffd23f';g.fillStyle='#ffd23f';g.lineWidth=1.5;g.lineCap='round';
@@ -3165,9 +3166,12 @@ function drawRoster(g,opt){
     g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(x+1,y+chh-13,cw-2,12);txt(g,c.name,x+cw/2,y+chh-11,8,'#fff','center');
     if(t.l){g.fillStyle=t.lc;g.fillRect(x+2,y+2,t.l.length*5+3,7);txt(g,t.l,x+3,y+2,6,'#fff','left',false)}
     if(t.r){g.fillStyle=t.rc;g.fillRect(x+cw-t.r.length*8-6,y+2,t.r.length*8+4,10);txt(g,t.r,x+cw-t.r.length*8-4,y+3,8,'#fff','left',false)}
+    const lockC=t.sw!=null&&NATIVE&&COSTUMES[c.id]&&!COS.has(c.id);
+    if(lockC){const sx=x+2,sy=y+14;g.fillStyle='#ffd23f';g.fillRect(sx,sy,9,8);g.fillStyle='#2a1a3a';g.fillRect(sx+1,sy+1,7,6);g.fillStyle='#ffd23f';g.fillRect(sx+3,sy+4,3,3);g.strokeStyle='#ffd23f';g.lineWidth=1;g.beginPath();g.arc(sx+4.5,sy+4,1.6,Math.PI,0);g.stroke()}
     if(t.sw!=null){let jr=0,jl=0;colOpts(c).forEach(k=>{const sk2=skinOf(c,k),L=isCos(k),sx=L?x+2:x+cw-11,sy=y+14+(L?jl++:jr++)*9;/* colours on the right, costumes on the left (gold frame) */
       g.fillStyle=k===t.sw?'#fff':(L?'#ffd23f':'#120a16');g.fillRect(sx,sy,9,8);g.fillStyle=outfit(sk2.ch,sk2.col);g.fillRect(sx+1,sy+1,7,6);if(L){g.fillStyle=sk2.col.accent;g.fillRect(sx+1,sy+5,7,2)}})}
-    BTN.push({x,y,w:cw,h:chh,cb:()=>opt.tap(c,i)})});
+    BTN.push({x,y,w:cw,h:chh,cb:()=>opt.tap(c,i)});
+    if(lockC)BTN.push({x:x,y:y+11,w:16,h:14,cb:()=>{G.cosSel=c.id;G.cosFrom=G.mode;ADS.checkPurchases();go('costumes')}})});
 }
 function drawInfo(g,c){g.fillStyle='rgba(0,0,0,0.55)';g.fillRect(4,157,376,38);if(!c){txt(g,'RANDOM',8,160,8,'#fff');txt(g,'???',64,160,8,'#b48cff');txt(g,'A SECRET FIGHTER HAS BEEN CHOSEN.',8,172,8,'#d8d0ff');txt(g,'REVEALED WHEN THE FIGHT STARTS!',8,182,8,'#d8d0ff');return}txt(g,c.name,8,160,8,'#fff');txt(g,c.arch,8+(c.name.length+1)*8,160,8,c.archCol);
   ['P','S','R'].forEach((l,k)=>{const xx=232+k*49;txt(g,l,xx,160,8,'#9a8fc8');for(let p=0;p<5;p++){g.fillStyle=p<c.stats[k]?c.archCol:'#2a2244';g.fillRect(xx+10+p*7,161,5,6)}});
