@@ -1750,8 +1750,9 @@ function KO(B,A,dir){
     Object.assign(B,{state:'getup',t:0,juggle:false,juggleInv:false,vx:0,vy:0,y:FLOOR,move:null,combo:0,launchN:0,capN:0,lHits:0,comboDmg:0,inv:110});
     G.superFlash={f:B,t:60,name:'RESURRECTION'};B.flash=30;B.flashCol='#fff2a0';addFx('ring',B.x,B.y-50*B.S);addFx('sigil',B.x,B.y-48*B.S);G.slow=30;SFX.super();return}
   B.hp=0;B.ko=true;Object.assign(B,{state:'hit',juggle:true,vy:-5.4,vx:dir*2.4,y:Math.min(B.y,FLOOR-1),move:null});
-  G.phase='ko';G.phaseT=0;G.slow=70;G.koFlash=14;G.koWinner=A;banner('K.O.',120,32);SFX.ko();if(!G.demo)vib(120);G.excite=1;
-  if(B.hp<=0&&A.hp===A.ch.hp)G.perfect=true;
+  /* a flawless win (the winner took no damage at all) shows PERFECT instead of K.O. */
+  if(A.hp>=A.ch.hp)G.perfect=true;
+  G.phase='ko';G.phaseT=0;G.slow=70;G.koFlash=14;G.koWinner=A;banner(G.perfect?'PERFECT':'K.O.',120,32);SFX.ko();if(!G.demo)vib(120);G.excite=1;
 }
 
 /* ============================ AI ============================ */
@@ -2613,7 +2614,7 @@ function startRound(){if(G.tag)tagRoundReset();G.p1.reset(STAGE_W/2-70);G.p2.res
 function endRound(winner){
   if(winner)G.wins[winner===G.p1?0:1]++;
   G.phase='roundover';G.phaseT=0;
-  if(winner){winner.state='win';winner.t=0;winner.vx=0;banner(G.perfect?'PERFECT!':(winner===G.me&&!G.demo?'YOU WIN':winner.ch.name+' WINS'),130,G.perfect?24:16)}else banner('DRAW GAME',130,16)}
+  if(winner){winner.state='win';winner.t=0;winner.vx=0;banner(winner===G.me&&!G.demo?'YOU WIN':winner.ch.name+' WINS',130,16)}else banner('DRAW GAME',130,16)}
 function matchOver(){
   if(G.demo){newDemo();return}
   const won=G.wins[G.me?G.me.side:0]>=2;G.result={won,t:0};if(G.net){G.result.net=true;return}
@@ -3056,7 +3057,7 @@ function renderHUD(g){
     else if(N.stalls&&G.tick%60<30&&N.frame-N.rconf>MAXRB)txt(g,'WAITING FOR RIVAL',W/2,50,8,'#ffd23f','center');
     const me=G.me;txt(g,'YOU',me.side?W-12:12,32,8,'#4aa0ff',me.side?'right':'left')}
   if(G.banner){const b=G.banner;b.t++;const k=b.t/b.life;const sc=b.t<8?1+(8-b.t)*0.15:1;g.save();g.translate(W/2,H/2-14);g.scale(sc,sc);g.globalAlpha=k>0.85?(1-k)/0.15:1;
-    if(b.text==='K.O.')bigTxt(g,b.text,0,0,b.size,'#ffffff','#ff2a2a');else bigTxt(g,b.text,0,0,b.size);g.restore();g.globalAlpha=1;if(b.t>=b.life)G.banner=null}
+    if(b.text==='K.O.')bigTxt(g,b.text,0,0,b.size,'#ffffff','#ff2a2a');else if(b.text==='PERFECT')bigTxt(g,b.text,0,0,b.size,'#fff6c0','#ffb000');else bigTxt(g,b.text,0,0,b.size);g.restore();g.globalAlpha=1;if(b.t>=b.life)G.banner=null}
 }
 function renderTitle(g){
   g.fillStyle='rgba(8,4,20,0.55)';g.fillRect(0,0,W,H);
